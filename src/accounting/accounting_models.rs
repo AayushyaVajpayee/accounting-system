@@ -10,7 +10,9 @@ struct CurrencyMaster{
     id:u32,
     tenant_id:u32,
     scale:u8,
+    ///16 char
     display_name:String,
+    ///50 char
     description:String,
     audit_metadata:AuditMetadataBase
 }
