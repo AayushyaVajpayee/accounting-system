@@ -1,5 +1,5 @@
 create table tenant(
-id serial primary key,
+id bigserial primary key,
 display_name varchar(100) not null,
 created_by varchar(50) not null,
 updated_by varchar(50),
