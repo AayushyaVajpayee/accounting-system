@@ -1,10 +1,4 @@
-#[derive(Debug)]
-pub struct AuditMetadataBase {
-    pub created_by: String,
-    pub updated_by: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug)]
 pub struct Tenant{

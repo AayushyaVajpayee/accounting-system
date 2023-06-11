@@ -1,5 +1,6 @@
 use postgres::{Client, Row};
-use crate::accounting::tenant::tenant_models::{AuditMetadataBase, Tenant};
+use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::accounting::tenant::tenant_models::{ Tenant};
 
 pub trait TenantDao {
     fn get_tenant_by_id(&mut self, id: i64) -> Option<Tenant>;
@@ -65,8 +66,9 @@ mod tests {
     use testcontainers::clients;
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
+    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
-    use crate::accounting::tenant::tenant_models::{AuditMetadataBase, Tenant};
+    use crate::accounting::tenant::tenant_models::{ Tenant};
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -119,6 +121,6 @@ mod tests {
         let created_tenant_id = tenant_dao.create_tenant(&tenant);
         // println!("created {} tenant", tenant_dao.create_tenant(tenant));
         println!("fetched {:?}", tenant_dao.get_tenant_by_id(created_tenant_id));
-        panic!("kkjkj");
+        // panic!("kkjkj");
     }
 }
