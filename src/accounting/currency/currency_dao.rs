@@ -76,7 +76,7 @@ mod tests {
     use testcontainers::images::generic::GenericImage;
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
-    use crate::accounting::currency::currency_models::{AuditMetadataBase, CurrencyMaster};
+    use crate::accounting::currency::currency_models::{a_currency_master, AuditMetadataBase, CurrencyMaster};
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -109,25 +109,7 @@ mod tests {
         let mut postgres_client = create_postgres_client(port);
         create_schema(&mut postgres_client);
       let mut currency_dao=  CurrencyDaoPostgresImpl{postgres_client};
-      let currency_master=CurrencyMaster{
-          id:1,
-          tenant_id:12,
-          description:"ab".to_string(),
-          display_name:"kjk".to_string(),
-          scale:3,
-          audit_metadata:AuditMetadataBase{
-              created_by:"unit test".to_string(),
-              created_at:SystemTime::now()
-                  .duration_since(SystemTime::UNIX_EPOCH)
-                  .unwrap()
-                  .as_micros() as i64,
-              updated_by:"unit test".to_string(),
-              updated_at:SystemTime::now()
-                  .duration_since(SystemTime::UNIX_EPOCH)
-                  .unwrap()
-                  .as_micros() as i64
-          }
-      };
+      let currency_master=a_currency_master(Default::default());
         currency_dao.create_currency_entry(currency_master);
         let got_c=currency_dao.get_currency_entry_by_id(1);
         println!("{:?}",got_c)
