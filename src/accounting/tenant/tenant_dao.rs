@@ -68,7 +68,7 @@ mod tests {
     use testcontainers::images::generic::GenericImage;
     use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
-    use crate::accounting::tenant::tenant_models::{ Tenant};
+    use crate::accounting::tenant::tenant_models::{a_tenant, Tenant};
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -100,25 +100,10 @@ mod tests {
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
         create_schema(&mut postgres_client);
-        let tenant = Tenant {
-            id: 1,
-            display_name: "cable".to_string(),
-            audit_metadata: AuditMetadataBase {
-                created_by: "unit test".to_string(),
-                created_at: SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_micros() as i64,
-                updated_by: "unit test".to_string(),
-                updated_at: SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_micros() as i64,
-            },
-        };
+        let t1=a_tenant(Default::default());
         let mut tenant_dao = TenantDaoImpl { postgres_client };
-        tenant_dao.create_tenant(&tenant);
-        let created_tenant_id = tenant_dao.create_tenant(&tenant);
+        tenant_dao.create_tenant(&t1);
+        let created_tenant_id = tenant_dao.create_tenant(&t1);
         // println!("created {} tenant", tenant_dao.create_tenant(tenant));
         println!("fetched {:?}", tenant_dao.get_tenant_by_id(created_tenant_id));
         // panic!("kkjkj");
