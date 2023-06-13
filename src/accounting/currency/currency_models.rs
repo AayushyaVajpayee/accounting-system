@@ -28,7 +28,7 @@ pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> Aud
 
 #[derive(Debug)]
 pub struct CurrencyMaster {
-    pub id: i32,
+    pub id: i16,
     pub tenant_id: i32,
     pub scale: i16,
     ///16 char
@@ -41,7 +41,7 @@ pub struct CurrencyMaster {
 #[cfg(test)]
 #[derive(Default)]
 pub struct CurrencyMasterTestBuilder {
-    pub id: Option<i32>,
+    pub id: Option<i16>,
     pub tenant_id: Option<i32>,
     pub scale: Option<i16>,
     pub display_name: Option<String>,

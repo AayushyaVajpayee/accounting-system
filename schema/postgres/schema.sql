@@ -1,5 +1,5 @@
-create table tenant(
-id bigserial primary key,
+create table if not exists tenant(
+id serial primary key,
 display_name varchar(100) not null,
 created_by varchar(50) not null,
 updated_by varchar(50),

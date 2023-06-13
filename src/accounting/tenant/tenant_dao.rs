@@ -1,25 +1,30 @@
 use postgres::{Client, Row};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::tenant::tenant_models::{ Tenant};
-
 pub trait TenantDao {
-    fn get_tenant_by_id(&mut self, id: i64) -> Option<Tenant>;
-    fn create_tenant(&mut self, tenant: &Tenant) -> i64;
+    fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant>;
+    fn create_tenant(&mut self, tenant: &Tenant) -> i32;
     fn update_tenant(&mut self, tenant: Tenant) -> i64;
     fn delete_tenant(&mut self, tenant_id: &str) -> i64;
 }
 
+pub fn get_tenant_dao(client:Client)->Box<dyn TenantDao>{
+    let td=TenantDaoImpl{
+        postgres_client:client
+    };
+    Box::new(td)
+}
 
-pub struct TenantDaoImpl {
+ struct TenantDaoImpl {
     postgres_client: Client,
 }
 
 impl TenantDao for TenantDaoImpl {
-    fn get_tenant_by_id(&mut self, id: i64) -> Option<Tenant> {
+    fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant> {
         let k = self.postgres_client
             .query("select id,display_name,created_by,updated_by,created_at,updated_at
             from tenant where id =$1"
-                   , &[&id])
+                   , &[id])
             .unwrap();
 
         k.iter().map(|row|
@@ -36,7 +41,7 @@ impl TenantDao for TenantDaoImpl {
         ).next()
     }
 
-    fn create_tenant(&mut self, tenant: &Tenant) -> i64 {
+    fn create_tenant(&mut self, tenant: &Tenant) -> i32 {
         self.postgres_client.query(
             "insert into tenant (display_name,created_by,updated_by,created_at,updated_at)
             values ($1,$2,$3,$4,$5) returning id", &[
@@ -105,7 +110,7 @@ mod tests {
         tenant_dao.create_tenant(&t1);
         let created_tenant_id = tenant_dao.create_tenant(&t1);
         // println!("created {} tenant", tenant_dao.create_tenant(tenant));
-        println!("fetched {:?}", tenant_dao.get_tenant_by_id(created_tenant_id));
+        println!("fetched {:?}", tenant_dao.get_tenant_by_id(&created_tenant_id));
         // panic!("kkjkj");
     }
 }

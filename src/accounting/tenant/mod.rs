@@ -1,3 +1,4 @@
-mod tenant_service;
+pub(crate) mod tenant_service;
 mod tenant_dao;
-mod tenant_models;
+pub(crate) mod tenant_models;
+

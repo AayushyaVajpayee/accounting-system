@@ -52,7 +52,7 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
             &[&(currency.tenant_id), &(currency.scale), &currency.display_name,
                 &currency.description,
                 &currency.audit_metadata.created_by, &currency.audit_metadata.updated_by,
-                &(currency.audit_metadata.created_at), &(currency.audit_metadata.updated_at)]
+                &(currency.audit_metadata.created_at), &(currency.audit_metadata.updated_at)],
         ).unwrap();
         // self.postgres_client.simple_query(&query).unwrap();
     }
@@ -76,7 +76,9 @@ mod tests {
     use testcontainers::images::generic::GenericImage;
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
-    use crate::accounting::currency::currency_models::{a_currency_master, AuditMetadataBase, CurrencyMaster};
+    use crate::accounting::currency::currency_models::{a_currency_master, AuditMetadataBase, CurrencyMaster, CurrencyMasterTestBuilder};
+    use crate::accounting::tenant::tenant_models::a_tenant;
+    use crate::accounting::tenant::tenant_service::get_tenant_service_for_test;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -108,10 +110,18 @@ mod tests {
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
         create_schema(&mut postgres_client);
-      let mut currency_dao=  CurrencyDaoPostgresImpl{postgres_client};
-      let currency_master=a_currency_master(Default::default());
+        let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client };
+        let tenant_postgres = create_postgres_client(port);
+        let mut tenant_service = get_tenant_service_for_test(tenant_postgres);
+        let a_tenant = a_tenant(Default::default());
+       let tenant_id= tenant_service.create_tenant(&a_tenant);
+        let currency_master = a_currency_master(CurrencyMasterTestBuilder {
+            tenant_id: Some(tenant_id),
+            ..Default::default()
+        }
+        );
         currency_dao.create_currency_entry(currency_master);
-        let got_c=currency_dao.get_currency_entry_by_id(1);
-        println!("{:?}",got_c)
+        let got_c = currency_dao.get_currency_entry_by_id(1);
+        println!("{:?}", got_c)
     }
 }

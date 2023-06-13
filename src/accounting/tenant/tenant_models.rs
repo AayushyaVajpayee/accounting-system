@@ -2,7 +2,7 @@ use crate::accounting::currency::currency_models::{AuditMetadataBase};
 
 #[derive(Debug)]
 pub struct Tenant {
-    pub id: i64,
+    pub id: i32,
     pub display_name: String,
     pub audit_metadata: AuditMetadataBase,
 }
@@ -10,7 +10,7 @@ pub struct Tenant {
 #[cfg(test)]
 #[derive(Default)]
 pub struct TenantTestBuilder {
-    pub id: Option<i64>,
+    pub id: Option<i32>,
     pub display_name: Option<String>,
     pub audit_metadata: Option<AuditMetadataBase>,
 }
