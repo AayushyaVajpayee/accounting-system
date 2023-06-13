@@ -34,6 +34,10 @@ create table if not exists account_type_master(
 create table if not exists app_user(
     id serial primary key,
     tenant_id integer not null references tenant(id),
+    first_name varchar(50) not null,
+    last_name varchar(50),
+    email_id varchar(200),
+    mobile_number varchar(14),
     created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now())*1000000,
