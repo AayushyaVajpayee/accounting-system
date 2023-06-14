@@ -6,8 +6,8 @@ use postgres::types::ToSql;
 use crate::accounting::currency::currency_models::{AuditMetadataBase, CurrencyMaster};
 
 pub trait CurrencyDao {
-    fn get_currency_entry_by_id(&mut self, id: i64) -> Option<CurrencyMaster>;
-    fn create_currency_entry(&mut self, currency: CurrencyMaster);
+    fn get_currency_entry_by_id(&mut self, id: &i16) -> Option<CurrencyMaster>;
+    fn create_currency_entry(&mut self, currency: CurrencyMaster) -> i16;
     fn update_currency_entry();
     fn delete_currency_entry();
 }
@@ -17,10 +17,10 @@ pub struct CurrencyDaoPostgresImpl {
 }
 
 impl CurrencyDao for CurrencyDaoPostgresImpl {
-    fn get_currency_entry_by_id(&mut self, id: i64) -> Option<CurrencyMaster> {
+    fn get_currency_entry_by_id(&mut self, id: &i16) -> Option<CurrencyMaster> {
         let k = self.postgres_client.
-            query("select id,tenant_id,scale,display_name,description,created_by,updated_by,
-             created_at,updated_at from currency_master ", &[]).unwrap();
+            query("select id,tenant_id,scale,display_name,description,created_by,updated_by,\
+            created_at,updated_at from currency_master where id = $1", &[id]).unwrap();
         k.iter().map(|row|
             CurrencyMaster {
                 id: row.get(0),
@@ -37,23 +37,16 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
             }).next()
     }
 
-    fn create_currency_entry(&mut self, currency: CurrencyMaster) {
-        // let query = format!(
-        //     "insert into currency_master  (tenant_id,scale,display_name,description,created_by,updated_by,
-        //      created_at,updated_at) values ({},{},{},{},{},{},{},{});
-        //     ", currency.tenant_id, currency.scale, currency.display_name, currency.description,
-        //     currency.audit_metadata.created_by, currency.audit_metadata.updated_by,
-        //     currency.audit_metadata.created_at, currency.audit_metadata.updated_at
-        // );
-        self.postgres_client.execute(
+    fn create_currency_entry(&mut self, currency: CurrencyMaster) -> i16 {
+        self.postgres_client.query(
             "insert into currency_master  (tenant_id,scale,display_name,description,created_by,updated_by,
-             created_at,updated_at) values ($1,$2,$3,$4,$5,$6,$7,$8);
+             created_at,updated_at) values ($1,$2,$3,$4,$5,$6,$7,$8) returning id
             ",
             &[&(currency.tenant_id), &(currency.scale), &currency.display_name,
                 &currency.description,
                 &currency.audit_metadata.created_by, &currency.audit_metadata.updated_by,
                 &(currency.audit_metadata.created_at), &(currency.audit_metadata.updated_at)],
-        ).unwrap();
+        ).unwrap().iter().map(|row| row.get(0)).next().unwrap()
         // self.postgres_client.simple_query(&query).unwrap();
     }
 
@@ -68,16 +61,14 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
-    use std::time::SystemTime;
-
     use postgres::{Client, NoTls};
     use testcontainers::clients;
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
-    use crate::accounting::currency::currency_models::{a_currency_master, AuditMetadataBase, CurrencyMaster, CurrencyMasterTestBuilder};
-    use crate::accounting::tenant::tenant_models::{a_create_tenant_request, a_tenant};
+    use crate::accounting::currency::currency_models::{a_currency_master, CurrencyMasterTestBuilder};
+    use crate::accounting::tenant::tenant_models::a_create_tenant_request;
     use crate::accounting::tenant::tenant_service::get_tenant_service_for_test;
 
     fn create_postgres_client(port: u16) -> Client {
@@ -121,7 +112,7 @@ mod tests {
         }
         );
         currency_dao.create_currency_entry(currency_master);
-        let got_c = currency_dao.get_currency_entry_by_id(1);
+        let got_c = currency_dao.get_currency_entry_by_id(&1);
         println!("{:?}", got_c)
     }
 }
