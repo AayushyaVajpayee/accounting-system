@@ -12,6 +12,13 @@ pub struct UserDaoPostgresImpl {
     postgres_client: Client,
 }
 
+pub fn get_user_dao(client: Client) -> Box<dyn UserDao> {
+    let user_dao = UserDaoPostgresImpl {
+        postgres_client: client
+    };
+    Box::new(user_dao)
+}
+
 impl UserDao for UserDaoPostgresImpl {
     fn get_user_by_id(&mut self, id: &i32) -> Option<User> {
         let rows = self.postgres_client.query("\

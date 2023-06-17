@@ -1,4 +1,4 @@
-use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug)]
 pub struct AccountTypeMaster {
@@ -32,7 +32,7 @@ pub fn a_create_account_type_master_request(builder: CreateAccountTypeMasterRequ
         tenant_id: builder.tenant_id.unwrap_or(0),
         account_code: builder.account_code.unwrap_or(0),
         display_name: builder.display_name.unwrap_or("".to_string()),
-        audit_metadata: builder.audit_metadata.unwrap_or_else(|| an_audit_metadata_base(Default::default())),
+        audit_metadata: builder.audit_metadata.unwrap_or_else(|| crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),
     }
 }
 
@@ -82,4 +82,18 @@ pub struct CreateAccountRequestTestBuilder {
     pub currency_master_id: Option<i16>,
     pub user_id: Option<i32>,
     pub audit_metadata: Option<AuditMetadataBase>,
+}
+
+#[cfg(test)]
+pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> CreateAccountRequest {
+    CreateAccountRequest {
+        tenant_id: builder.tenant_id.unwrap_or(0),
+        display_code: builder.display_code.unwrap_or("".to_string()),
+        account_type_id: builder.account_type_id.unwrap_or(0),
+        opening_balance: builder.opening_balance.unwrap_or(0),
+        currency_master_id: builder.currency_master_id.unwrap_or(0),
+        user_id: builder.user_id.unwrap_or(0),
+        audit_metadata: builder.audit_metadata.unwrap_or_else(||
+            crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),
+    }
 }

@@ -1,3 +1,3 @@
 mod user_dao;
-mod user_models;
-mod user_service;
+pub(crate) mod user_models;
+pub(crate) mod user_service;
