@@ -22,7 +22,6 @@ create table if not exists currency_master(
 create table if not exists account_type_master(
     id smallserial primary key,
     tenant_id integer not null references tenant(id),
-    scale smallint not null,
     display_name varchar(30) not null,
     account_code smallint not null,
     created_by varchar(50) not null,
@@ -47,8 +46,12 @@ create table if not exists app_user(
 create table user_account(
  id serial primary key,
  tenant_id integer not null references tenant(id),
- account_type_id smallint not null,
+ display_code varchar(20) not null unique,
+ account_type_id smallint not null  references account_type_master(id),
  user_id integer not null references app_user(id),
+ currency_master_id smallint not null references currency_master(id),
+ opening_balance integer not null,
+ current_balance integer not null,
  created_by varchar(50) not null,
  updated_by varchar(50),
  created_at bigint default extract(epoch from now())*1000000,

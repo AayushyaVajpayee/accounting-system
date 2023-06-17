@@ -3,3 +3,4 @@ mod currency;
 mod tenant;
 pub(crate) mod postgres_factory;
 mod user;
+mod account;
