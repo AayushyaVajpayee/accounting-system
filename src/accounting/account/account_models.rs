@@ -5,7 +5,7 @@ pub struct AccountTypeMaster {
     pub id: i16,
     pub tenant_id: i32,
     pub display_name: String,
-    pub account_code: i16,
+    pub account_code: Option<i16>,
     pub audit_metadata: AuditMetadataBase,
 }
 
@@ -13,7 +13,7 @@ pub struct AccountTypeMaster {
 pub struct CreateAccountTypeMasterRequest {
     pub tenant_id: i32,
     pub display_name: String,
-    pub account_code: i16,
+    pub account_code: Option<i16>,
     pub audit_metadata: AuditMetadataBase,
 }
 
@@ -30,7 +30,7 @@ pub struct CreateAccountTypeMasterRequestTestBuilder {
 pub fn a_create_account_type_master_request(builder: CreateAccountTypeMasterRequestTestBuilder) -> CreateAccountTypeMasterRequest {
     CreateAccountTypeMasterRequest {
         tenant_id: builder.tenant_id.unwrap_or(0),
-        account_code: builder.account_code.unwrap_or(0),
+        account_code: builder.account_code,
         display_name: builder.display_name.unwrap_or("".to_string()),
         audit_metadata: builder.audit_metadata.unwrap_or_else(|| crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),
     }
@@ -53,9 +53,11 @@ pub struct Account {
     ///max 20 char string of only numeric data
     pub display_code: String,
     pub account_type_id: i16,
-    pub opening_balance: i64,
-    pub current_balance: i64,
-    pub currency_master_id: i16,
+    pub ledger_master_id: i32,
+    pub debits_posted: i64,
+    pub debits_pending: i64,
+    pub credits_posted: i64,
+    pub credits_pending: i64,
     pub user_id: i32,
     pub audit_metadata: AuditMetadataBase,
 }
@@ -66,8 +68,7 @@ pub struct CreateAccountRequest {
     pub display_code: String,
     //todo should it be self generated
     pub account_type_id: i16,
-    pub opening_balance: i64,
-    pub currency_master_id: i16,
+    pub ledger_master_id: i32,
     pub user_id: i32,
     pub audit_metadata: AuditMetadataBase,
 }
@@ -78,8 +79,7 @@ pub struct CreateAccountRequestTestBuilder {
     pub tenant_id: Option<i32>,
     pub display_code: Option<String>,
     pub account_type_id: Option<i16>,
-    pub opening_balance: Option<i64>,
-    pub currency_master_id: Option<i16>,
+    pub ledger_master_id: Option<i32>,
     pub user_id: Option<i32>,
     pub audit_metadata: Option<AuditMetadataBase>,
 }
@@ -90,8 +90,7 @@ pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> Cre
         tenant_id: builder.tenant_id.unwrap_or(0),
         display_code: builder.display_code.unwrap_or("".to_string()),
         account_type_id: builder.account_type_id.unwrap_or(0),
-        opening_balance: builder.opening_balance.unwrap_or(0),
-        currency_master_id: builder.currency_master_id.unwrap_or(0),
+        ledger_master_id: builder.ledger_master_id.unwrap_or(0),
         user_id: builder.user_id.unwrap_or(0),
         audit_metadata: builder.audit_metadata.unwrap_or_else(||
             crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),

@@ -69,7 +69,7 @@ impl AccountDao for AccountDaoPostgresImpl {
     fn get_account_by_id(&mut self, id: &i32) -> Option<Account> {
         let k = self.postgres_client.query(
             "select id,tenant_id,display_code,account_type_id,\
-            user_id,currency_master_id,opening_balance,current_balance,\
+            user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,credits_pending,\
             created_by,updated_by,created_at,updated_at \
             from user_account where id=$1",
             &[id],
@@ -82,14 +82,16 @@ impl AccountDao for AccountDaoPostgresImpl {
                     display_code: row.get(2),
                     account_type_id: row.get(3),
                     user_id: row.get(4),
-                    currency_master_id: row.get(5),
-                    opening_balance: row.get(6),
-                    current_balance: row.get(7),
+                    ledger_master_id: row.get(5),
+                    debits_posted: row.get(6),
+                    debits_pending: row.get(7),
+                    credits_posted: row.get(8),
+                    credits_pending: row.get(9),
                     audit_metadata: AuditMetadataBase {
-                        created_by: row.get(8),
-                        updated_by: row.get(9),
-                        created_at: row.get(10),
-                        updated_at: row.get(11),
+                        created_by: row.get(10),
+                        updated_by: row.get(11),
+                        created_at: row.get(12),
+                        updated_at: row.get(13),
                     },
                 }).next()
     }
@@ -97,18 +99,17 @@ impl AccountDao for AccountDaoPostgresImpl {
     fn create_account(&mut self, request: &CreateAccountRequest) -> i32 {
         self.postgres_client.query(
             "insert into user_account (tenant_id,display_code,account_type_id,\
-            user_id,currency_master_id,opening_balance,current_balance,\
+            user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,credits_pending,\
             created_by,updated_by,created_at,updated_at)
-            values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning id
+            values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) returning id
             ",
             &[
                 &request.tenant_id,
                 &request.display_code,
                 &request.account_type_id,
                 &request.user_id,
-                &request.currency_master_id,
-                &request.opening_balance,
-                &request.opening_balance,
+                &request.ledger_master_id,
+                &0, &0, &0, &0,
                 &request.audit_metadata.created_by,
                 &request.audit_metadata.updated_by,
                 &request.audit_metadata.created_at,
@@ -272,7 +273,7 @@ mod account_tests {
         let user_id = user_service.create_user(&user_creation_request);
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
             tenant_id: Some(tenant_id),
-            currency_master_id: Some(currency_id),
+            ledger_master_id: Some(todo!()),
             account_type_id: Some(account_type_id),
             user_id: Some(user_id),
             ..Default::default()
