@@ -56,7 +56,7 @@ fn create_schema(client: &mut Client) {
     client.simple_query(&fi).unwrap();
 }
 
-fn copy_tables(port: u16) {
+pub fn copy_tables(port: u16) {
     let filenames = get_seed_filenames_ordered();
     validate_seed_file_names(&filenames).unwrap();
     let mut client = create_postgres_client(port);

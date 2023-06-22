@@ -1,1 +1,1 @@
-mod seed_service;
+pub(crate) mod seed_service;

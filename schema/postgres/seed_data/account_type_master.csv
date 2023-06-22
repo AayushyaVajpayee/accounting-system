@@ -1,13 +1,13 @@
 id,tenant_id,child_id,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at
-1,1,,,Asset,,seed_data,,1687018780000,1687018780000
-2,1,,,Liability,,seed_data,,1687018780000,1687018780000
-3,1,,,Equity,,seed_data,,1687018780000,1687018780000
-4,1,,,Income,,seed_data,,1687018780000,1687018780000
-5,1,,,Expense,,seed_data,,1687018780000,1687018780000
-6,1,,,Current Asset,,seed_data,,1687018780000,1687018780000
-7,1,,,Fixed(Non current) Asset,,seed_data,,1687018780000,1687018780000
-8,1,,,Cash,,seed_data,,1687018780000,1687018780000
-9,1,,,Property,,seed_data,,1687018780000,1687018780000
-10,1,,,Equipment,,seed_data,,1687018780000,1687018780000
-11,1,,,Vehicle,,seed_data,,1687018780000,1687018780000
-12,1,,,Accounts Receivable,,seed_data,,1687018780000,1687018780000
+1,1,,,Asset,,seed_data,seed_data,1687018780000,1687018780000
+2,1,,,Liability,,seed_data,seed_data,1687018780000,1687018780000
+3,1,,,Equity,,seed_data,seed_data,1687018780000,1687018780000
+4,1,,,Income,,seed_data,seed_data,1687018780000,1687018780000
+5,1,,,Expense,,seed_data,seed_data,1687018780000,1687018780000
+6,1,,,Current Asset,,seed_data,seed_data,1687018780000,1687018780000
+7,1,,,Fixed(Non current) Asset,,seed_data,seed_data,1687018780000,1687018780000
+8,1,,,Cash,,seed_data,seed_data,1687018780000,1687018780000
+9,1,,,Property,,seed_data,seed_data,1687018780000,1687018780000
+10,1,,,Equipment,,seed_data,seed_data,1687018780000,1687018780000
+11,1,,,Vehicle,,seed_data,seed_data,1687018780000,1687018780000
+12,1,,,Accounts Receivable,,seed_data,seed_data,1687018780000,1687018780000

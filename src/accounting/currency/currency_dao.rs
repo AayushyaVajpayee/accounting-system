@@ -64,8 +64,7 @@ mod tests {
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
-    use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::accounting::tenant::tenant_service::get_tenant_service_for_test;
+    use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -96,19 +95,14 @@ mod tests {
         let node = test_container_client.run(generic_postgres);
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
-        create_schema(&mut postgres_client);
-        let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client };
-        let tenant_postgres = create_postgres_client(port);
-        let mut tenant_service = get_tenant_service_for_test(tenant_postgres);
-        let a_tenant = a_create_tenant_request(Default::default());
-        let tenant_id = tenant_service.create_tenant(&a_tenant);
+        copy_tables(port);
         let currency_master = a_create_currency_master_request(
             CreateCurrencyMasterRequestTestBuilder {
-                tenant_id: Some(tenant_id),
+                tenant_id: Some(1),
                 ..Default::default()
             }
         );
-
+        let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client };
         currency_dao.create_currency_entry(&currency_master);
         let got_c = currency_dao.get_currency_entry_by_id(&1);
         println!("{:?}", got_c)

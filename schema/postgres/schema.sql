@@ -6,6 +6,7 @@ updated_by varchar(50),
 created_at bigint default extract(epoch from now())*1000000,
 updated_at bigint default extract(epoch from now())*1000000
 );
+alter sequence if exists tenant_id_seq restart with 2;
 
 create table if not exists currency_master(
     id smallserial primary key,
@@ -18,7 +19,7 @@ create table if not exists currency_master(
     created_at bigint default extract(epoch from now())*1000000,
     updated_at bigint default extract(epoch from now())*1000000
 );
-
+alter sequence if exists  currency_master_id_seq restart with 400;
 create table if not exists account_type_master(
     id smallserial primary key,
     tenant_id integer not null references tenant(id),
@@ -31,7 +32,7 @@ create table if not exists account_type_master(
     created_at bigint default extract(epoch from now())*1000000,
     updated_at bigint default extract(epoch from now())*1000000
 );
-
+alter sequence if exists account_type_master_id_seq restart with 13;
 create table if not exists app_user(
     id serial primary key,
     tenant_id integer not null references tenant(id),
@@ -44,6 +45,7 @@ create table if not exists app_user(
     created_at bigint default extract(epoch from now())*1000000,
     updated_at bigint default extract(epoch from now())*1000000
 );
+alter sequence if exists  app_user_id_seq restart with 2;
 
 create table ledger_master(
   id serial primary key,
@@ -55,7 +57,7 @@ create table ledger_master(
   created_at bigint default extract(epoch from now())*1000000,
   updated_at bigint default extract(epoch from now())*1000000
 );
-
+alter sequence if exists  ledger_master_id_seq restart with 2;
 create table user_account(
  id serial primary key,
  tenant_id integer not null references tenant(id),
@@ -72,3 +74,4 @@ create table user_account(
  created_at bigint default extract(epoch from now())*1000000,
  updated_at bigint default extract(epoch from now())*1000000
 );
+alter sequence if exists user_account_id_seq restart with 3;
