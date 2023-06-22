@@ -1,4 +1,4 @@
 id,tenant_id,scale,display_name,description,created_by,updated_by,created_at,updated_at
 1,1,0,Paise,indian paise,seed_data,,1687018780000,16870187800
 2,1,2,INR,indian rupee,seed_data,,1687018780000,1687018780000
-3,1,8,BTC,Bitcoin (crypto currency),seed_data,1687018780000,1687018780000
+3,1,8,BTC,Bitcoin (crypto currency),seed_data,,1687018780000,1687018780000

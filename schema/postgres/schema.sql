@@ -22,7 +22,7 @@ create table if not exists currency_master(
 create table if not exists account_type_master(
     id smallserial primary key,
     tenant_id integer not null references tenant(id),
-    child_id smallint[] references account_type_master(id),
+    child_id smallint[],
     parent_id smallint references account_type_master(id),
     display_name varchar(30) not null,
     account_code smallint,
