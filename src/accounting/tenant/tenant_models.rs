@@ -1,4 +1,4 @@
-use crate::accounting::currency::currency_models::{AuditMetadataBase};
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug)]
 pub struct Tenant {

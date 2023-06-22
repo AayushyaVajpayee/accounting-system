@@ -1,13 +1,15 @@
 use postgres::Client;
+
+use crate::accounting::postgres_factory::create_postgres_client;
 use crate::accounting::tenant::tenant_dao::{get_tenant_dao, TenantDao};
 use crate::accounting::tenant::tenant_models::{CreateTenantRequest, Tenant};
-use  crate::accounting::postgres_factory::create_postgres_client;
-pub trait TenantService{
-    fn get_tenant_by_id(&mut self,id:&i32)->Option<Tenant>;
-    fn create_tenant(&mut self,tenant:&CreateTenantRequest)->i32;
 
+pub trait TenantService {
+    fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant>;
+    fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32;
 }
-struct TenantServiceImpl{
+
+struct TenantServiceImpl {
     tenant_dao: Box<dyn TenantDao>
 }
 impl TenantService for TenantServiceImpl{

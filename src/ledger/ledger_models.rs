@@ -1,5 +1,3 @@
-use std::os::unix::raw::ino_t;
-
 struct Transfer{
     id:u128,
     debit_account_id:u128,
