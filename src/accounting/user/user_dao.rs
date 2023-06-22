@@ -69,10 +69,9 @@ mod tests {
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
-    use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::accounting::tenant::tenant_service::get_tenant_service_for_test;
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
+    use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -83,12 +82,6 @@ mod tests {
         client
     }
 
-    fn create_schema(client: &mut Client) {
-        let path = format!("schema/postgres/schema.sql");
-        let fi = std::fs::read_to_string(path).unwrap();
-        // println!("{fi}");
-        client.simple_query(&fi).unwrap();
-    }
 
     #[test]
     fn test_users() {
@@ -103,13 +96,10 @@ mod tests {
         let node = test_container_client.run(generic_postgres);
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
-        create_schema(&mut postgres_client);
-        let t1 = a_create_tenant_request(Default::default());
-        let mut tenant_service = get_tenant_service_for_test(postgres_client);
-        let tenant_id = tenant_service.create_tenant(&t1);
+        copy_tables(port);
         let user = a_create_user_request(
             CreateUserRequestTestBuilder {
-                tenant_id: Some(tenant_id),
+                tenant_id: Some(1),
                 ..Default::default()
             }
         );

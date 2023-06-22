@@ -75,12 +75,6 @@ mod tests {
         client
     }
 
-    fn create_schema(client: &mut Client) {
-        let path = format!("schema/postgres/schema.sql");
-        let fi = std::fs::read_to_string(path).unwrap();
-        // println!("{fi}");
-        client.simple_query(&fi).unwrap();
-    }
 
     #[test]
     fn test_prep() {

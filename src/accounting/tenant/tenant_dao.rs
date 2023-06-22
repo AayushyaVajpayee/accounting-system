@@ -1,6 +1,8 @@
-use postgres::{Client, Row};
+use postgres::Client;
+
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::tenant::tenant_models::{CreateTenantRequest, Tenant};
+
 pub trait TenantDao {
     fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant>;
     fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32;
@@ -66,14 +68,14 @@ impl TenantDao for TenantDaoImpl {
 
 #[cfg(test)]
 mod tests {
-    use std::time::SystemTime;
     use postgres::{Client, NoTls};
     use testcontainers::clients;
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
-    use crate::accounting::currency::currency_models::AuditMetadataBase;
+
     use crate::accounting::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
-    use crate::accounting::tenant::tenant_models::{a_create_tenant_request, a_tenant, Tenant};
+    use crate::accounting::tenant::tenant_models::a_create_tenant_request;
+    use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -82,13 +84,6 @@ mod tests {
         connect(&con_str, NoTls)
             .unwrap();
         client
-    }
-
-    fn create_schema(client: &mut Client) {
-        let path = format!("schema/postgres/schema.sql");
-        let fi = std::fs::read_to_string(path).unwrap();
-        // println!("{fi}");
-        client.simple_query(&fi).unwrap();
     }
 
     #[test]
@@ -104,7 +99,7 @@ mod tests {
         let node = test_container_client.run(generic_postgres);
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
-        create_schema(&mut postgres_client);
+        copy_tables(port);
         let t1=a_create_tenant_request(Default::default());
         let mut tenant_dao = TenantDaoImpl { postgres_client };
         tenant_dao.create_tenant(&t1);

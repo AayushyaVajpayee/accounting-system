@@ -109,7 +109,7 @@ impl AccountDao for AccountDaoPostgresImpl {
                 &request.account_type_id,
                 &request.user_id,
                 &request.ledger_master_id,
-                &0, &0, &0, &0,
+                &0i64, &0i64, &0i64, &0i64,
                 &request.audit_metadata.created_by,
                 &request.audit_metadata.updated_by,
                 &request.audit_metadata.created_at,
@@ -133,8 +133,7 @@ mod account_type_tests {
 
     use crate::accounting::account::account_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder};
-    use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::accounting::tenant::tenant_service::get_tenant_service_for_test;
+    use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -145,12 +144,7 @@ mod account_type_tests {
         client
     }
 
-    fn create_schema(client: &mut Client) {
-        let path = format!("schema/postgres/schema.sql");
-        let fi = std::fs::read_to_string(path).unwrap();
-        // println!("{fi}");
-        client.simple_query(&fi).unwrap();
-    }
+
 
     #[test]
     fn tests() {
@@ -165,26 +159,13 @@ mod account_type_tests {
         let node = test_container_client.run(generic_postgres);
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
-        create_schema(&mut postgres_client);
-        let mut tenant_service = get_tenant_service_for_test(postgres_client);
-        let a_tenant = a_create_tenant_request(Default::default());
-        let tenant_id = tenant_service.create_tenant(&a_tenant);
-        // let mut currency_postgres_client = create_postgres_client(port);
-        // let mut currency_service =
-        //     get_currency_service_for_test(currency_postgres_client);
-
-        // let currency_master = a_create_currency_master_request(
-        //     CreateCurrencyMasterRequestTestBuilder{
-        //     tenant_id:Some(tenant_id),
-        //     ..Default::default()
-        // });
-        // let currency_master_id= currency_service.create_currency_entry(&currency_master);
+        copy_tables(port);
         let mut account_type_dao = AccountTypeDaoPostgresImpl {
             postgres_client: create_postgres_client(port)
         };
         let an_account_type = a_create_account_type_master_request(
             CreateAccountTypeMasterRequestTestBuilder {
-                tenant_id: Some(tenant_id),
+                tenant_id: Some(1),
                 ..Default::default()
             });
         let account_type_id = account_type_dao.create_account_type(&an_account_type);
@@ -201,14 +182,9 @@ mod account_tests {
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
-    use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl, AccountTypeDao, AccountTypeDaoPostgresImpl};
-    use crate::accounting::account::account_models::{a_create_account_request, a_create_account_type_master_request, CreateAccountRequestTestBuilder, CreateAccountTypeMasterRequestTestBuilder};
-    use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
-    use crate::accounting::currency::currency_service::get_currency_service_for_test;
-    use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::accounting::tenant::tenant_service::get_tenant_service_for_test;
-    use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
-    use crate::accounting::user::user_service::get_user_service_for_test;
+    use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
+    use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
+    use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -218,14 +194,6 @@ mod account_tests {
             .unwrap();
         client
     }
-
-    fn create_schema(client: &mut Client) {
-        let path = format!("schema/postgres/schema.sql");
-        let fi = std::fs::read_to_string(path).unwrap();
-        // println!("{fi}");
-        client.simple_query(&fi).unwrap();
-    }
-
 
     #[test]
     fn test_account() {
@@ -240,44 +208,15 @@ mod account_tests {
         let node = test_container_client.run(generic_postgres);
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
-        create_schema(&mut postgres_client);
-        // let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client };
-        let tenant_postgres = create_postgres_client(port);
-        let mut tenant_service = get_tenant_service_for_test(tenant_postgres);
-        let a_tenant = a_create_tenant_request(Default::default());
-        let tenant_id = tenant_service.create_tenant(&a_tenant);
-        let mut currency_service = get_currency_service_for_test(create_postgres_client(port));
-        let currency_creation_request = a_create_currency_master_request(
-            CreateCurrencyMasterRequestTestBuilder {
-                tenant_id: Some(tenant_id),
-                ..Default::default()
-            }
-        );
-        let currency_id = currency_service.create_currency_entry(&currency_creation_request);
-        let mut account_type_dao = AccountTypeDaoPostgresImpl {
-            postgres_client: create_postgres_client(port)
-        };
-        let an_account_type = a_create_account_type_master_request(CreateAccountTypeMasterRequestTestBuilder {
-            tenant_id: Some(tenant_id),
-            ..Default::default()
-        });
-        let account_type_id = account_type_dao.create_account_type(&an_account_type);
-        let mut account_dao = AccountDaoPostgresImpl {
-            postgres_client: create_postgres_client(port)
-        };
-        let mut user_service = get_user_service_for_test(create_postgres_client(port));
-        let user_creation_request = a_create_user_request(CreateUserRequestTestBuilder {
-            tenant_id: Some(tenant_id),
-            ..Default::default()
-        });
-        let user_id = user_service.create_user(&user_creation_request);
+        copy_tables(port);
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
-            tenant_id: Some(tenant_id),
-            ledger_master_id: Some(todo!()),
-            account_type_id: Some(account_type_id),
-            user_id: Some(user_id),
+            tenant_id: Some(1),
+            ledger_master_id: Some(1),
+            account_type_id: Some(1),
+            user_id: Some(1),
             ..Default::default()
         });
+        let mut account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client };
         let account_id = account_dao.create_account(&an_account_request);
         let account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
     }
