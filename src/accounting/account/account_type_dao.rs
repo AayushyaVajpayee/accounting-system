@@ -2,7 +2,7 @@ use std::sync::OnceLock;
 
 use postgres::Client;
 
-use crate::accounting::account::account_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
+use crate::accounting::account::account_type_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 pub trait AccountTypeDao {
@@ -95,8 +95,8 @@ mod account_type_tests {
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
-    use crate::accounting::account::account_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder};
     use crate::accounting::account::account_type_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};
+    use crate::accounting::account::account_type_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder};
     use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
