@@ -1,4 +1,4 @@
-use crate::accounting::account::account_type_dao::AccountTypeDao;
+use crate::accounting::account::account_type::account_type_dao::AccountTypeDao;
 
 pub struct AccountTypeService {
     account_type_dao: Box<dyn AccountTypeDao>,

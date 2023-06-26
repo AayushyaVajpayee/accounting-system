@@ -2,7 +2,7 @@ use std::sync::OnceLock;
 
 use postgres::Client;
 
-use crate::accounting::account::account_type_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
+use crate::accounting::account::account_type::account_type_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 pub trait AccountTypeDao {
