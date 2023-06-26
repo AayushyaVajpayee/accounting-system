@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use postgres::Client;
+use postgres::{Client, Row};
 
 use crate::accounting::account::account_type::account_type_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -15,27 +15,52 @@ pub struct AccountTypeDaoPostgresImpl {
     postgres_client: Client,
 }
 
-const ACCOUNT_TYPE_POSTGRES_SELECT_FIELDS: &str =
+const SELECT_FIELDS: &str =
     "id,tenant_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
-const ACCOUNT_TYPE_TABLE_NAME: &str = "account_type_master";
-static ACCOUNT_TYPE_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
-static ACCOUNT_TYPE_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
+const TABLE_NAME: &str = "account_type_master";
+static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
+static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
+static ALL_TYPES_FOR_TENANT: OnceLock<String> = OnceLock::new();
 
 impl AccountTypeDaoPostgresImpl {
     fn get_account_type_by_id_query() -> &'static String {
-        ACCOUNT_TYPE_BY_ID_QUERY.get_or_init(|| {
-            format!("select {ACCOUNT_TYPE_POSTGRES_SELECT_FIELDS} from {ACCOUNT_TYPE_TABLE_NAME} where id=$1")
+        BY_ID_QUERY.get_or_init(|| {
+            format!("select {SELECT_FIELDS} from {TABLE_NAME} where id=$1")
         })
     }
 
     fn create_insert_statement() -> &'static String {
-        ACCOUNT_TYPE_INSERT_STATEMENT.get_or_init(|| {
-            format!("insert into {ACCOUNT_TYPE_TABLE_NAME} ({ACCOUNT_TYPE_POSTGRES_SELECT_FIELDS})\
+        INSERT_STATEMENT.get_or_init(|| {
+            format!("insert into {TABLE_NAME} ({SELECT_FIELDS})\
             values (DEFAULT,$1,$2,$3,$4,$5,$6,$7) returning id")
+        })
+    }
+
+    fn get_all_types_for_tenant_id() -> &'static String {
+        ALL_TYPES_FOR_TENANT.get_or_init(|| {
+            format!("select {SELECT_FIELDS} from {TABLE_NAME} where tenant_id=$1")
         })
     }
 }
 
+impl TryFrom<&Row> for AccountTypeMaster {
+    type Error = ();
+
+    fn try_from(row: &Row) -> Result<Self, Self::Error> {
+        Ok(AccountTypeMaster {
+            id: row.get(0),
+            tenant_id: row.get(1),
+            display_name: row.get(2),
+            account_code: row.get(3),
+            audit_metadata: AuditMetadataBase {
+                created_by: row.get(4),
+                updated_by: row.get(5),
+                created_at: row.get(6),
+                updated_at: row.get(7),
+            },
+        })
+    }
+}
 
 impl AccountTypeDao for AccountTypeDaoPostgresImpl {
     fn get_account_type_by_id(&mut self, id: &i16) -> Option<AccountTypeMaster> {
@@ -44,18 +69,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
             .query(query,
                    &[id]).unwrap();
         k.iter().map(|row|
-            AccountTypeMaster {
-                id: row.get(0),
-                tenant_id: row.get(1),
-                display_name: row.get(2),
-                account_code: row.get(3),
-                audit_metadata: AuditMetadataBase {
-                    created_by: row.get(4),
-                    updated_by: row.get(5),
-                    created_at: row.get(6),
-                    updated_at: row.get(7),
-                },
-            }
+            row.try_into().unwrap()
         ).next()
     }
 
@@ -80,10 +94,9 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
     }
 
     fn get_all_account_types_for_tenant_id(&mut self, tenant_id: &i32) -> Vec<AccountTypeMaster> {
-        // let k = self.postgres_client.query(
-        //     "select"
-        // )
-        todo!()
+        let query = AccountTypeDaoPostgresImpl::get_all_types_for_tenant_id();
+        self.postgres_client.query(query, &[tenant_id])
+            .unwrap().iter().map(|row| row.try_into().unwrap()).collect()
     }
 }
 
@@ -95,8 +108,8 @@ mod account_type_tests {
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
-    use crate::accounting::account::account_type_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};
-    use crate::accounting::account::account_type_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder};
+    use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};
+    use crate::accounting::account::account_type::account_type_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder};
     use crate::seeddata::seed_service::copy_tables;
 
     fn create_postgres_client(port: u16) -> Client {
