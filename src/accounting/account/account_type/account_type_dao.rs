@@ -36,7 +36,7 @@ impl AccountTypeDaoPostgresImpl {
         })
     }
 
-    fn get_all_types_for_tenant_id() -> &'static String {
+    fn get_all_types_for_tenant_id_query() -> &'static String {
         ALL_TYPES_FOR_TENANT.get_or_init(|| {
             format!("select {SELECT_FIELDS} from {TABLE_NAME} where tenant_id=$1")
         })
@@ -94,7 +94,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
     }
 
     fn get_all_account_types_for_tenant_id(&mut self, tenant_id: &i32) -> Vec<AccountTypeMaster> {
-        let query = AccountTypeDaoPostgresImpl::get_all_types_for_tenant_id();
+        let query = AccountTypeDaoPostgresImpl::get_all_types_for_tenant_id_query();
         self.postgres_client.query(query, &[tenant_id])
             .unwrap().iter().map(|row| row.try_into().unwrap()).collect()
     }
@@ -146,5 +146,7 @@ mod account_type_tests {
         let _ = account_type_dao
             .get_account_type_by_id(&account_type_id)
             .unwrap();
+        let k = account_type_dao.get_all_account_types_for_tenant_id(&1);
+        assert!(k.len() > 5);
     }
 }
