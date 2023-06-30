@@ -3,10 +3,10 @@ use std::io::Write;
 
 use postgres::{Client, NoTls};
 
-use crate::seeddata::constants::{SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES_LOCATION};
+use crate::seeddata::constants::{SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
 
 pub fn get_seed_filenames_ordered() -> Vec<String> {
-    let path = format!("{SEED_FILES_LOCATION}{SEED_FILES}");
+    let path = format!("{}{}", SEED_FILES_LOCATION, SEED_FILES);
     std::fs::read_to_string(path)
         .unwrap()
         .lines()
