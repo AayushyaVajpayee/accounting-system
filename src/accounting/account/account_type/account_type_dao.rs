@@ -16,7 +16,7 @@ pub struct AccountTypeDaoPostgresImpl {
 }
 
 const SELECT_FIELDS: &str =
-    "id,tenant_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
+    "id,tenant_id,child_ids,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "account_type_master";
 static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
@@ -32,7 +32,7 @@ impl AccountTypeDaoPostgresImpl {
     fn create_insert_statement() -> &'static String {
         INSERT_STATEMENT.get_or_init(|| {
             format!("insert into {TABLE_NAME} ({SELECT_FIELDS})\
-            values (DEFAULT,$1,$2,$3,$4,$5,$6,$7) returning id")
+            values (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,$9) returning id")
         })
     }
 
@@ -50,13 +50,15 @@ impl TryFrom<&Row> for AccountTypeMaster {
         Ok(AccountTypeMaster {
             id: row.get(0),
             tenant_id: row.get(1),
-            display_name: row.get(2),
-            account_code: row.get(3),
+            child_ids: row.try_get(2).ok(),
+            parent_id: row.try_get(3).ok(),
+            display_name: row.get(4),
+            account_code: row.get(5),
             audit_metadata: AuditMetadataBase {
-                created_by: row.get(4),
-                updated_by: row.get(5),
-                created_at: row.get(6),
-                updated_at: row.get(7),
+                created_by: row.get(6),
+                updated_by: row.get(7),
+                created_at: row.get(8),
+                updated_at: row.get(9),
             },
         })
     }
@@ -79,6 +81,8 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
             query,
             &[
                 &request.tenant_id,
+                &request.child_ids,
+                &request.parent_id,
                 &request.display_name,
                 &request.account_code,
                 &request.audit_metadata.created_by,

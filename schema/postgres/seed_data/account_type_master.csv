@@ -1,4 +1,4 @@
-id,tenant_id,child_id,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at
+id,tenant_id,child_ids,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at
 1,1,"{6,7}",,Asset,,seed_data,seed_data,1687018780000,1687018780000
 2,1,"{13,14,15}",,Liability,,seed_data,seed_data,1687018780000,1687018780000
 3,1,,,Equity,,seed_data,seed_data,1687018780000,1687018780000

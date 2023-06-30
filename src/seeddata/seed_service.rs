@@ -1,14 +1,12 @@
 use std::collections::HashSet;
 use std::io::Write;
-use std::ops::Not;
 
 use postgres::{Client, NoTls};
 
-const SEED_FILES: &'static str = "seed_files_metadata.csv";
-
+use crate::seeddata::constants::{SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES_LOCATION};
 
 pub fn get_seed_filenames_ordered() -> Vec<String> {
-    let path = format!("schema/postgres/seed_data/seed_files_metadata.csv");
+    let path = format!("{SEED_FILES_LOCATION}{SEED_FILES}");
     std::fs::read_to_string(path)
         .unwrap()
         .lines()
@@ -17,19 +15,18 @@ pub fn get_seed_filenames_ordered() -> Vec<String> {
         .map(|row| row.to_string())
         .collect::<Vec<String>>()
 }
-
 fn validate_seed_file_names(names: &Vec<String>) -> Result<(), Vec<String>> {
-    let available_files = std::fs::read_dir("schema/postgres/seed_data/").unwrap()
+    let available_files = std::fs::read_dir(SEED_FILES_LOCATION).unwrap()
         .map(|row| row.unwrap().file_name().to_str().unwrap().to_string())
         .collect::<HashSet<String>>();
     let p = names.iter().map(|r|
-        if (!available_files.contains(r)) {
+        if !available_files.contains(r) {
             r.clone()
         } else {
             "".to_string()
         }
     ).filter(|r| !r.is_empty()).collect::<Vec<String>>();
-    if (!p.is_empty()) {
+    if !p.is_empty() {
         Err(p)
     } else {
         Ok(())
@@ -40,7 +37,6 @@ fn read_csv(name: &str) -> String {
     // let k = BinaryCopyInWriter::new(/* postgres::CopyInWriter<'_> */, /* &[postgres::types::Type] */);
     todo!()
 }
-
 fn create_postgres_client(port: u16) -> Client {
     let con_str =
         format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
@@ -49,13 +45,10 @@ fn create_postgres_client(port: u16) -> Client {
         .unwrap();
     client
 }
-
 fn create_schema(client: &mut Client) {
-    let path = format!("schema/postgres/schema.sql");
-    let fi = std::fs::read_to_string(path).unwrap();
+    let fi = std::fs::read_to_string(SCHEMA_CREATION_SCRIPT_PATH).unwrap();
     client.simple_query(&fi).unwrap();
 }
-
 pub fn copy_tables(port: u16) {
     let filenames = get_seed_filenames_ordered();
     validate_seed_file_names(&filenames).unwrap();
@@ -69,7 +62,7 @@ pub fn copy_tables(port: u16) {
             .unwrap().to_string()
         ).collect::<Vec<String>>();
     tablenames.iter().for_each(|t| {
-        let file_path = format!("schema/postgres/seed_data/{t}.csv");
+        let file_path = format!("{SEED_FILES_LOCATION}{t}.csv");
         let content = std::fs::read_to_string(file_path).unwrap();
         let query = format!("copy {t} from stdin with csv header");
         let mut k = txn.copy_in(&query).unwrap();

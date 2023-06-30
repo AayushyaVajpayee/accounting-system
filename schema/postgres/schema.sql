@@ -23,7 +23,7 @@ alter sequence if exists  currency_master_id_seq restart with 1000;
 create table if not exists account_type_master(
     id smallserial primary key,
     tenant_id integer not null references tenant(id),
-    child_id smallint[],
+    child_ids smallint[],
     parent_id smallint references account_type_master(id),
     display_name varchar(30) not null,
     account_code smallint,
