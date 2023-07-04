@@ -1,8 +1,8 @@
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Serialize};
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccountTypeMaster {
     pub id: i16,
     pub tenant_id: i32,
