@@ -64,21 +64,9 @@ impl UserDao for UserDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
-    use postgres::{Client, NoTls};
-
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
-
-    fn create_postgres_client(port: u16) -> Client {
-        let con_str =
-            format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-        let client = Client::
-        connect(&con_str, NoTls)
-            .unwrap();
-        client
-    }
-
+    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
     fn test_users() {

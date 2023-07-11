@@ -2,8 +2,9 @@
 pub mod test_utils_postgres {
     use std::sync::OnceLock;
 
-    use testcontainers::Container;
+    use postgres::{Client, NoTls};
     use testcontainers::clients::Cli;
+    use testcontainers::Container;
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
 
@@ -19,6 +20,15 @@ pub mod test_utils_postgres {
     unsafe impl Send for PK<'_> {}
 
     unsafe impl Sync for PK<'_> {}
+
+    pub fn create_postgres_client(port: u16) -> Client {
+        let con_str =
+            format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
+        let client = Client::
+        connect(&con_str, NoTls)
+            .unwrap();
+        client
+    }
 
     fn get_client() -> &'static Cli {
         K.get_or_init(|| Cli::default())

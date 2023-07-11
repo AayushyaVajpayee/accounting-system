@@ -90,20 +90,9 @@ impl AccountDao for AccountDaoPostgresImpl {
 
 #[cfg(test)]
 mod account_tests {
-    use postgres::{Client, NoTls};
-
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
-
-    fn create_postgres_client(port: u16) -> Client {
-        let con_str =
-            format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-        let client = Client::
-        connect(&con_str, NoTls)
-            .unwrap();
-        client
-    }
+    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
     fn test_account() {

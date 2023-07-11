@@ -68,20 +68,9 @@ impl TenantDao for TenantDaoImpl {
 
 #[cfg(test)]
 mod tests {
-    use postgres::{Client, NoTls};
-
     use crate::accounting::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
     use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
-
-    fn create_postgres_client(port: u16) -> Client {
-        let con_str =
-            format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-        let client = Client::
-        connect(&con_str, NoTls)
-            .unwrap();
-        client
-    }
+    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
     fn test_tenant() {
