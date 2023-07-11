@@ -61,8 +61,7 @@ mod tests {
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
-    use crate::seeddata::seed_service::copy_tables;
-    use crate::test_utils::test_utils_postgres::run_postgres;
+    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -76,10 +75,8 @@ mod tests {
 
     #[test]
     fn test_prep() {
-        let node = run_postgres();
-        let port = node.get_host_port_ipv4(5432);
+        let port = get_postgres_image_port();
         let mut postgres_client = create_postgres_client(port);
-        copy_tables(port);
         let currency_master = a_create_currency_master_request(
             CreateCurrencyMasterRequestTestBuilder {
                 tenant_id: Some(1),

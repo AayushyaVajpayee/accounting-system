@@ -68,8 +68,7 @@ mod tests {
 
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
-    use crate::seeddata::seed_service::copy_tables;
-    use crate::test_utils::test_utils_postgres::run_postgres;
+    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -83,10 +82,8 @@ mod tests {
 
     #[test]
     fn test_users() {
-        let node = run_postgres();
-        let port = node.get_host_port_ipv4(5432);
-        let mut postgres_client = create_postgres_client(port);
-        copy_tables(port);
+        let port = get_postgres_image_port();
+        let postgres_client = create_postgres_client(port);
         let user = a_create_user_request(
             CreateUserRequestTestBuilder {
                 tenant_id: Some(1),

@@ -76,8 +76,7 @@ pub fn copy_tables(port: u16) {
 
 #[cfg(test)]
 mod tests {
-    use crate::seeddata::seed_service::{copy_tables, get_seed_filenames_ordered, validate_seed_file_names};
-    use crate::test_utils::test_utils_postgres::run_postgres;
+    use crate::seeddata::seed_service::{get_seed_filenames_ordered, validate_seed_file_names};
 
     #[test]
     fn test_k() {
@@ -87,10 +86,9 @@ mod tests {
         println!("{:?}", kk);
     }
 
-    #[test]
-    fn test_2() {
-        let node = run_postgres();
-        let port = node.get_host_port_ipv4(5432);
-        copy_tables(port)
-    }
+    // #[test]
+    // fn test_2() {
+    //     let port =get_postgres_image_port();
+    //     copy_tables(port)
+    // }
 }

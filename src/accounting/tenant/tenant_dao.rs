@@ -72,8 +72,7 @@ mod tests {
 
     use crate::accounting::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
     use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::seeddata::seed_service::copy_tables;
-    use crate::test_utils::test_utils_postgres::run_postgres;
+    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -86,18 +85,8 @@ mod tests {
 
     #[test]
     fn test_tenant() {
-        // let test_container_client = clients::Cli::default();
-        // let image = "postgres";
-        // let image_tag = "latest";
-        // let generic_postgres = GenericImage::new(image, image_tag)
-        //     .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
-        //     .with_env_var("POSTGRES_DB", "postgres")
-        //     .with_env_var("POSTGRES_USER", "postgres")
-        //     .with_env_var("POSTGRES_PASSWORD", "postgres");
-        let node = run_postgres();
-        let port = node.get_host_port_ipv4(5432);
+        let port = get_postgres_image_port();
         let mut postgres_client = create_postgres_client(port);
-        copy_tables(port);
         let t1 = a_create_tenant_request(Default::default());
         let mut tenant_dao = TenantDaoImpl { postgres_client };
         tenant_dao.create_tenant(&t1);

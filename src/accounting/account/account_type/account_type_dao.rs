@@ -111,8 +111,7 @@ mod account_type_tests {
 
     use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};
     use crate::accounting::account::account_type::account_type_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder};
-    use crate::seeddata::seed_service::copy_tables;
-    use crate::test_utils::test_utils_postgres::run_postgres;
+    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -125,9 +124,7 @@ mod account_type_tests {
 
     #[test]
     fn tests() {
-        let node = run_postgres();
-        let port = node.get_host_port_ipv4(5432);
-        copy_tables(port);
+        let port = get_postgres_image_port();
         let mut account_type_dao = AccountTypeDaoPostgresImpl {
             postgres_client: create_postgres_client(port)
         };

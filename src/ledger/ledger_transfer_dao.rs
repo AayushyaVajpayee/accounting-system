@@ -17,6 +17,8 @@ pub struct LedgerTransferDaoPostgresImpl {
 mod tests {
     use rstest::rstest;
 
+    use crate::test_utils::test_utils_postgres::get_postgres_image_port;
+
     #[rstest]
     #[case::empty_list_of_transfer()]
     #[case::successful_create_transfer_batch()]
@@ -29,6 +31,6 @@ mod tests {
     /// todo test with and without exception block to see what difference does it make
     ///
     fn test_create_ledger_transfers_procedure() {
-        let k = crate::test_utils::test_utils_postgres::run_postgres();
+        let k = get_postgres_image_port();
     }
 }
