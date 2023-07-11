@@ -75,3 +75,27 @@ create table user_account(
  updated_at bigint default extract(epoch from now())*1000000
 );
 alter sequence if exists user_account_id_seq restart with 1000;
+
+create table transfer(
+id UUID primary key,
+tenant_id integer references tenant(id),
+--may be a better name will be grouping id.
+caused_by_event_id UUID not null,
+grouping_id UUID not null,
+debit_account_id integer not null,
+credit_account_id integer not null,
+pending_id UUID,
+reverts_id UUID,
+adjusts_id UUID,
+timeout bigint,
+ledger_master_id integer,
+code smallint,
+amount bigint not null,
+remarks varchar(80),
+is_pending bool,
+post_pending bool,
+void_pending bool,
+is_reversal bool,
+is_adjustment bool,
+created_at bigint default extract(epoch from now())*1000000
+);

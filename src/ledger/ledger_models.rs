@@ -1,45 +1,36 @@
-struct Transfer{
-    id:u128,
-    debit_account_id:u128,
-    credit_account_id:u128,
-    pending_id:u128,
-    timeout:u64,
-    ledger:u32,
-    code:u16,
-    amount:u64,
+use uuid::Uuid;
+
+struct Transfer {
+    id: Uuid,
+    debit_account_id: i32,
+    credit_account_id: i32,
+    pending_id: Option<Uuid>,
+    reverts_id: Option<Uuid>,
+    adjusts_id: Option<Uuid>,
+    // this will be physical event like an invoice
+    // generating 3-4 entries:tax ledger entry, tds entry, taxable entry, and invoice payable entry
+    caused_by_event_id: Uuid,
+    // for an order id,
+    // invoice gets generated, 4 entries get create
+    // invoice gets reverted
+    // credit note get generated
+    // debit notes get generated
+    // customer payment received at a later date
+    // all these will be have same grouping_id
+    grouping_id: Uuid,
+    timeout: Option<i64>,
+    //this is basically partitioning the set of accounts that can transact together,
+    //one reason can be this can have the same currency
+    ledger_master_id: i32,
+    code: i16,
+    //will need to check this is always positive
+    amount: i64,
     /// should be max 80 char
-    remarks:String,
-    timestamp:u64,
-    flags:TransferFlags,
-
-}
-
-struct TransferFlags{
-    linked:bool,
-    pending:bool,
-    post_pending_transfer:bool,
-    void_pending_transfer:bool,
-    balancing_debit:bool,
-    balancing_credit:bool,
-}
-
-struct Account{
-    id:u128,
-    /// ledger can contain the currency
-    ledger:u32,
-    code:u16,
-    debits_pending:u64,
-    debits_posted:u64,
-    credits_pending:u64,
-    credits_posted:u64,
-    timestamp:u64,
-    flags:AccountFlags
-}
-
-
-struct AccountFlags{
-    linked:bool,
-    debits_must_not_exceed_credits:bool,
-    credits_must_not_exceed_debits:bool
-
+    remarks: Option<String>,
+    created_at: i64,
+    is_pending: bool,
+    post_pending: bool,
+    void_pending: bool,
+    is_reversal: bool,
+    is_adjustment: bool,
 }
