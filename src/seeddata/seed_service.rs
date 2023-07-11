@@ -76,11 +76,8 @@ pub fn copy_tables(port: u16) {
 
 #[cfg(test)]
 mod tests {
-    use testcontainers::clients;
-    use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
-
     use crate::seeddata::seed_service::{copy_tables, get_seed_filenames_ordered, validate_seed_file_names};
+    use crate::test_utils::test_utils_postgres::run_postgres;
 
     #[test]
     fn test_k() {
@@ -92,15 +89,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let test_container_client = clients::Cli::default();
-        let image = "postgres";
-        let image_tag = "latest";
-        let generic_postgres = GenericImage::new(image, image_tag)
-            .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
-            .with_env_var("POSTGRES_DB", "postgres")
-            .with_env_var("POSTGRES_USER", "postgres")
-            .with_env_var("POSTGRES_PASSWORD", "postgres");
-        let node = test_container_client.run(generic_postgres);
+        let node = run_postgres();
         let port = node.get_host_port_ipv4(5432);
         copy_tables(port)
     }

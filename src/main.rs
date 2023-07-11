@@ -5,6 +5,7 @@ use postgres::{Client, NoTls};
 mod ledger;
 mod accounting;
 mod seeddata;
+mod test_utils;
 
 fn main() {
     println!("Hello, world!");

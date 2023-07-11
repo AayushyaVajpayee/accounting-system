@@ -65,13 +65,11 @@ impl UserDao for UserDaoPostgresImpl {
 #[cfg(test)]
 mod tests {
     use postgres::{Client, NoTls};
-    use testcontainers::clients;
-    use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
 
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
     use crate::seeddata::seed_service::copy_tables;
+    use crate::test_utils::test_utils_postgres::run_postgres;
 
     fn create_postgres_client(port: u16) -> Client {
         let con_str =
@@ -85,15 +83,7 @@ mod tests {
 
     #[test]
     fn test_users() {
-        let test_container_client = clients::Cli::default();
-        let image = "postgres";
-        let image_tag = "latest";
-        let generic_postgres = GenericImage::new(image, image_tag)
-            .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
-            .with_env_var("POSTGRES_DB", "postgres")
-            .with_env_var("POSTGRES_USER", "postgres")
-            .with_env_var("POSTGRES_PASSWORD", "postgres");
-        let node = test_container_client.run(generic_postgres);
+        let node = run_postgres();
         let port = node.get_host_port_ipv4(5432);
         let mut postgres_client = create_postgres_client(port);
         copy_tables(port);
