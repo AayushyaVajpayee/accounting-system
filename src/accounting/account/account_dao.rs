@@ -1,9 +1,16 @@
 use std::sync::OnceLock;
 
-use postgres::Client;
+use postgres::{Client, Row};
 
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+
+const ACCOUNT_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,display_code,account_type_id,\
+user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,\
+credits_pending,created_by,updated_by,created_at,updated_at";
+const ACCOUNT_TABLE_NAME: &str = "user_account";
+static ACCOUNT_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
+static ACCOUNT_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 pub trait AccountDao {
     fn get_account_by_id(&mut self, id: &i32) -> Option<Account>;
@@ -13,11 +20,32 @@ pub trait AccountDao {
 pub struct AccountDaoPostgresImpl {
     postgres_client: Client,
 }
+impl TryFrom<&Row> for Account{
+    type Error = ();
 
-const ACCOUNT_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,display_code,account_type_id,user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,credits_pending,created_by,updated_by,created_at,updated_at";
-const ACCOUNT_TABLE_NAME: &str = "user_account";
-static ACCOUNT_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
-static ACCOUNT_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
+    fn try_from(row: &Row) -> Result<Self, Self::Error> {
+        Ok(
+            Account{
+                id: row.get(0),
+                tenant_id: row.get(1),
+                display_code: row.get(2),
+                account_type_id: row.get(3),
+                user_id:row.get(4),
+                ledger_master_id: row.get(5),
+                debits_posted: row.get(6),
+                debits_pending: row.get(7),
+                credits_posted: row.get(8),
+                credits_pending: row.get(9),
+                audit_metadata: AuditMetadataBase {
+                    created_by: row.get(10),
+                    updated_by: row.get(11),
+                    created_at: row.get(12),
+                    updated_at: row.get(13),
+                },
+            }
+        )
+    }
+}
 
 impl AccountDaoPostgresImpl {
     fn get_account_by_id_query() -> &'static str {
@@ -43,24 +71,8 @@ impl AccountDao for AccountDaoPostgresImpl {
         ).unwrap();
         k.iter()
             .map(|row|
-                Account {
-                    id: row.get(0),
-                    tenant_id: row.get(1),
-                    display_code: row.get(2),
-                    account_type_id: row.get(3),
-                    user_id: row.get(4),
-                    ledger_master_id: row.get(5),
-                    debits_posted: row.get(6),
-                    debits_pending: row.get(7),
-                    credits_posted: row.get(8),
-                    credits_pending: row.get(9),
-                    audit_metadata: AuditMetadataBase {
-                        created_by: row.get(10),
-                        updated_by: row.get(11),
-                        created_at: row.get(12),
-                        updated_at: row.get(13),
-                    },
-                }).next()
+                row.try_into().unwrap()
+               ).next()
     }
 
     fn create_account(&mut self, request: &CreateAccountRequest) -> i32 {

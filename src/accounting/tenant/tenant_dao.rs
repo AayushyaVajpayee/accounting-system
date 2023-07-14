@@ -1,7 +1,14 @@
-use postgres::Client;
+use std::sync::OnceLock;
+
+use postgres::{Client, Row};
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::tenant::tenant_models::{CreateTenantRequest, Tenant};
+
+const SELECT_FIELDS:&str = "id,display_name,created_by,updated_by,created_at,updated_at";
+const TABLE_NAME:&str = "tenant";
+static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
+static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 pub trait TenantDao {
     fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant>;
@@ -20,33 +27,54 @@ pub fn get_tenant_dao(client:Client)->Box<dyn TenantDao>{
  struct TenantDaoImpl {
     postgres_client: Client,
 }
+impl TryFrom<&Row> for Tenant{
+    type Error = ();
 
+    fn try_from(row: &Row) -> Result<Self, Self::Error> {
+        Ok( Tenant {
+            id: row.get(0),
+            display_name: row.get(1),
+            audit_metadata: AuditMetadataBase {
+                created_by: row.get(2),
+                updated_by: row.get(3),
+                created_at: row.get(4),
+                updated_at: row.get(5),
+            },
+        })
+    }
+}
+
+impl TenantDaoImpl{
+    fn get_tenant_by_id_query()->&'static String{
+        BY_ID_QUERY.get_or_init(||{
+            format!("select {} from {} where id=$1",SELECT_FIELDS,TABLE_NAME)
+        })
+    }
+
+    fn create_insert_statement()->&'static String{
+        INSERT_STATEMENT.get_or_init(||{
+            format!("insert into {} ({}) values\
+             (DEFAULT,$1,$2,$3,$4,$5) returning id",TABLE_NAME,SELECT_FIELDS)
+        })
+    }
+}
 impl TenantDao for TenantDaoImpl {
     fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant> {
+        let query=TenantDaoImpl::get_tenant_by_id_query();
         let k = self.postgres_client
-            .query("select id,display_name,created_by,updated_by,created_at,updated_at
-            from tenant where id =$1"
+            .query(query
                    , &[id])
             .unwrap();
 
         k.iter().map(|row|
-            Tenant {
-                id: row.get(0),
-                display_name: row.get(1),
-                audit_metadata: AuditMetadataBase {
-                    created_by: row.get(2),
-                    updated_by: row.get(3),
-                    created_at: row.get(4),
-                    updated_at: row.get(5),
-                },
-            }
+           row.try_into().unwrap()
         ).next()
     }
 
     fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32 {
+        let query=TenantDaoImpl::create_insert_statement();
         self.postgres_client.query(
-            "insert into tenant (display_name,created_by,updated_by,created_at,updated_at)
-            values ($1,$2,$3,$4,$5) returning id", &[
+            query, &[
                 &tenant.display_name,
                 &tenant.audit_metadata.created_by,
                 &tenant.audit_metadata.updated_by,
