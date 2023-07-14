@@ -90,13 +90,6 @@ $$
     END;
 $$ language plpgsql
 
-select create_ledger_transfer(('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
-							   ,'1',
-							   'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-							   'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-							  1,2,null,null,null,null,1,null,
-							   2,null,null,null,null,null,null,null
-							  ));
 
 
 
