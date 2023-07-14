@@ -5,6 +5,13 @@ use postgres::{Client, Row};
 use crate::accounting::account::account_type::account_type_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
+const SELECT_FIELDS: &str =
+    "id,tenant_id,child_ids,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
+const TABLE_NAME: &str = "account_type_master";
+static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
+static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
+static ALL_TYPES_FOR_TENANT: OnceLock<String> = OnceLock::new();
+
 pub trait AccountTypeDao {
     fn get_account_type_by_id(&mut self, id: &i16) -> Option<AccountTypeMaster>;
     fn create_account_type(&mut self, request: &CreateAccountTypeMasterRequest) -> i16;
@@ -14,13 +21,6 @@ pub trait AccountTypeDao {
 pub struct AccountTypeDaoPostgresImpl {
     postgres_client: Client,
 }
-
-const SELECT_FIELDS: &str =
-    "id,tenant_id,child_ids,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
-const TABLE_NAME: &str = "account_type_master";
-static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
-static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
-static ALL_TYPES_FOR_TENANT: OnceLock<String> = OnceLock::new();
 
 impl AccountTypeDaoPostgresImpl {
     fn get_account_type_by_id_query() -> &'static String {
