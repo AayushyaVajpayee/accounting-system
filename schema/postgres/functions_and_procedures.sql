@@ -39,8 +39,8 @@ create or replace procedure create_ledger_transfer(txn transfer,inout result jso
 --			validation_result jsonb='{"txn_id":"","committed":true,"reason":[]}';
 			declare t timestamptz := clock_timestamp();
         BEGIN
-			select * from user_account where id=txn.credit_account_id into credit_acc_row;
-			select * from user_account where id=txn.debit_account_id into debit_acc_row;
+			select * from user_account where id=txn.credit_account_id and tenant_id=txn.tenant_id into credit_acc_row;
+			select * from user_account where id=txn.debit_account_id and tenant_id=txn.tenant_id into debit_acc_row;
 			call validate_transfer(debit_acc_row,credit_acc_row,txn,result);
             if (result->'committed')::boolean=false  then
             raise notice 'early return called';
@@ -50,8 +50,8 @@ create or replace procedure create_ledger_transfer(txn transfer,inout result jso
 	id, tenant_id, caused_by_event_id, grouping_id, debit_account_id, credit_account_id, pending_id, reverts_id, adjusts_id, timeout, ledger_master_id, code, amount, remarks, is_pending, post_pending, void_pending, is_reversal, is_adjustment, created_at)
 	VALUES (
 txn.id,txn.tenant_id,txn.caused_by_event_id,txn.grouping_id,txn.debit_account_id,txn.credit_account_id,txn.pending_id,txn.reverts_id,txn.adjusts_id,txn.timeout,txn.ledger_master_id,txn.code,txn.amount,txn.remarks,txn.is_pending,txn.post_pending,txn.void_pending,txn.is_reversal,txn.is_adjustment,txn.created_at);
-      update user_account set credits_posted=credits_posted-txn.amount where id=txn.credit_account_id;
-	  update user_account set debits_posted=debits_posted+txn.amount where id=txn.debit_account_id;
+      update user_account set credits_posted=credits_posted-txn.amount where id=txn.credit_account_id and tenant_id=txn.tenant_id;
+	  update user_account set debits_posted=debits_posted+txn.amount where id=txn.debit_account_id and tenant_id=txn.tenant_id;
 -- 	  commit;
 	  raise notice 'time spent=%', clock_timestamp() - t;
 -- 	  return 0;
