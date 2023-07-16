@@ -187,6 +187,16 @@ mod tests {
         }
     }
 
+    #[test]
+    #[should_panic]
+    fn should_fail_for_more_than_600_in_batch() {
+        let port = get_postgres_image_port();
+        let postgres_client = create_postgres_client(port);
+        let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+        let transfer_candidates = generate_random_transfers(1, 2, 100, 1, 601);
+        let p = cl.create_transfers(&transfer_candidates);
+    }
+
     #[rstest]
     #[case::empty_list(0)]
     #[case::single_element(1)]
@@ -319,7 +329,7 @@ mod tests {
     #[rstest]
     ///todo test for all error messages --done
     /// todo test for idempotency --done
-    /// todo test for max limit
+    /// todo test for max limit --done
     /// todo test for exceptions. there will be many cases to handle.like, different constraint violations,duplicate entries, some error etc
     /// todo test for 10, 100, and 1000 batch insertions to see how these behave
     /// todo test with and without exception block to see what difference does it make

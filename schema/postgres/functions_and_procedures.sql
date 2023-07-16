@@ -78,6 +78,10 @@ $$
        result_element jsonb;
        txn transfer;
     BEGIN
+      if array_length(txns,1) >600 then
+             RAISE EXCEPTION 'no of transfers in batch cannot be more than 600 but was %', array_length(txns,1)
+             USING HINT = 'no of transfers in batch cannot be more than 600';
+      end if;
       foreach txn in array txns
       loop
        result_element=json_build_object('txn_id',txn.id,'committed',not failed,'reason','[]'::jsonb);
