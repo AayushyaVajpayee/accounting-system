@@ -18,7 +18,7 @@ impl TenantService for TenantServiceImpl{
     }
 
     fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32 {
-        self.tenant_dao.create_tenant(&tenant)
+        self.tenant_dao.create_tenant(tenant)
     }
 }
 

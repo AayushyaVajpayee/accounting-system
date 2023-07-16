@@ -1,11 +1,4 @@
-
-struct AuditMetadataBase{
-    created_by:String,
-    updated_by:String,
-    created_at:i64,
-    updated_at:i64
-}
-
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 struct LedgerMaster{
     id:i32,

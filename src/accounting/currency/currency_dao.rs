@@ -101,7 +101,7 @@ mod tests {
         );
         let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client };
         currency_dao.create_currency_entry(&currency_master);
-        let got_c = currency_dao.get_currency_entry_by_id(&1);
+        let got_c = currency_dao.get_currency_entry_by_id(&1).unwrap();
         println!("{:?}", got_c)
     }
 }

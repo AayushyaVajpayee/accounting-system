@@ -20,17 +20,18 @@ pub trait AccountDao {
 pub struct AccountDaoPostgresImpl {
     postgres_client: Client,
 }
-impl TryFrom<&Row> for Account{
+
+impl TryFrom<&Row> for Account {
     type Error = ();
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(
-            Account{
+            Account {
                 id: row.get(0),
                 tenant_id: row.get(1),
                 display_code: row.get(2),
                 account_type_id: row.get(3),
-                user_id:row.get(4),
+                user_id: row.get(4),
                 ledger_master_id: row.get(5),
                 debits_posted: row.get(6),
                 debits_pending: row.get(7),
@@ -45,6 +46,12 @@ impl TryFrom<&Row> for Account{
             }
         )
     }
+}
+
+pub fn get_account_dao(client: Client) -> Box<dyn AccountDao> {
+    Box::new(AccountDaoPostgresImpl {
+        postgres_client: client
+    })
 }
 
 impl AccountDaoPostgresImpl {
@@ -72,7 +79,7 @@ impl AccountDao for AccountDaoPostgresImpl {
         k.iter()
             .map(|row|
                 row.try_into().unwrap()
-               ).next()
+            ).next()
     }
 
     fn create_account(&mut self, request: &CreateAccountRequest) -> i32 {

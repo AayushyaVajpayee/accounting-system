@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug)]
@@ -41,11 +43,13 @@ pub struct CreateAccountRequestTestBuilder {
 #[cfg(test)]
 pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> CreateAccountRequest {
     CreateAccountRequest {
-        tenant_id: builder.tenant_id.unwrap_or(0),
-        display_code: builder.display_code.unwrap_or("".to_string()),
-        account_type_id: builder.account_type_id.unwrap_or(0),
-        ledger_master_id: builder.ledger_master_id.unwrap_or(0),
-        user_id: builder.user_id.unwrap_or(0),
+        tenant_id: builder.tenant_id.unwrap_or(1),
+        display_code: builder.display_code.unwrap_or_else(|| {
+            Uuid::new_v4().to_string().split_at(19).0.to_string()
+        }),
+        account_type_id: builder.account_type_id.unwrap_or(1),
+        ledger_master_id: builder.ledger_master_id.unwrap_or(1),
+        user_id: builder.user_id.unwrap_or(1),
         audit_metadata: builder.audit_metadata.unwrap_or_else(||
             crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),
     }

@@ -4,9 +4,15 @@ txn transfer,
 inout output_result jsonb)  as $$
     DECLARE
     BEGIN
+
         if credit_acc is null or debit_acc is null then
 			    output_result['committed']='false';
-			    output_result['reason']= output_result['reason']||concat('["no account for ', txn.credit_account_id,'"]')::jsonb;
+			    if credit_acc is null then
+			        output_result['reason']= output_result['reason']||concat('["no account for ', txn.credit_account_id,'"]')::jsonb;
+			    end if;
+			    if debit_acc is null then
+			        output_result['reason']= output_result['reason']||concat('["no account for ', txn.debit_account_id,'"]')::jsonb;
+			    end if;
 			    raise notice 'my jsonb value is %',output_result;
 		end if;
 		if credit_acc.ledger_master_id!=txn.ledger_master_id or debit_acc.ledger_master_id!=txn.ledger_master_id then

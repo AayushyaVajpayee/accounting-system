@@ -75,8 +75,7 @@ pub fn copy_tables(port: u16) {
         let query = format!("copy {t} from stdin with csv header");
         let mut copy_in_writer = txn.copy_in(&query).unwrap();
         copy_in_writer.write_all(content.as_ref()).unwrap();
-        let rows_written = copy_in_writer.finish().unwrap();
-        println!("rows written {rows_written}");
+        let _rows_written = copy_in_writer.finish().unwrap();
     });
     txn.commit().unwrap();
 }

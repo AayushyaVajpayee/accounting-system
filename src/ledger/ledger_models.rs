@@ -33,6 +33,7 @@ pub struct Transfer {
     pub timeout: Option<i64>,
     //this is basically partitioning the set of accounts that can transact together,
     //one reason can be this can have the same currency
+    //another is ease of doing database partitioning
     pub ledger_master_id: i32,
     ///this code is actually a reference to a transaction type. we will need to maintain that master too
     pub code: i16,
