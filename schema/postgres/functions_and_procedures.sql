@@ -25,7 +25,7 @@ inout output_result jsonb)  as $$
 		end if;
 		if txn.amount<=0 then
 			    output_result['committed']='false';
-			    output_result['reason'] = output_result['reason']||concat('["transfer amount cannot be <=0  but was ',txn.amount,'"]')::jsonb;
+			    output_result['reason'] = output_result['reason']||concat('["transfer amount cannot be <=0 but was ',txn.amount,'"]')::jsonb;
 		end if;
     END;
 $$ language plpgsql;

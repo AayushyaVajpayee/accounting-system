@@ -1,6 +1,3 @@
-use std::any::Any;
-use std::fmt::Debug;
-use std::ops::Deref;
 use std::sync::OnceLock;
 
 use postgres::{Client, Row, SimpleQueryMessage};
@@ -219,7 +216,6 @@ mod tests {
                 assert!(response.reason[0] == "linked transfer failed");
             }
         }
-        // println!("{:?}", p);
     }
 
     #[rstest]
@@ -264,16 +260,32 @@ mod tests {
         if transfer_ledger_id_same {
             tr_led_id = ledger_master_service.create_ledger_master_entry(&k);
         }
-        /// ensure we have accounts with the given ledger ids
-        ///create accounts with the ledger ids
-        ///todo either setup test data here or prepare seed data that we can test
         let transfer_candidates = generate_random_transfers(
             db_acc_id,
             cr_acc_id,
             100,
             tr_led_id, 1);
         let p = cl.create_transfers(&transfer_candidates);
-        println!("{:?}", p);
+        assert_eq!(p.len(), 1);
+        assert!(!p.first().unwrap().committed);
+        assert_eq!(p.first().unwrap().reason.len(), 1);
+        let err_message = format!("accounts must have the same ledger debit_acc_ledger_id: {}, credit_acc_ledger_id: {}, transfer ledger id: {}", db_acc_led_id, cr_acc_led_id, tr_led_id);
+        assert_eq!(p.first().unwrap().reason.first().unwrap(), err_message.as_str());
+    }
+
+    #[rstest]
+    #[case(- 1)]
+    #[case(- 0)]
+    fn should_fail_transfer_amounts_of_less_than_equal_to_zero(#[case] amount: i64) {
+        let port = get_postgres_image_port();
+        let postgres_client = create_postgres_client(port);
+        let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+        let transfer_candidates = generate_random_transfers(1, 2, amount, 1, 1);
+        let p = cl.create_transfers(&transfer_candidates);
+        assert_eq!(p.len(), 1);
+        assert!(!p.first().unwrap().committed);
+        assert_eq!(p.first().unwrap().reason.len(), 1);
+        assert_eq!(p.first().unwrap().reason[0], format!("transfer amount cannot be <=0 but was {}", amount).as_str());
     }
 
     #[rstest]
