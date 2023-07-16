@@ -38,7 +38,14 @@ create or replace procedure create_ledger_transfer(txn transfer,inout result jso
 --			output_result JSONB='{"txn_id":"","committed":true,"reason":[]}';
 --			validation_result jsonb='{"txn_id":"","committed":true,"reason":[]}';
 			declare t timestamptz := clock_timestamp();
+			existing_entry transfer.id%type;
         BEGIN
+            select id from transfer where id=txn.id and tenant_id=txn.tenant_id into existing_entry;
+            if existing_entry is not null then
+                result['committed']='false';
+                result['reason']= result['reason']||concat('["transfer already exists with this id"]')::jsonb;
+                return;
+            end if;
 			select * from user_account where id=txn.credit_account_id and tenant_id=txn.tenant_id into credit_acc_row;
 			select * from user_account where id=txn.debit_account_id and tenant_id=txn.tenant_id into debit_acc_row;
 			call validate_transfer(debit_acc_row,credit_acc_row,txn,result);

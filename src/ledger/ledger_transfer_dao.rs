@@ -61,17 +61,12 @@ impl LedgerTransferDaoPostgresImpl {
 impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
     fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse> {
         let query = convert_transfers_to_postgres_array(&transfers);
-        println!("{}", query);
         let p = self.postgres_client.simple_query(&query);
-        println!("{:?}", p);
         p.unwrap().iter().map(|a| {
             match a {
                 SimpleQueryMessage::Row(aa) => {
                     let k = aa.get(0);
                     let p = serde_json::from_str::<Vec<TransferCreationDbResponse>>(k.unwrap()).unwrap();
-                    println!("{:?}", k);
-                    println!("{}", p.len());
-                    println!("{:?}", p);
                     p
                 }
                 SimpleQueryMessage::CommandComplete(_) => { todo!() }
@@ -157,6 +152,39 @@ mod tests {
         }
 
         transfers
+    }
+
+    #[rstest]
+    fn should_not_commit_transactions_which_have_been_already_persisted_idempotency() {
+        let port = get_postgres_image_port();
+        let postgres_client = create_postgres_client(port);
+        let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+        let initial_transfers = generate_random_transfers(1, 2, 100, 1, 1);
+        let re1 = cl.create_transfers(&initial_transfers);
+        assert_eq!(re1.len(), 1);
+        assert!(re1.first().unwrap().committed);
+        let re2 = cl.create_transfers(&initial_transfers);
+        println!("{:?}", re2);
+        assert_eq!(re2.len(), 1);
+        assert!(!re2.first().unwrap().committed);
+        assert_eq!(re2.first().unwrap().reason.len(), 1);
+        assert_eq!(re2.first().unwrap().reason[0], "transfer already exists with this id");
+        let mut more_transfers = generate_random_transfers(1, 2, 100, 1, 2);
+        for initial_transfer in initial_transfers {
+            more_transfers.push(initial_transfer);
+        }
+        let re3 = cl.create_transfers(&more_transfers);
+        assert_eq!(re3.len(), 3);
+        for re in re3 {
+            if re.txn_id == re1[0].txn_id {
+                assert!(!re.committed);
+                assert_eq!(re.reason.len(), 1);
+                assert_eq!(re.reason[0], "transfer already exists with this id")
+            } else {
+                assert!(re.committed);
+                assert_eq!(re.reason.len(), 0);
+            }
+        }
     }
 
     #[rstest]
@@ -289,11 +317,8 @@ mod tests {
     }
 
     #[rstest]
-    // #[case::empty_list_of_transfer()]
-    // #[case::successful_create_transfer_batch()]
-    // #[case::success_one_linked_batch_should_pass_and_other_should_fail()]
-    ///todo test for all error messages
-    /// todo test for idempotency
+    ///todo test for all error messages --done
+    /// todo test for idempotency --done
     /// todo test for max limit
     /// todo test for exceptions. there will be many cases to handle.like, different constraint violations,duplicate entries, some error etc
     /// todo test for 10, 100, and 1000 batch insertions to see how these behave
