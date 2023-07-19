@@ -54,9 +54,9 @@ create or replace procedure create_ledger_transfer(txn transfer,inout result jso
                 return;
             end if;
 			 INSERT INTO transfer(
-	id, tenant_id, caused_by_event_id, grouping_id, debit_account_id, credit_account_id, pending_id, reverts_id, adjusts_id, timeout, ledger_master_id, code, amount, remarks, is_pending, post_pending, void_pending, is_reversal, is_adjustment, created_at)
+	id, tenant_id, caused_by_event_id, grouping_id, debit_account_id, credit_account_id, pending_id, ledger_master_id, code, amount, remarks,transfer_type, created_at)
 	VALUES (
-txn.id,txn.tenant_id,txn.caused_by_event_id,txn.grouping_id,txn.debit_account_id,txn.credit_account_id,txn.pending_id,txn.reverts_id,txn.adjusts_id,txn.timeout,txn.ledger_master_id,txn.code,txn.amount,txn.remarks,txn.is_pending,txn.post_pending,txn.void_pending,txn.is_reversal,txn.is_adjustment,txn.created_at);
+txn.id,txn.tenant_id,txn.caused_by_event_id,txn.grouping_id,txn.debit_account_id,txn.credit_account_id,txn.pending_id,txn.ledger_master_id,txn.code,txn.amount,txn.remarks,txn.transfer_type,txn.created_at);
       update user_account set credits_posted=credits_posted-txn.amount where id=txn.credit_account_id and tenant_id=txn.tenant_id;
 	  update user_account set debits_posted=debits_posted+txn.amount where id=txn.debit_account_id and tenant_id=txn.tenant_id;
 -- 	  commit;

@@ -3,7 +3,8 @@ use std::sync::OnceLock;
 use postgres::{Client, Row, SimpleQueryMessage};
 use uuid::Uuid;
 
-use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse};
+use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse, TransferType};
+use crate::ledger::ledger_models::TransferType::{Pending, PostPending, Regular, VoidPending};
 
 pub trait LedgerTransferDao {
     ///
@@ -17,7 +18,9 @@ pub struct LedgerTransferDaoPostgresImpl {
     postgres_client: Client,
 }
 
-const LEDGER_TRANSFER_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,caused_by_event_id,grouping_id,debit_account_id,credit_account_id,pending_id,reverts_id,adjusts_id,timeout,ledger_master_id,code,amount,remarks,is_pending,post_pending,void_pending,is_reversal,is_adjustment,created_at";
+const LEDGER_TRANSFER_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,caused_by_event_id,grouping_id,\
+debit_account_id,credit_account_id,pending_id,ledger_master_id,code,\
+amount,remarks,transfer_type,created_at";
 const LEDGER_TRANSFER_TABLE_NAME: &str = "transfer";
 static TRANSFER_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 
@@ -25,6 +28,14 @@ impl TryFrom<&Row> for Transfer {
     type Error = ();
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
+        let k: i16 = row.get(11);
+        let transfer_type = match k {
+            1 => Regular,
+            2 => Pending,
+            3 => PostPending { pending_id: row.get(6) },
+            4 => VoidPending { pending_id: row.get(6) },
+            _ => panic!("{} is not mapped to transferType enum", k)
+        };
         Ok(Transfer {
             id: row.get(0),
             tenant_id: row.get(1),
@@ -32,20 +43,13 @@ impl TryFrom<&Row> for Transfer {
             grouping_id: row.get(3),
             debit_account_id: row.get(4),
             credit_account_id: row.get(5),
-            pending_id: row.get(6),
-            reverts_id: row.get(7),
-            adjusts_id: row.get(8),
-            timeout: row.get(9),
-            ledger_master_id: row.get(10),
-            code: row.get(11),
-            amount: row.get(12),
-            remarks: row.get(13),
-            is_pending: row.get(14),
-            post_pending: row.get(15),
-            void_pending: row.get(16),
-            is_reversal: row.get(17),
-            is_adjustment: row.get(18),
-            created_at: row.get(19),
+            ledger_master_id: row.get(7),
+            code: row.get(8),
+            amount: row.get(9),
+            remarks: row.get(10),
+            transfer_type,
+            created_at: row.get(12),
+
         })
     }
 }
@@ -92,26 +96,29 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
 }
 
 fn convert_transfer_to_postgres_composite_type_input_string(transfer: &Transfer) -> String {
-    format!("('{}',{},'{}','{}',{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{})",
+    format!("('{}',{},'{}','{}',{},{},{},{},{},{},{},{},{})",
             transfer.id,
             transfer.tenant_id,
             transfer.caused_by_event_id,
             transfer.grouping_id,
             transfer.debit_account_id,
             transfer.credit_account_id,
-            transfer.pending_id.map(|a| format!("'{}'", a)).unwrap_or("null".to_string()),
-            transfer.reverts_id.map(|a| format!("'{}'", a)).unwrap_or("null".to_string()),
-            transfer.adjusts_id.map(|a| format!("'{}'", a)).unwrap_or("null".to_string()),
-            transfer.timeout.map(|a| a.to_string()).unwrap_or("null".to_string()),
+            match transfer.transfer_type {
+                Regular | Pending => { "null".to_string() }
+                PostPending { pending_id }
+                | VoidPending { pending_id } =>
+                    { format!("'{}'", pending_id) }
+            },
             transfer.ledger_master_id,
             transfer.code,
             transfer.amount,
             transfer.remarks.as_ref().map(|a| format!("'{}'", &a)).unwrap_or("null".to_string()),
-            transfer.is_pending,
-            transfer.post_pending,
-            transfer.void_pending,
-            transfer.is_reversal,
-            transfer.is_adjustment,
+            match transfer.transfer_type {
+                Regular => 1,
+                Pending => 2,
+                PostPending { .. } => 3,
+                VoidPending { .. } => 4,
+            },
             transfer.created_at
     )
 }
@@ -150,8 +157,103 @@ mod tests {
                 ..Default::default()
             }));
         }
-
         transfers
+    }
+
+    mod transfer_type_post_tests {
+        use rstest::rstest;
+
+        // #[rstest]
+        // #[case::should()]
+        fn test_posting_a_post_entry(post: bool, adjust: bool, pending: bool, post_pending: bool, void_pending: bool) {
+            //test_successful_create_transfers_of_multiple_sizes tests this
+        }
+    }
+
+    mod transfer_type_pending_tests {
+        #[test]
+        fn test_posting_a_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_allow_reverting_flag_in_a_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_allow_adjusting_flag_in_a_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_allow_void_pending_flag_in_a_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_allow_post_pending_entry_in_a_pending_entry() {
+            todo!()
+        }
+    }
+
+    mod transfer_type_post_pending_tests {
+        #[test]
+        fn should_post_pending_entry_for_a_pending_entry_in_full() {
+            todo!()
+        }
+
+        #[test]
+        fn should_post_pending_entry_for_a_pending_entry_partially() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_post_pending_entry_for_a_pending_entry_in_excess() {
+            todo!()
+        }
+
+        #[test]
+        fn should_error_out_posting_entry_for_an_invalid_pending_entry_id() {
+            todo!()
+        }
+
+        #[test]
+        fn should_error_out_posting_entry_for_already_posted_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_error_out_posting_entry_for_an_already_voided_pending_entry_id() {
+            todo!()
+        }
+    }
+
+    mod transfer_type_void_pending_tests {
+        #[test]
+        fn should_be_able_to_void_a_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_void_an_already_voided_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_post_a_void_entry_for_missing_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_post_a_void_entry_for_post_pending_entry() {
+            todo!()
+        }
+
+        #[test]
+        fn should_not_post_a_void_entry_for_post_entry() {
+            todo!()
+        }
     }
 
     #[rstest]
@@ -330,14 +432,8 @@ mod tests {
     ///todo test for all error messages --done
     /// todo test for idempotency --done
     /// todo test for max limit --done
-    /// todo test for exceptions. there will be many cases to handle.like, different constraint violations,duplicate entries, some error etc
-    /// todo test for 10, 100, and 1000 batch insertions to see how these behave
-    /// todo test with and without exception block to see what difference does it make
-    /// todo test reverts id
     /// todo test post pending
     /// todo test void pending
-    /// todo test adjustment id
-    /// todo test timeout if possible
     /// todo check accounts have the same currency
     /// todo how to check if the procedure is present in database or not. pretty important.for the code and database to be in sync
     fn test_create_ledger_transfers_procedure() {
