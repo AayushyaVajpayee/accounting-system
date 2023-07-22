@@ -1,3 +1,38 @@
+create or replace procedure validate_pending_transfer(trf transfer,inout output_result jsonb) as $$
+declare
+    existing_tr transfer;
+    already_posted_voided_tr transfer;
+begin
+    if trf.transfer_type not in (3,4) then
+         return;
+    end if;
+    select * from transfer where id=trf.pending_id and tenant_id=trf.tenant_id and transfer_type=2 into existing_tr;
+    if existing_tr is null then
+    --    end if;
+        output_result['committed']='false';
+        output_result['reason'] = output_result['reason']||concat('["no pending transfer found for pending_id:',trf.pending_id,'  and tenant_id:',trf.tenant_id,'"]')::jsonb;
+        -- convey message in the inout param that the pending id does not exist
+        return; -- should we return early or not
+    end if;
+    select * from transfer where pending_id = trf.pending_id and tenant_id = trf.tenant_id into already_posted_voided_tr;
+    if already_posted_voided_tr is null then
+    -- everything is cool
+    else
+        output_result['committed']='false';
+        output_result['reason']=output_result['reason']||concat('["pending transfer with id:',already_posted_voided_tr.pending_id,' already processed with id:',
+        already_posted_voided_tr.id,', action taken was with code: ',already_posted_voided_tr.transfer_type,' "]')::jsonb;
+        return;
+    -- entry already posted or voided return a proper error message
+    end if;
+    if trf.amount > existing_tr.amount and trf.transfer_type=3 then
+         output_result['committed']='false';
+         output_result['reason']=output_result['reason']||concat('["posting amount(',trf.amount,') cannot be more than pending amount(',existing_tr.amount,')"]')::jsonb;
+         return;
+    -- entry amount to be posted or voided is greater than pending amount, cannot proceed.
+    -- entry amount to be checked only in case if its being posted otherwise not.
+    end if;
+end; $$ language plpgsql;
+
 create or replace procedure validate_transfer(debit_acc user_account,
 credit_acc user_account,
 txn transfer,
@@ -27,6 +62,7 @@ inout output_result jsonb)  as $$
 			    output_result['committed']='false';
 			    output_result['reason'] = output_result['reason']||concat('["transfer amount cannot be <=0 but was ',txn.amount,'"]')::jsonb;
 		end if;
+		call validate_pending_transfer(txn,output_result);
     END;
 $$ language plpgsql;
 --{txn_id:String,committed:boolean,reason:String}
@@ -77,6 +113,7 @@ $$
        result_arr jsonb='[]';
        result_element jsonb;
        txn transfer;
+       failed_index integer;
     BEGIN
       if array_length(txns,1) >600 then
              RAISE EXCEPTION 'no of transfers in batch cannot be more than 600 but was %', array_length(txns,1)
@@ -105,7 +142,9 @@ $$
       end loop;
       return result_arr;
     END;
-$$ language plpgsql
+$$ language plpgsql;
+
+
 
 
 

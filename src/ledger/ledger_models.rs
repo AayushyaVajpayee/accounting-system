@@ -11,7 +11,7 @@ pub struct TransferCreationDbResponse {
     pub reason: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TransferType {
     Regular,
     Pending,
@@ -93,7 +93,7 @@ pub fn a_transfer(builder: TransferBuilder) -> Transfer {
         credit_account_id: builder.credit_account_id.unwrap_or(1),
         caused_by_event_id: builder.caused_by_event_id.unwrap_or_else(Uuid::new_v4),
         grouping_id: builder.grouping_id.unwrap_or_else(Uuid::new_v4),
-        ledger_master_id: builder.ledger_master_id.unwrap_or(0),
+        ledger_master_id: builder.ledger_master_id.unwrap_or(1),
         code: builder.code.unwrap_or(0),
         amount: builder.amount.unwrap_or(100),
         remarks: builder.remarks,
