@@ -16,7 +16,8 @@ pub enum TransferType {
     Regular,
     Pending,
     PostPending { pending_id: Uuid },
-    VoidPending { pending_id: Uuid },
+    //accounts, ledger_id, don't make much sense here. I need to wrtie test if i include them otherwise i dont
+    VoidPending { pending_id: Uuid },//accounts, ledger_id,amount don't make much sense here. I need to wrtie test if i include them otherwise i dont
 }
 
 //todo create a validation function for transfer

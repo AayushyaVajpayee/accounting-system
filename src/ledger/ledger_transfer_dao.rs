@@ -178,24 +178,27 @@ mod tests {
 
 
     mod transfer_type_pending_tests {
+        use rstest::rstest;
         use crate::ledger::ledger_models::{a_transfer, TransferBuilder, TransferType};
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
-        #[test]
-        fn test_posting_a_pending_entry() {
+        #[rstest]
+        #[case::regular_entry(Some(TransferType::Regular))]
+        #[case::pending_entry(Some(TransferType::Pending))]
+        fn test_posting_a_pending_entry(#[case] entry_type: Option<TransferType>) {
             let port = get_postgres_image_port();
             let postgres_client = create_postgres_client(port);
             let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
             let mut k = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
+                transfer_type: entry_type.clone(),
                 debit_account_id: Some(1),
                 credit_account_id: Some(2),
                 ..Default::default()
             });
             let p = cl.create_transfers(&vec![k.clone()]);
             let kkk = cl.get_transfers_by_id(k.id).unwrap();
-            assert_eq!(kkk.transfer_type, TransferType::Pending);
+            assert_eq!(kkk.transfer_type, entry_type.unwrap());
             assert_eq!(1, p.len());
             assert!(p[0].committed);
             assert_eq!(0, p[0].reason.len());
@@ -203,33 +206,56 @@ mod tests {
     }
 
     mod transfer_type_post_pending_tests {
-        use std::future::Pending;
+        use rstest::{fixture, rstest};
         use uuid::Uuid;
-        use crate::ledger::ledger_models::{a_transfer, TransferBuilder, TransferType};
+        use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder, TransferType};
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
-        #[test]
-        fn should_post_pending_entry_for_a_pending_entry_in_full() {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
+        fn pending_transfer() -> Transfer {
+            a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
                 debit_account_id: Some(1),
                 credit_account_id: Some(2),
+                amount: Some(100),
                 ..Default::default()
-            });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
+            })
+        }
+
+        #[rstest]
+        #[case::should_post_pending_entry_for_a_pending_entry_in_full(pending_transfer(),
+        Some(TransferType::PostPending{pending_id: uuid::Uuid::new_v4()}),
+        Some(100))]
+        #[case::should_post_pending_entry_for_a_pending_entry_partially(pending_transfer(),
+        Some(TransferType::PostPending{pending_id: uuid::Uuid::new_v4()}),
+        Some(99))]
+        #[case::should_be_able_to_void_a_pending_entry(pending_transfer(),
+        Some(TransferType::VoidPending{pending_id: uuid::Uuid::new_v4()}),
+        Some(100))]
+        // #[case(Some(TransferType::Pending),Some(TransferType::VoidPending{pending_id:uuid::Uuid::new_v4()}))]
+        fn should_be_able_to_resolve_pending_transfer(
+            #[case]pending_transfer: Transfer,
+            #[case] pending_resolution_type: Option<TransferType>, #[case] pending_resolution_amount: Option<i64>)
+        {
+            let pending_resolution_type = match pending_resolution_type.unwrap() {
+                TransferType::Regular | TransferType::Pending => { panic!("invalid state") }
+                TransferType::PostPending { .. } => { TransferType::PostPending { pending_id: pending_transfer.id } }
+                TransferType::VoidPending { .. } => { TransferType::VoidPending { pending_id: pending_transfer.id } }
+            };
+            let port = get_postgres_image_port();
+            let postgres_client = create_postgres_client(port);
+            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+            let resolved_pending_transfer = a_transfer(TransferBuilder {
+                transfer_type: Some(pending_resolution_type),
                 debit_account_id: Some(1),
                 credit_account_id: Some(2),
+                amount: pending_resolution_amount,
                 ..Default::default()
             });
-            let p = cl.create_transfers(&vec![pending_transfer, post_pending_transfer.clone()]);
-            let kkk = cl.get_transfers_by_id(post_pending_transfer.id).unwrap();
-            matches!(kkk.transfer_type,TransferType::PostPending {..});
+            let p = cl.create_transfers(&vec![pending_transfer, resolved_pending_transfer.clone()]);
             println!("{:?}", p);
+            let kkk = cl.get_transfers_by_id(resolved_pending_transfer.id).unwrap();
+            // matches!(kkk.transfer_type,TransferType::PostPending {..});
             assert_eq!(2, p.len());
             for x in p {
                 assert!(x.committed);
@@ -237,8 +263,11 @@ mod tests {
             }
         }
 
-        #[test]
-        fn should_post_pending_entry_for_a_pending_entry_partially() {
+        #[rstest]
+        #[case(Some(TransferType::PostPending{pending_id: Uuid::new_v4()}))]
+        #[case(Some(TransferType::VoidPending{pending_id: Uuid::new_v4()}))]
+        fn should_error_out_posting_entry_for_an_invalid_pending_entry_id(#[case] transfer_type: Option<TransferType>)
+        {
             let port = get_postgres_image_port();
             let postgres_client = create_postgres_client(port);
             let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
@@ -249,22 +278,82 @@ mod tests {
                 amount: Some(100),
                 ..Default::default()
             });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
+            let mut resolved_pending_transfer = a_transfer(TransferBuilder {
+                transfer_type: transfer_type,
                 debit_account_id: Some(1),
                 credit_account_id: Some(2),
-                amount: Some(99),
+                amount: Some(100),
                 ..Default::default()
             });
-            let p = cl.create_transfers(&vec![pending_transfer, post_pending_transfer.clone()]);
-            let kkk = cl.get_transfers_by_id(post_pending_transfer.id).unwrap();
-            matches!(kkk.transfer_type,TransferType::PostPending {..});
-            println!("{:?}", p);
+            let p = cl.create_transfers(&vec![pending_transfer.clone(), resolved_pending_transfer.clone()]);
+            println!("{:?}", &p);
+            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
+            assert!(cl.get_transfers_by_id(resolved_pending_transfer.id).is_none());
             assert_eq!(2, p.len());
             for x in p {
-                assert!(x.committed);
-                assert_eq!(0, x.reason.len());
+                assert!(!x.committed);
+                assert_eq!(1, x.reason.len());
             }
+        }
+
+        #[rstest]
+        fn should_not_act_on_an_already_resolved_pending_transfer(
+            #[values("pp", "vp")]
+            first_resolved_transfer_type: String,
+            #[values("pp", "vp")]
+            second_resolved_transfer_type: String,
+        )
+        {
+            //todo may be this can be combined with above test
+            let port = get_postgres_image_port();
+            let postgres_client = create_postgres_client(port);
+            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+            let mut pending_transfer = a_transfer(TransferBuilder {
+                transfer_type: Some(TransferType::Pending),
+                debit_account_id: Some(1),
+                credit_account_id: Some(2),
+                amount: Some(100),
+                ..Default::default()
+            });
+            let mut first_resolved_transfer = a_transfer(TransferBuilder {
+                transfer_type: if first_resolved_transfer_type == "pp" {
+                    Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() })
+                } else {
+                    Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() })
+                },
+                debit_account_id: Some(1),
+                credit_account_id: Some(2),
+                amount: Some(100),
+                ..Default::default()
+            });
+            let mut second_resolved_transfer = a_transfer(TransferBuilder {
+                transfer_type: if first_resolved_transfer_type == "pp" {
+                    Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() })
+                } else {
+                    Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() })
+                },
+                debit_account_id: Some(1),
+                credit_account_id: Some(2),
+                amount: Some(100),
+                ..Default::default()
+            });
+            //todo first 2 should be committed together and third one should fail.
+            let p = cl.create_transfers(&vec![pending_transfer.clone(), first_resolved_transfer.clone(), second_resolved_transfer.clone()]);
+            println!("{:?}", &p);
+            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
+            assert!(cl.get_transfers_by_id(first_resolved_transfer.id).is_none());
+            assert!(cl.get_transfers_by_id(second_resolved_transfer.id).is_none());
+            assert_eq!(3, p.len());
+            for x in p {
+                assert!(!x.committed);
+                assert_eq!(1, x.reason.len());
+            }
+        }
+
+        #[ignore]
+        #[test]
+        fn verify_credits_debits_posted_pending_after_posting_void_transfer() {
+            todo!()
         }
 
         #[test]
@@ -297,257 +386,9 @@ mod tests {
             }
         }
 
-        #[test]
-        fn should_error_out_posting_entry_for_an_invalid_pending_entry_id() {
-            //todo may be this can be combined with above test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: Uuid::new_v4() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let p = cl.create_transfers(&vec![pending_transfer.clone(), post_pending_transfer.clone()]);
-            println!("{:?}", &p);
-            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(post_pending_transfer.id).is_none());
-            assert_eq!(2, p.len());
-            for x in p {
-                assert!(!x.committed);
-                assert_eq!(1, x.reason.len());
-            }
-        }
-
-        #[test]
-        fn should_error_out_posting_entry_for_already_posted_pending_entry() {
-            //todo may be this can be combined with above test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut post_pending_transfer1 = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            //todo first 2 should be committed together and third one should fail.
-            let p = cl.create_transfers(&vec![pending_transfer.clone(), post_pending_transfer.clone(), post_pending_transfer1.clone()]);
-            println!("{:?}", &p);
-            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(post_pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(post_pending_transfer1.id).is_none());
-            assert_eq!(3, p.len());
-            for x in p {
-                assert!(!x.committed);
-                assert_eq!(1, x.reason.len());
-            }
-        }
-
-        #[test]
-        fn should_error_out_posting_entry_for_an_already_voided_pending_entry_id() {
-            //todo may be this can be combined with above test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut post_pending_transfer1 = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            //todo first 2 should be committed together and third one should fail.
-            let p = cl.create_transfers(&vec![pending_transfer.clone(), post_pending_transfer.clone(), post_pending_transfer1.clone()]);
-            println!("{:?}", &p);
-            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(post_pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(post_pending_transfer1.id).is_none());
-            assert_eq!(3, p.len());
-            for x in p {
-                assert!(!x.committed);
-                assert_eq!(1, x.reason.len());
-            }
-        }
-    }
-
-    mod transfer_type_void_pending_tests {
-        use uuid::Uuid;
-        use crate::ledger::ledger_models::{a_transfer, TransferBuilder, TransferType};
-        use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
-        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
-
-        //todo these can be tested same as that post_pending tests with rstest cases
-        #[test]
-        fn should_be_able_to_void_a_pending_entry() {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                ..Default::default()
-            });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                ..Default::default()
-            });
-            let p = cl.create_transfers(&vec![pending_transfer, post_pending_transfer.clone()]);
-            let kkk = cl.get_transfers_by_id(post_pending_transfer.id).unwrap();
-            matches!(kkk.transfer_type,TransferType::PostPending {..});
-            println!("{:?}", p);
-            assert_eq!(2, p.len());
-            for x in p {
-                assert!(x.committed);
-                assert_eq!(0, x.reason.len());
-            }
-        }
-
-        #[test]
-        fn should_not_void_an_already_voided_pending_entry() {
-            //todo may be this can be combined with above test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut void_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut void_pending_transfer1 = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            //todo first 2 should be committed together and third one should fail.
-            let p = cl.create_transfers(&vec![pending_transfer.clone(), void_pending_transfer.clone(), void_pending_transfer1.clone()]);
-            println!("{:?}", &p);
-            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(void_pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(void_pending_transfer1.id).is_none());
-            assert_eq!(3, p.len());
-            for x in p {
-                assert!(!x.committed);
-                assert_eq!(1, x.reason.len());
-            }
-        }
-
-        #[test]
-        fn should_not_post_a_void_entry_for_missing_pending_entry() {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::VoidPending { pending_id: Uuid::new_v4() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let p = cl.create_transfers(&vec![post_pending_transfer.clone()]);
-            println!("{:?}", &p);
-            assert!(cl.get_transfers_by_id(post_pending_transfer.id).is_none());
-            assert_eq!(1, p.len());
-            for x in p {
-                assert!(!x.committed);
-                assert_eq!(1, x.reason.len());
-            }
-        }
-
-        #[test]
-        fn should_not_post_a_void_entry_for_post_pending_entry() {
-            //todo may be this can be combined with above test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::Pending),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::VoidPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            let mut void_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
-                debit_account_id: Some(1),
-                credit_account_id: Some(2),
-                amount: Some(100),
-                ..Default::default()
-            });
-            //todo first 2 should be committed together and third one should fail.
-            let p = cl.create_transfers(&vec![pending_transfer.clone(), post_pending_transfer.clone(), void_pending_transfer.clone()]);
-            println!("{:?}", &p);
-            assert!(cl.get_transfers_by_id(pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(post_pending_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(void_pending_transfer.id).is_none());
-            assert_eq!(3, p.len());
-            for x in p {
-                assert!(!x.committed);
-                assert_eq!(1, x.reason.len());
-            }
-        }
-
-        #[test]
-        fn should_not_post_a_void_entry_for_post_entry() {
+        #[rstest]
+        fn should_not_resolve_pending_transfer_for_post_entry(
+            #[values("pp", "vp")]resolution_type: String) {
             //todo important test
             let port = get_postgres_image_port();
             let postgres_client = create_postgres_client(port);
@@ -560,24 +401,38 @@ mod tests {
                 ..Default::default()
             });
 
-            let mut void_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: Some(TransferType::PostPending { pending_id: regular_transfer.id.clone() }),
+            let mut resolving_transfer = a_transfer(TransferBuilder {
+                transfer_type: if resolution_type == "pp" {
+                    Some(TransferType::PostPending { pending_id: regular_transfer.id.clone() })
+                } else {
+                    Some(TransferType::VoidPending { pending_id: regular_transfer.id.clone() })
+                },
                 debit_account_id: Some(1),
                 credit_account_id: Some(2),
                 amount: Some(100),
                 ..Default::default()
             });
             //todo first 2 should be committed together and third one should fail.
-            let p = cl.create_transfers(&vec![regular_transfer.clone(), void_pending_transfer.clone()]);
+            let p = cl.create_transfers(&vec![regular_transfer.clone(), resolving_transfer.clone()]);
             println!("{:?}", &p);
             assert!(cl.get_transfers_by_id(regular_transfer.id).is_none());
-            assert!(cl.get_transfers_by_id(void_pending_transfer.id).is_none());
+            assert!(cl.get_transfers_by_id(resolving_transfer.id).is_none());
             assert_eq!(2, p.len());
             for x in p {
                 assert!(!x.committed);
                 assert_eq!(1, x.reason.len());
             }
         }
+    }
+
+    mod transfer_type_void_pending_tests {
+        use crate::ledger::ledger_models::{a_transfer, TransferBuilder, TransferType};
+        use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
+        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+
+        //todo these can be tested same as that post_pending tests with rstest cases
+
+        //todo check credits debits posted/pending before or after in order to verify this has happened correctly
     }
 
     #[rstest]
