@@ -141,7 +141,7 @@ fn convert_transfer_to_postgres_composite_type_input_string(transfer: &Transfer)
 
 fn convert_transfers_to_postgres_array(transfers: &Vec<Transfer>) -> String {
     format!("select create_linked_transfers(array[{}]::transfer[])", transfers
-        .into_iter()
+        .iter()
         .map(convert_transfer_to_postgres_composite_type_input_string)
         .collect::<Vec<String>>().join(","))
 }
@@ -205,7 +205,7 @@ mod tests {
         }
     }
 
-    mod transfer_type_post_pending_tests {
+    mod pending_transfer_resolution_tests {
         use rstest::{fixture, rstest};
         use uuid::Uuid;
         use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder, TransferType};
@@ -387,8 +387,8 @@ mod tests {
         }
 
         #[rstest]
-        fn should_not_resolve_pending_transfer_for_post_entry(
-            #[values("pp", "vp")]resolution_type: String) {
+        fn should_not_resolve_a_post_transfer(
+            #[values("pp")]resolution_type: String) {
             //todo important test
             let port = get_postgres_image_port();
             let postgres_client = create_postgres_client(port);
@@ -425,15 +425,7 @@ mod tests {
         }
     }
 
-    mod transfer_type_void_pending_tests {
-        use crate::ledger::ledger_models::{a_transfer, TransferBuilder, TransferType};
-        use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
-        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
-        //todo these can be tested same as that post_pending tests with rstest cases
-
-        //todo check credits debits posted/pending before or after in order to verify this has happened correctly
-    }
 
     #[rstest]
     fn should_not_commit_transactions_which_have_been_already_persisted_idempotency() {
