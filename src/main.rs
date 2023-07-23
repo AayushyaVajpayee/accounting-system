@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use postgres::{Client, NoTls};
 
 mod ledger;

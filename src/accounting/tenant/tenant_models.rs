@@ -41,6 +41,7 @@ pub fn a_create_tenant_request(builder:CreateTenantTestBuilder)->CreateTenantReq
     }
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn a_tenant(builder: TenantTestBuilder) -> Tenant {
     Tenant {

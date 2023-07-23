@@ -13,6 +13,7 @@ struct CurrencyServiceImpl {
     currency_dao: Box<dyn CurrencyDao>,
 }
 
+#[allow(dead_code)]
 pub fn get_currency_service() -> Box<dyn CurrencyService> {
     let pclient = create_postgres_client();
     let currency_dao = get_currency_dao(pclient);
@@ -20,6 +21,7 @@ pub fn get_currency_service() -> Box<dyn CurrencyService> {
     Box::new(currency_s)
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn get_currency_service_for_test(postgres_client: Client) -> Box<dyn CurrencyService> {
     let currency_dao = get_currency_dao(postgres_client);

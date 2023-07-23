@@ -139,7 +139,9 @@ BEGIN
     if txn.transfer_type in (3, 4) then
         select *
         from transfer
-        where id = txn.pending_id and transfer_type = 2 and tenant_id = txn.tenant_id
+        where id = txn.pending_id
+          and transfer_type = 2
+          and tenant_id = txn.tenant_id
         into pending_transfer;
     end if;
     select * from user_account where id = txn.credit_account_id and tenant_id = txn.tenant_id into credit_acc_row;
@@ -172,37 +174,48 @@ DECLARE
     result_arr     jsonb='[]';
     result_element jsonb;
     txn            transfer;
-    failed_index   integer;
+    failed_res jsonb;
+    failed_id  uuid;
 BEGIN
     if array_length(txns, 1) > 600 then
         RAISE EXCEPTION 'no of transfers in batch cannot be more than 600 but was %', array_length(txns, 1)
             USING HINT = 'no of transfers in batch cannot be more than 600';
     end if;
-    foreach txn in array txns
-        loop
-            result_element = json_build_object('txn_id', txn.id, 'committed', not failed, 'reason', '[]'::jsonb);
-            raise notice 'result_element %',result_element;
-            if failed then
-                result_element['reason'] = '["linked transfer failed"]';
-                result_arr = result_arr || result_element;
-                --prepare a default failed response as linked transfer failed
-            else
-                raise notice 'calling create_ledger_transfer';
+    BEGIN
+        foreach txn in array txns
+            loop
+                result_element = json_build_object('txn_id', txn.id, 'committed', not failed, 'reason', '[]'::jsonb);
                 call create_ledger_transfer(txn, result_element);
-                raise notice 'create_ledger_transfer output %',result_element;
                 if (result_element -> 'committed')::boolean = false then
-                    select true into failed;
+                    failed = true;
+                    failed_res = result_element;
+                    failed_id = txn.id;
+                    raise exception using errcode = 'VALFA',message = 'validation failed or error for transfer',
+                        hint = 'check reason incase of validation failure. for error pg logs may help';
                 end if;
-                raise notice 'result_arr before %',result_arr;
-                select result_arr || result_element into result_arr;--verify this line
-                raise notice 'result_arr after %',result_arr;
+                select result_arr || result_element into result_arr;
+                --verify this line
                 --append the result into jsonb array
-            end if;
-        end loop;
+            end loop;
+--     return result_arr;
+    exception
+        when others then
+            result_arr = '[]';
+            foreach txn in array txns
+                loop
+                    if txn.id = failed_id then
+                        select result_arr || failed_res into result_arr;
+                    else
+                        result_element = json_build_object('txn_id', txn.id, 'committed', false, 'reason', '[
+                          "linked transfer failed"
+                        ]'::jsonb);
+                        select result_arr || result_element into result_arr;
+                    end if;
+                end loop;
+    END;
     return result_arr;
 END;
 $$ language plpgsql;
-
 
 
 

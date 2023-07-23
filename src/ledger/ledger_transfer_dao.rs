@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 use postgres::{Client, Row, SimpleQueryMessage};
 use uuid::Uuid;
 
-use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse, TransferType};
+use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse};
 use crate::ledger::ledger_models::TransferType::{Pending, PostPending, Regular, VoidPending};
 
 pub trait LedgerTransferDao {
@@ -65,9 +65,9 @@ impl LedgerTransferDaoPostgresImpl {
 impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
     fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse> {
         let query = convert_transfers_to_postgres_array(&transfers);
-        let mut t = self.postgres_client.transaction().unwrap();
-        let p = t.simple_query(&query);
-        let mut k = p.unwrap().iter().map(|a| {
+        // let mut t = self.postgres_client.transaction().unwrap();
+        let p = self.postgres_client.simple_query(&query);
+        let k = p.unwrap().iter().map(|a| {
             match a {
                 SimpleQueryMessage::Row(aa) => {
                     let k = aa.get(0);
@@ -78,20 +78,20 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
                 _ => { todo!() }
             }
         }).next().unwrap();
-        if k.iter().any(|a| !a.committed) {
-            t.rollback().unwrap();
-            return k.into_iter().map(|mut k| {
-                if k.committed {
-                    k.committed = false;
-                    k.reason = vec!["linked transfer failed".to_string()];
-                }
-                k
-            }).collect();
-            //todo the above processing can be done in plpgsql block too and i should try there
-            // since major backbone of ours will plpgsql
-        } else {
-            t.commit().unwrap();
-        }
+        // if k.iter().any(|a| !a.committed) {
+        //     // t.rollback().unwrap();
+        //     return k.into_iter().map(|mut k| {
+        //         if k.committed {
+        //             k.committed = false;
+        //             k.reason = vec!["linked transfer failed".to_string()];
+        //         }
+        //         k
+        //     }).collect();
+        //     //todo the above processing can be done in plpgsql block too and i should try there
+        //     // since major backbone of ours will plpgsql
+        // } else {
+        //     // t.commit().unwrap();
+        // }
         k
     }
 
@@ -149,13 +149,14 @@ fn convert_transfers_to_postgres_array(transfers: &Vec<Transfer>) -> String {
 #[cfg(test)]
 mod tests {
     use std::ops::Not;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     use rand::Rng;
     use rstest::rstest;
-    use crate::accounting::account::account_models::{a_create_account_request, Account, CreateAccountRequestTestBuilder};
+    use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
     use crate::accounting::account::account_service::get_account_service_for_test;
 
-    use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder, TransferType};
+    use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder};
     use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
     use crate::ledger::ledgermaster::ledger_master_models::{a_create_ledger_master_entry_request, CreateLedgerMasterEntryRequestTestBuilder};
     use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service_for_test;
@@ -181,7 +182,7 @@ mod tests {
 
     fn generate_random_transfers(debit_account: i32, credit_account: i32, amount: i64, ledger_master_id: i32, size: usize) -> Vec<Transfer> {
         let mut transfers: Vec<Transfer> = Vec::with_capacity(size);
-        for i in 0..size {
+        for _i in 0..size {
             transfers.push(a_transfer(TransferBuilder {
                 debit_account_id: Some(debit_account),
                 credit_account_id: Some(credit_account),
@@ -215,7 +216,7 @@ mod tests {
             let mut acc_ser = get_account_service_for_test(create_postgres_client(port));
             let acc1 = acc_ser.get_account_by_id(&accs[0]).unwrap();
             let acc2 = acc_ser.get_account_by_id(&accs[1]).unwrap();
-            let mut k = a_transfer(TransferBuilder {
+            let k = a_transfer(TransferBuilder {
                 transfer_type: entry_type.clone(),
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
@@ -233,7 +234,7 @@ mod tests {
                 assert_eq!(acc1.debits_pending + 100, acc_1_after.debits_pending);
                 assert_eq!(acc2.credits_pending + 100, acc_2_after.credits_pending)
             }
-            if (entry_type.clone().unwrap() == Regular) {
+            if entry_type.clone().unwrap() == Regular {
                 assert_eq!(acc1.credits_pending, acc_1_after.credits_pending);
                 assert_eq!(acc1.debits_pending, acc_1_after.debits_pending);
                 assert_eq!(acc2.credits_pending, acc_2_after.credits_pending);
@@ -250,7 +251,7 @@ mod tests {
     }
 
     mod pending_transfer_resolution_tests {
-        use rstest::{fixture, rstest};
+        use rstest::{rstest};
         use uuid::Uuid;
         use crate::accounting::account::account_service::get_account_service_for_test;
         use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder, TransferType};
@@ -327,7 +328,7 @@ mod tests {
                 assert_eq!(acc2.credits_posted, acc2_after.credits_posted);
             }
 
-            let kkk = cl.get_transfers_by_id(resolved_pending_transfer.id).unwrap();
+            let _kkk = cl.get_transfers_by_id(resolved_pending_transfer.id).unwrap();
             // matches!(kkk.transfer_type,TransferType::PostPending {..});
 
             assert_eq!(2, p.len());
@@ -349,15 +350,15 @@ mod tests {
             let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
             let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
             let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
+            let pending_transfer = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
                 amount: Some(100),
                 ..Default::default()
             });
-            let mut resolved_pending_transfer = a_transfer(TransferBuilder {
-                transfer_type: transfer_type,
+            let resolved_pending_transfer = a_transfer(TransferBuilder {
+                transfer_type,
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
                 amount: Some(100),
@@ -461,14 +462,14 @@ mod tests {
             let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
             let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
             let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut pending_transfer = a_transfer(TransferBuilder {
+            let pending_transfer = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
                 amount: Some(100),
                 ..Default::default()
             });
-            let mut post_pending_transfer = a_transfer(TransferBuilder {
+            let post_pending_transfer = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::PostPending { pending_id: pending_transfer.id.clone() }),
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
@@ -507,7 +508,7 @@ mod tests {
             let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
             let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
             let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
-            let mut regular_transfer = a_transfer(TransferBuilder {
+            let regular_transfer = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Regular),
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
@@ -515,7 +516,7 @@ mod tests {
                 ..Default::default()
             });
 
-            let mut resolving_transfer = a_transfer(TransferBuilder {
+            let resolving_transfer = a_transfer(TransferBuilder {
                 transfer_type: if resolution_type == "pp" {
                     Some(TransferType::PostPending { pending_id: regular_transfer.id.clone() })
                 } else {
@@ -601,7 +602,7 @@ mod tests {
         let accs = create_two_accounts_for_transfer();
         let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], 100, 1, 601);
-        let p = cl.create_transfers(&transfer_candidates);
+        let _p = cl.create_transfers(&transfer_candidates);
     }
 
     #[rstest]
@@ -613,13 +614,16 @@ mod tests {
         let port = get_postgres_image_port();
         let postgres_client = create_postgres_client(port);
         let accs = create_two_accounts_for_transfer();
-
         let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
         let mut acc_service = get_account_service_for_test(create_postgres_client(port));
         let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
         let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], 100, 1, size);
+        let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
         let p = cl.create_transfers(&transfer_candidates);
+        cl.create_transfers(&transfer_candidates);
+        let stop = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+        println!("{}", stop - start);
         let mut acc_service = get_account_service_for_test(create_postgres_client(port));
         let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
         let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
@@ -659,6 +663,7 @@ mod tests {
         let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
         let transfer_candidates = generate_random_transfers(debit_acc_id, credit_acc_id, 100, 1, size);
         let p = cl.create_transfers(&transfer_candidates);
+        println!("{:?}", p);
         for i in 0..size {
             let response = &p[i];
             let candidate = &transfer_candidates[i];

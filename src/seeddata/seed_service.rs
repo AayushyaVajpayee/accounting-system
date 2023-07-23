@@ -33,14 +33,17 @@ fn validate_seed_file_names(names: &Vec<String>) -> Result<(), Vec<String>> {
     }
 }
 
-fn read_csv(name: &str) -> String {
+#[allow(dead_code)]
+fn read_csv(_name: &str) -> String {
     // let k = BinaryCopyInWriter::new(/* postgres::CopyInWriter<'_> */, /* &[postgres::types::Type] */);
     todo!()
 }
+
+#[allow(dead_code)]
 fn create_postgres_client(port: u16) -> Client {
     let con_str =
         format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-    let mut client = Client::
+    let client = Client::
     connect(&con_str, NoTls)
         .unwrap();
     client
@@ -87,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_k() {
-        let mut k = get_seed_filenames_ordered();
+        let k = get_seed_filenames_ordered();
         println!("{:?}", k);
         let kk = validate_seed_file_names(&k);
         println!("{:?}", kk);

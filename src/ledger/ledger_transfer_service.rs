@@ -1,6 +1,4 @@
-use std::ops::Not;
 use uuid::Uuid;
-use crate::ledger::ledger_models::Transfer;
 
 pub trait LedgerTransferService {
     fn create_transfers(request: CreateTransfersRequest);
@@ -8,17 +6,15 @@ pub trait LedgerTransferService {
     fn get_transfers_for_account_for_interval(request: GetTransfersForAccountForInterval);
 }
 
-pub fn validate_transfer_object(t: &Transfer) -> Vec<String> {
-    let mut errors: Vec<String> = vec![];
-    errors
-}
 
+#[allow(dead_code)]
 pub struct CreateTransfersRequest {
     //every inside vector fails or commits together
     //transactionally
     transfer_requests: Vec<Vec<CreateTransfersRequest>>,
 }
 
+#[allow(dead_code)]
 pub struct CreateTransferRequest {
     id: Uuid,
     tenant_id: i32,
@@ -40,10 +36,12 @@ pub struct CreateTransferRequest {
     created_at: i64,
 }
 
+#[allow(dead_code)]
 pub struct CreateTransfersResponse {
     responses: Vec<CreateTransferResponse>,
 }
 
+#[allow(dead_code)]
 pub struct CreateTransferResponse {
     id: Uuid,
     committed: bool,
@@ -51,11 +49,13 @@ pub struct CreateTransferResponse {
     error_message: Option<String>,
 }
 
+#[allow(dead_code)]
 pub struct GetTransferByIdRequest {
     tenant_id: i32,
     id: Vec<Uuid>,
 }
 
+#[allow(dead_code)]
 pub struct GetTransfersForAccountForInterval {
     tenant_id: i32,
     account_id: i32,
@@ -64,18 +64,3 @@ pub struct GetTransfersForAccountForInterval {
     to: i64,
 }
 
-#[cfg(test)]
-mod tests {
-    use rstest::rstest;
-    use uuid::Uuid;
-    use crate::ledger::ledger_models::{a_transfer, TransferBuilder};
-    use crate::ledger::ledger_transfer_service::validate_transfer_object;
-
-    #[test]
-    fn should_not_return_error_message_for_correct_transfer() {
-        let transfer = a_transfer(
-            Default::default());
-        let res = validate_transfer_object(&transfer);
-        assert_eq!(0, res.len());
-    }
-}

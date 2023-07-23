@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::error::Error;
-use std::ops::{Deref, Not};
 
 use serde::Serialize;
 use thiserror::Error;
@@ -8,11 +6,13 @@ use thiserror::Error;
 use crate::accounting::account::account_type::account_type_dao::AccountTypeDao;
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
 
+#[allow(dead_code)]
 pub struct AccountTypeService {
     account_type_dao: Box<dyn AccountTypeDao>,
 
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum HierarchyError {
     #[error("account id {0} is not present in account master")]
@@ -29,6 +29,7 @@ pub struct AccountTypeHierarchy {
 }
 
 impl AccountTypeService {
+    #[allow(dead_code)]
     pub fn get_account_type_hierarchy(&mut self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
         let all_accounts = self.account_type_dao.get_all_account_types_for_tenant_id(&tenant_id);
         AccountTypeService::create_hierarchy(&all_accounts)
@@ -123,12 +124,12 @@ mod tests {
         let mut max_iter = 30;
         while !work_queue.is_empty() && max_iter > 0 {
             max_iter -= 1;
-            let mut curr = work_queue.pop().unwrap();
+            let curr = work_queue.pop().unwrap();
             let mut adj_entry = adj.iter_mut().find(|l| l.id == curr.current_account_id);
             if adj_entry.is_some() {
                 curr.child_account_types.iter().for_each(|a| {
-                    let k = adj_entry.as_deref_mut().unwrap().adj_links.insert(a.current_account_id);
-                    ;
+                    let _k = adj_entry.as_deref_mut().unwrap().adj_links.insert(a.current_account_id);
+
                 })
             } else {
                 adj.push(AdjacencyListEntry {

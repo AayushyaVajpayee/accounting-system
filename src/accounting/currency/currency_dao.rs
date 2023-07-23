@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test_prep() {
         let port = get_postgres_image_port();
-        let mut postgres_client = create_postgres_client(port);
+        let postgres_client = create_postgres_client(port);
         let currency_master = a_create_currency_master_request(
             CreateCurrencyMasterRequestTestBuilder {
                 tenant_id: Some(1),

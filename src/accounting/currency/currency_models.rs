@@ -87,6 +87,7 @@ pub struct CurrencyMasterTestBuilder {
     pub audit_metadata: Option<AuditMetadataBase>,
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn a_currency_master(builder: CurrencyMasterTestBuilder) -> CurrencyMaster {
     CurrencyMaster {
@@ -99,6 +100,7 @@ pub fn a_currency_master(builder: CurrencyMasterTestBuilder) -> CurrencyMaster {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct CurrencyAmount {
     scale: i16,

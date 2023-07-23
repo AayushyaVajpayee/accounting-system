@@ -104,11 +104,11 @@ mod tests {
     #[test]
     fn test_create_and_insert() {
         let port = get_postgres_image_port();
-        let mut postgres_client = create_postgres_client(port);
+        let postgres_client = create_postgres_client(port);
         let ledger_master = a_create_ledger_master_entry_request(
             Default::default());
         let mut ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
         let id = ledger_master_dao.create_ledger_master_entry(&ledger_master);
-        let queried = ledger_master_dao.get_ledger_master_by_id(&id).unwrap();
+        let _queried = ledger_master_dao.get_ledger_master_by_id(&id).unwrap();
     }
 }

@@ -84,11 +84,11 @@ impl TenantDao for TenantDaoImpl {
         ).unwrap().iter().map(|row| row.get(0)).next().unwrap()
     }
 
-    fn update_tenant(&mut self, tenant: &CreateTenantRequest) -> i64 {
+    fn update_tenant(&mut self, _tenant: &CreateTenantRequest) -> i64 {
         todo!()
     }
 
-    fn delete_tenant(&mut self, tenant_id: &str) -> i64 {
+    fn delete_tenant(&mut self, _tenant_id: &str) -> i64 {
         todo!()
     }
 }
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn test_tenant() {
         let port = get_postgres_image_port();
-        let mut postgres_client = create_postgres_client(port);
+        let postgres_client = create_postgres_client(port);
         let t1 = a_create_tenant_request(Default::default());
         let mut tenant_dao = TenantDaoImpl { postgres_client };
         tenant_dao.create_tenant(&t1);

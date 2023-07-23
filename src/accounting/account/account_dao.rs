@@ -116,7 +116,7 @@ mod account_tests {
     #[test]
     fn test_account() {
         let port = get_postgres_image_port();
-        let mut postgres_client = create_postgres_client(port);
+        let postgres_client = create_postgres_client(port);
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
             tenant_id: Some(1),
             ledger_master_id: Some(1),
@@ -126,6 +126,6 @@ mod account_tests {
         });
         let mut account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client };
         let account_id = account_dao.create_account(&an_account_request);
-        let account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
+        let _account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
     }
 }

@@ -53,6 +53,8 @@ impl UserDaoPostgresImpl {
         })
     }
 }
+
+#[allow(dead_code)]
 pub fn get_user_dao(client: Client) -> Box<dyn UserDao> {
     let user_dao = UserDaoPostgresImpl {
         postgres_client: client
@@ -99,14 +101,13 @@ mod tests {
     #[test]
     fn test_users() {
         let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
         let user = a_create_user_request(
             CreateUserRequestTestBuilder {
                 tenant_id: Some(1),
                 ..Default::default()
             }
         );
-        let mut postgres_client = create_postgres_client(port);
+        let postgres_client = create_postgres_client(port);
         let mut user_dao = UserDaoPostgresImpl { postgres_client };
         let user_id = user_dao.create_user(&user);
         let user = user_dao.get_user_by_id(&user_id);
