@@ -452,12 +452,6 @@ mod tests {
             }
         }
 
-        #[ignore]
-        #[test]
-        fn verify_credits_debits_posted_pending_after_posting_void_transfer() {
-            todo!()
-        }
-
         #[test]
         fn should_not_post_pending_entry_for_a_pending_entry_in_excess() {
             let port = get_postgres_image_port();
