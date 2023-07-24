@@ -10,6 +10,7 @@ pub trait LedgerTransferDao {
     ///
     ///
     fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse>;
+    fn create_batch_transfers(&mut self, transfers: &Vec<Vec<Transfer>>) -> Vec<Vec<TransferCreationDbResponse>>;
     fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer>;
     fn get_transfers_for_account_for_interval();
 }
@@ -63,6 +64,30 @@ impl LedgerTransferDaoPostgresImpl {
 }
 
 impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
+    fn create_batch_transfers(&mut self, transfers: &Vec<Vec<Transfer>>) -> Vec<Vec<TransferCreationDbResponse>> {
+        if transfers.is_empty() {
+            return vec![];
+        }
+        let formatted_array = format!("select batch_process_linked_transfers(array[{}]::transfer[][])", transfers.iter().map(
+            |a| {
+                format!("[{}]", a.iter()
+                    .map(convert_transfer_to_postgres_composite_type_input_string)
+                    .collect::<Vec<String>>().join(","))
+            }
+        ).collect::<Vec<String>>().join(","));
+        let p = self.postgres_client.simple_query(&formatted_array).unwrap();
+        let k = match &p[0] {
+            SimpleQueryMessage::Row(r) => {
+                let k = r.get(0);
+                let des = serde_json::from_str::<Vec<Vec<TransferCreationDbResponse>>>(k.unwrap()).unwrap();
+                des
+            }
+            SimpleQueryMessage::CommandComplete(_) => { todo!() }
+            _ => { todo!() }
+        };
+        k
+    }
+
     fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse> {
         let query = convert_transfers_to_postgres_array(&transfers);
         // let mut t = self.postgres_client.transaction().unwrap();
@@ -94,6 +119,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
         // }
         k
     }
+
 
     fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer> {
         let query = LedgerTransferDaoPostgresImpl::get_transfer_by_id_query();
@@ -195,6 +221,100 @@ mod tests {
         transfers
     }
 
+    mod create_batch_transfer_tests {
+        use rstest::rstest;
+        use crate::ledger::ledger_models::Transfer;
+        use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
+        use crate::ledger::ledger_transfer_dao::tests::{create_two_accounts_for_transfer, generate_random_transfers};
+        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+
+        #[rstest]
+        #[trace]
+        fn should_be_able_to_post_multiple_linked_transfers(
+            #[values(0, 1, 2)]outer_arr_size: i32,
+            #[values(1, 2)]inner_arr_size: i32)
+        {
+            let port = get_postgres_image_port();
+            let postgres_client = create_postgres_client(port);
+            let accs = create_two_accounts_for_transfer();
+            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+            let transfer = generate_random_transfers(accs[0],
+                                                     accs[1],
+                                                     100,
+                                                     1,
+                                                     (outer_arr_size * inner_arr_size) as usize)
+                .chunks(inner_arr_size as usize).map(|a| a.to_vec()).collect::<Vec<Vec<Transfer>>>();
+            let resp = cl.create_batch_transfers(&transfer);
+            println!("{:?}", resp);
+            for x in resp {
+                for y in x {
+                    assert!(y.committed);
+                    assert!(y.reason.is_empty())
+                }
+            }
+        }
+
+        #[test]
+        fn should_fail_only_one_batch_due_to_error_and_not_others() {
+            let port = get_postgres_image_port();
+            let postgres_client = create_postgres_client(port);
+            let accs = create_two_accounts_for_transfer();
+            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+            let mut transfer = generate_random_transfers(accs[0],
+                                                         accs[1],
+                                                         100,
+                                                         1,
+                                                         2)
+                .chunks(2 as usize)
+                .map(|a| a.to_vec())
+                .collect::<Vec<Vec<Transfer>>>();
+            let transfers1 = generate_random_transfers(
+                -1,
+                -2,
+                100,
+                1,
+                2);
+            transfer.push(transfers1);
+            let p = cl.create_batch_transfers(&transfer);
+            println!("{:?}", p);
+            for gh in &p[0] {
+                assert!(gh.committed);
+                assert!(gh.reason.is_empty());
+                assert!(cl.get_transfers_by_id(gh.txn_id).is_some())
+            }
+            for gh in &p[1] {
+                assert!(!gh.committed);
+                assert!(!gh.reason.is_empty());
+                assert!(cl.get_transfers_by_id(gh.txn_id).is_none())
+            }
+        }
+
+        #[test]
+        #[should_panic]
+        fn should_panic_if_transfer_more_than_500() {
+            let port = get_postgres_image_port();
+            let postgres_client = create_postgres_client(port);
+            let accs = create_two_accounts_for_transfer();
+            let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
+            let mut transfer = generate_random_transfers(accs[0],
+                                                         accs[1],
+                                                         100,
+                                                         1,
+                                                         502)
+                .chunks(50 as usize)
+                .map(|a| a.to_vec())
+                .collect::<Vec<Vec<Transfer>>>();
+            let transfers1 = generate_random_transfers(
+                -1,
+                -2,
+                100,
+                1,
+                2);
+            transfer.push(transfers1);
+            let p = cl.create_batch_transfers(&transfer);
+            println!("{:?}", p);
+        }
+    }
 
     mod transfer_type_pending_tests {
         use rstest::rstest;

@@ -219,6 +219,28 @@ $$ language plpgsql;
 
 
 
-
-
+create or replace function batch_process_linked_transfers(txns transfer[][]) returns jsonb as
+$$
+DECLARE
+    txn_list       transfer[];
+    result_element jsonb='[]';
+    result         jsonb='[]';
+BEGIN
+    if cardinality(txns) > 500 then
+        RAISE EXCEPTION 'no of transfers in batch cannot be more than 500 but was %', cardinality(txns)
+            USING HINT = 'no of transfers in batch cannot be more than 500';
+    end if;
+    --should not be more than total of  500 elements for now
+    foreach txn_list slice 1 in array txns
+        loop
+            select create_linked_transfers(txn_list) into result_element;
+            raise notice 'aa %',result_element;
+            raise notice 'aae %',result;
+            select result || jsonb_build_array(result_element) into result;
+            raise notice 'aar %',result;
+        end loop;
+    return result;
+end;
+$$
+    language plpgsql;
 
