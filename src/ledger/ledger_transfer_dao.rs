@@ -7,8 +7,8 @@ use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse};
 use crate::ledger::ledger_models::TransferType::{Pending, PostPending, Regular, VoidPending};
 
 pub trait LedgerTransferDao {
-    fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse>;
-    fn create_batch_transfers(&mut self, transfers: &Vec<Vec<Transfer>>) -> Vec<Vec<TransferCreationDbResponse>>;
+    fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse>;
+    fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>>;
     fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer>;
     fn get_transfers_for_account_for_interval();
 }
@@ -27,13 +27,13 @@ impl TryFrom<&Row> for Transfer {
     type Error = ();
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
-        let k: i16 = row.get(11);
-        let transfer_type = match k {
+        let transfer_type_numeric_code: i16 = row.get(11);
+        let transfer_type = match transfer_type_numeric_code {
             1 => Regular,
             2 => Pending,
             3 => PostPending { pending_id: row.get(6) },
             4 => VoidPending { pending_id: row.get(6) },
-            _ => panic!("{} is not mapped to transferType enum", k)
+            _ => panic!("{} is not mapped to transferType enum", transfer_type_numeric_code)
         };
         Ok(Transfer {
             id: row.get(0),
@@ -62,7 +62,25 @@ impl LedgerTransferDaoPostgresImpl {
 }
 
 impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
-    fn create_batch_transfers(&mut self, transfers: &Vec<Vec<Transfer>>) -> Vec<Vec<TransferCreationDbResponse>> {
+    fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse> {
+        let query = convert_transfers_to_postgres_array(transfers);
+        // let mut t = self.postgres_client.transaction().unwrap();
+        let p = self.postgres_client.simple_query(&query);
+        let k = p.unwrap().iter().map(|a| {
+            match a {
+                SimpleQueryMessage::Row(aa) => {
+                    let k = aa.get(0);
+                    let p = serde_json::from_str::<Vec<TransferCreationDbResponse>>(k.unwrap()).unwrap();
+                    p
+                }
+                SimpleQueryMessage::CommandComplete(_) => { todo!() }
+                _ => { todo!() }
+            }
+        }).next().unwrap();
+        k
+    }
+
+    fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>> {
         if transfers.is_empty() {
             return vec![];
         }
@@ -83,38 +101,6 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
             SimpleQueryMessage::CommandComplete(_) => { todo!() }
             _ => { todo!() }
         };
-        k
-    }
-
-    fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse> {
-        let query = convert_transfers_to_postgres_array(&transfers);
-        // let mut t = self.postgres_client.transaction().unwrap();
-        let p = self.postgres_client.simple_query(&query);
-        let k = p.unwrap().iter().map(|a| {
-            match a {
-                SimpleQueryMessage::Row(aa) => {
-                    let k = aa.get(0);
-                    let p = serde_json::from_str::<Vec<TransferCreationDbResponse>>(k.unwrap()).unwrap();
-                    p
-                }
-                SimpleQueryMessage::CommandComplete(_) => { todo!() }
-                _ => { todo!() }
-            }
-        }).next().unwrap();
-        // if k.iter().any(|a| !a.committed) {
-        //     // t.rollback().unwrap();
-        //     return k.into_iter().map(|mut k| {
-        //         if k.committed {
-        //             k.committed = false;
-        //             k.reason = vec!["linked transfer failed".to_string()];
-        //         }
-        //         k
-        //     }).collect();
-        //     //todo the above processing can be done in plpgsql block too and i should try there
-        //     // since major backbone of ours will plpgsql
-        // } else {
-        //     // t.commit().unwrap();
-        // }
         k
     }
 
@@ -163,7 +149,7 @@ fn convert_transfer_to_postgres_composite_type_input_string(transfer: &Transfer)
     )
 }
 
-fn convert_transfers_to_postgres_array(transfers: &Vec<Transfer>) -> String {
+fn convert_transfers_to_postgres_array(transfers: &[Transfer]) -> String {
     format!("select create_linked_transfers(array[{}]::transfer[])", transfers
         .iter()
         .map(convert_transfer_to_postgres_composite_type_input_string)
