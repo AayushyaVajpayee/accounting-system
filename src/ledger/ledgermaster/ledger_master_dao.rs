@@ -12,10 +12,9 @@ pub trait LedgerMasterDao {
 
 
 pub fn get_ledger_master_dao(client: Client) -> Box<dyn LedgerMasterDao> {
-    let p = LedgerMasterPostgresDaoImpl {
+    Box::new(LedgerMasterPostgresDaoImpl {
         postgres_client: client
-    };
-    Box::new(p)
+    })
 }
 
 
@@ -102,13 +101,14 @@ mod tests {
     use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
-    fn test_create_and_insert() {
+    fn should_be_able_to_create_and_fetch_ledger_master() {
         let port = get_postgres_image_port();
         let postgres_client = create_postgres_client(port);
         let ledger_master = a_create_ledger_master_entry_request(
             Default::default());
         let mut ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
         let id = ledger_master_dao.create_ledger_master_entry(&ledger_master);
-        let _queried = ledger_master_dao.get_ledger_master_by_id(&id).unwrap();
+        let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(&id).unwrap();
+        assert_eq!(fetched_ledger_master.id, id);
     }
 }

@@ -76,19 +76,18 @@ create table user_account(
 );
 alter sequence if exists user_account_id_seq restart with 1000;
 create table transfer(
-id UUID primary key,--16
-tenant_id integer references tenant(id),--4
---may be a better name will be grouping id.
-caused_by_event_id UUID not null,--16
-grouping_id UUID not null,--16
-debit_account_id integer not null,--4
-credit_account_id integer not null,--4
-pending_id UUID,--16
-ledger_master_id integer,--4
-code smallint,--2
-amount bigint not null, --8
-remarks varchar(40),--41
+                         id                 UUID primary key,
+                         tenant_id          integer references tenant (id),
+                         caused_by_event_id UUID    not null,
+                         grouping_id        UUID    not null,
+                         debit_account_id   integer not null,
+                         credit_account_id  integer not null,
+                         pending_id         UUID,
+                         ledger_master_id   integer,
+                         code               smallint,
+                         amount             bigint  not null,
+                         remarks            varchar(40),
 --1 for regular, 2 for pending, 3 for post pending , 4 void pending
-transfer_type smallint,--2
-created_at bigint default extract(epoch from now())*1000000--8
+                         transfer_type      smallint,
+                         created_at         bigint default extract(epoch from now()) * 1000000
 );

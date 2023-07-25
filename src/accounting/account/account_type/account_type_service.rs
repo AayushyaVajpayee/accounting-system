@@ -128,7 +128,7 @@ mod tests {
             let mut adj_entry = adj.iter_mut().find(|l| l.id == curr.current_account_id);
             if adj_entry.is_some() {
                 curr.child_account_types.iter().for_each(|a| {
-                    let _k = adj_entry.as_deref_mut().unwrap().adj_links.insert(a.current_account_id);
+                    adj_entry.as_deref_mut().unwrap().adj_links.insert(a.current_account_id);
 
                 })
             } else {

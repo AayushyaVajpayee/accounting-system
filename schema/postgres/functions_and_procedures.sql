@@ -12,8 +12,8 @@ begin
         output_result['reason'] = output_result['reason'] ||
                                   concat('["no pending transfer found for pending_id:', trf.pending_id,
                                          '  and tenant_id:', trf.tenant_id, '"]')::jsonb;
-        -- convey message in the inout param that the pending id does not exist
-        return; -- should we return early or not
+
+        return;
     end if;
     select *
     from transfer
@@ -38,8 +38,6 @@ begin
                                   concat('["posting amount(', trf.amount, ') cannot be more than pending amount(',
                                          pending_trf.amount, ')"]')::jsonb;
         return;
-        -- entry amount to be posted or voided is greater than pending amount, cannot proceed.
-        -- entry amount to be checked only in case if its being posted otherwise not.
     end if;
 end;
 $$ language plpgsql;
@@ -63,7 +61,6 @@ BEGIN
             output_result['reason'] =
                         output_result['reason'] || concat('["no account for ', txn.debit_account_id, '"]')::jsonb;
         end if;
-        raise notice 'my jsonb value is %',output_result;
     end if;
     if credit_acc.ledger_master_id != txn.ledger_master_id or debit_acc.ledger_master_id != txn.ledger_master_id then
         output_result['committed'] = 'false';
@@ -124,8 +121,6 @@ $$
 DECLARE
     credit_acc_row   user_account;
     debit_acc_row    user_account;
---			output_result JSONB='{"txn_id":"","committed":true,"reason":[]}';
---			validation_result jsonb='{"txn_id":"","committed":true,"reason":[]}';
     declare t        timestamptz := clock_timestamp();
     existing_entry   transfer.id%type;
     pending_transfer transfer;
@@ -148,7 +143,6 @@ BEGIN
     select * from user_account where id = txn.debit_account_id and tenant_id = txn.tenant_id into debit_acc_row;
     call validate_transfer(debit_acc_row, credit_acc_row, txn, pending_transfer, result);
     if (result -> 'committed')::boolean = false then
-        raise notice 'early return called';
         return;
     end if;
     INSERT INTO transfer(id, tenant_id, caused_by_event_id, grouping_id, debit_account_id, credit_account_id,
@@ -156,19 +150,13 @@ BEGIN
     VALUES (txn.id, txn.tenant_id, txn.caused_by_event_id, txn.grouping_id, txn.debit_account_id, txn.credit_account_id,
             txn.pending_id, txn.ledger_master_id, txn.code, txn.amount, txn.remarks, txn.transfer_type, txn.created_at);
     call update_accounts_balance_for_transfer(txn, pending_transfer, credit_acc_row, debit_acc_row);
--- 	  commit;
     raise notice 'time spent=%', clock_timestamp() - t;
--- 	  return 0;
 end;
 $$ language plpgsql;
 
 
---what should be the response
---it should be a jsonb list with each txn unique id and correspondingly if that was committed or not and
---then a reason for not getting committed
 create or replace function create_linked_transfers(txns transfer[]) returns jsonb as
 $$
---should not execute for more than 5000 elements. ensure this by adding a validation
 DECLARE
     failed         boolean= false;
     result_arr     jsonb='[]';
@@ -194,10 +182,7 @@ BEGIN
                         hint = 'check reason incase of validation failure. for error pg logs may help';
                 end if;
                 select result_arr || result_element into result_arr;
-                --verify this line
-                --append the result into jsonb array
             end loop;
---     return result_arr;
     exception
         when others then
             result_arr = '[]';
@@ -230,14 +215,10 @@ BEGIN
         RAISE EXCEPTION 'no of transfers in batch cannot be more than 500 but was %', cardinality(txns)
             USING HINT = 'no of transfers in batch cannot be more than 500';
     end if;
-    --should not be more than total of  500 elements for now
     foreach txn_list slice 1 in array txns
         loop
             select create_linked_transfers(txn_list) into result_element;
-            raise notice 'aa %',result_element;
-            raise notice 'aae %',result;
             select result || jsonb_build_array(result_element) into result;
-            raise notice 'aar %',result;
         end loop;
     return result;
 end;

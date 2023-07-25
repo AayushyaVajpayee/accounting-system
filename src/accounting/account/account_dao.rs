@@ -126,6 +126,7 @@ mod account_tests {
         });
         let mut account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client };
         let account_id = account_dao.create_account(&an_account_request);
-        let _account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
+        let account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
+        assert_eq!(account_fetched.id, account_id)
     }
 }

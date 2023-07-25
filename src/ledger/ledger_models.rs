@@ -20,8 +20,6 @@ pub enum TransferType {
     VoidPending { pending_id: Uuid },//accounts, ledger_id,amount don't make much sense here. I need to wrtie test if i include them otherwise i dont
 }
 
-//todo create a validation function for transfer
-//todo it should validate that correct parameters are set and incorrect combination of parameters cannot be set
 #[derive(Debug, Clone)]
 pub struct Transfer {
     pub id: Uuid,

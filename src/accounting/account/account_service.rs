@@ -25,6 +25,5 @@ impl AccountService for AccountServiceImpl {
 
 #[cfg(test)]
 pub fn get_account_service_for_test(client: Client) -> Box<dyn AccountService> {
-    let k = get_account_dao(client);
-    Box::new(AccountServiceImpl { account_dao: k })
+    Box::new(AccountServiceImpl { account_dao: get_account_dao(client) })
 }

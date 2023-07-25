@@ -25,8 +25,7 @@ impl LedgerMasterService for LedgerMasterServiceImpl {
 #[cfg(test)]
 pub fn get_ledger_master_service_for_test(postgres_client: Client) -> Box<dyn LedgerMasterService> {
     let ledger_master_dao = get_ledger_master_dao(postgres_client);
-    let lms = LedgerMasterServiceImpl {
+    Box::new(LedgerMasterServiceImpl {
         ledger_master_dao
-    };
-    Box::new(lms)
+    })
 }

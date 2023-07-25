@@ -99,7 +99,7 @@ mod tests {
     use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
-    fn test_users() {
+    fn should_be_able_to_create_and_fetch_users() {
         let port = get_postgres_image_port();
         let user = a_create_user_request(
             CreateUserRequestTestBuilder {
@@ -110,7 +110,7 @@ mod tests {
         let postgres_client = create_postgres_client(port);
         let mut user_dao = UserDaoPostgresImpl { postgres_client };
         let user_id = user_dao.create_user(&user);
-        let user = user_dao.get_user_by_id(&user_id);
-        println!("{:?}", user);
+        let user = user_dao.get_user_by_id(&user_id).unwrap();
+        assert_eq!(user.id, user_id);
     }
 }

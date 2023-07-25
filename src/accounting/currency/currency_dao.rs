@@ -90,7 +90,7 @@ mod tests {
     use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
-    fn test_prep() {
+    fn should_be_able_to_create_and_fetch_currency() {
         let port = get_postgres_image_port();
         let postgres_client = create_postgres_client(port);
         let currency_master = a_create_currency_master_request(
@@ -100,8 +100,8 @@ mod tests {
             }
         );
         let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client };
-        currency_dao.create_currency_entry(&currency_master);
-        let got_c = currency_dao.get_currency_entry_by_id(&1).unwrap();
-        println!("{:?}", got_c)
+        let curr_id = currency_dao.create_currency_entry(&currency_master);
+        let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).unwrap();
+        assert_eq!(curr_id, fetched_curr.id)
     }
 }

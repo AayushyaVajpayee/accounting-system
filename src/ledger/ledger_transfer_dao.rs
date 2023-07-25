@@ -7,8 +7,6 @@ use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse};
 use crate::ledger::ledger_models::TransferType::{Pending, PostPending, Regular, VoidPending};
 
 pub trait LedgerTransferDao {
-    ///
-    ///
     fn create_transfers(&mut self, transfers: &Vec<Transfer>) -> Vec<TransferCreationDbResponse>;
     fn create_batch_transfers(&mut self, transfers: &Vec<Vec<Transfer>>) -> Vec<Vec<TransferCreationDbResponse>>;
     fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer>;
