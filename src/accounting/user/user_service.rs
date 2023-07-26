@@ -9,6 +9,7 @@ pub trait UserService {
     fn create_user(&mut self, user: &CreateUserRequest) -> i32;
 }
 
+#[allow(dead_code)]
 pub fn get_user_service() -> Box<dyn UserService> {
     let pclient = create_postgres_client();
     let user_dao = get_user_dao(pclient);
@@ -18,6 +19,7 @@ pub fn get_user_service() -> Box<dyn UserService> {
     Box::new(user_service)
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn get_user_service_for_test(postgres_client: Client) -> Box<dyn UserService> {
     let user_dao = get_user_dao(postgres_client);

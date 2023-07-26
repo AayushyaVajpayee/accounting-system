@@ -18,10 +18,11 @@ impl TenantService for TenantServiceImpl{
     }
 
     fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32 {
-        self.tenant_dao.create_tenant(&tenant)
+        self.tenant_dao.create_tenant(tenant)
     }
 }
 
+#[allow(dead_code)]
 pub fn get_tenant_service()-> Box<dyn TenantService> {
     let pclient=create_postgres_client();
     let tenant_d=get_tenant_dao(pclient);
@@ -30,6 +31,7 @@ pub fn get_tenant_service()-> Box<dyn TenantService> {
 
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn get_tenant_service_for_test(postgres_client:Client) -> Box<dyn TenantService>{
     let tenant_d=get_tenant_dao(postgres_client);

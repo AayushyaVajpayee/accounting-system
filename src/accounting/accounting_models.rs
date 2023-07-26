@@ -1,12 +1,6 @@
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-struct AuditMetadataBase{
-    created_by:String,
-    updated_by:String,
-    created_at:i64,
-    updated_at:i64
-}
-
-
+#[allow(dead_code)]
 struct LedgerMaster{
     id:i32,
     tenant_id:i32,
@@ -17,6 +11,7 @@ struct LedgerMaster{
     audit_metadata:AuditMetadataBase
 }
 
+#[allow(dead_code)]
 struct AccountTypeMaster{
     id:i16,
     tenant_id:i32,
@@ -27,13 +22,14 @@ struct AccountTypeMaster{
 }
 
 
-
+#[allow(dead_code)]
 struct User{
     id:i64,
     tenant_id:i32,
     audit_metadata:AuditMetadataBase
 }
 
+#[allow(dead_code)]
 struct UserAccount{
     id:i128,
     account_type_id:i16,

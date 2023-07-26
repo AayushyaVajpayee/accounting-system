@@ -85,39 +85,14 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
-    use postgres::{Client, NoTls};
-    use testcontainers::clients;
-    use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
-
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
-    use crate::seeddata::seed_service::copy_tables;
-
-    fn create_postgres_client(port: u16) -> Client {
-        let con_str =
-            format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-        let client = Client::
-        connect(&con_str, NoTls)
-            .unwrap();
-        client
-    }
-
+    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
-    fn test_prep() {
-        let test_container_client = clients::Cli::default();
-        let image = "postgres";
-        let image_tag = "latest";
-        let generic_postgres = GenericImage::new(image, image_tag)
-            .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
-            .with_env_var("POSTGRES_DB", "postgres")
-            .with_env_var("POSTGRES_USER", "postgres")
-            .with_env_var("POSTGRES_PASSWORD", "postgres");
-        let node = test_container_client.run(generic_postgres);
-        let port = node.get_host_port_ipv4(5432);
-        let mut postgres_client = create_postgres_client(port);
-        copy_tables(port);
+    fn should_be_able_to_create_and_fetch_currency() {
+        let port = get_postgres_image_port();
+        let postgres_client = create_postgres_client(port);
         let currency_master = a_create_currency_master_request(
             CreateCurrencyMasterRequestTestBuilder {
                 tenant_id: Some(1),
@@ -125,8 +100,8 @@ mod tests {
             }
         );
         let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client };
-        currency_dao.create_currency_entry(&currency_master);
-        let got_c = currency_dao.get_currency_entry_by_id(&1);
-        println!("{:?}", got_c)
+        let curr_id = currency_dao.create_currency_entry(&currency_master);
+        let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).unwrap();
+        assert_eq!(curr_id, fetched_curr.id)
     }
 }

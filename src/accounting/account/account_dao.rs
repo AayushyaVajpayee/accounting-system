@@ -20,17 +20,18 @@ pub trait AccountDao {
 pub struct AccountDaoPostgresImpl {
     postgres_client: Client,
 }
-impl TryFrom<&Row> for Account{
+
+impl TryFrom<&Row> for Account {
     type Error = ();
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(
-            Account{
+            Account {
                 id: row.get(0),
                 tenant_id: row.get(1),
                 display_code: row.get(2),
                 account_type_id: row.get(3),
-                user_id:row.get(4),
+                user_id: row.get(4),
                 ledger_master_id: row.get(5),
                 debits_posted: row.get(6),
                 debits_pending: row.get(7),
@@ -45,6 +46,12 @@ impl TryFrom<&Row> for Account{
             }
         )
     }
+}
+
+pub fn get_account_dao(client: Client) -> Box<dyn AccountDao> {
+    Box::new(AccountDaoPostgresImpl {
+        postgres_client: client
+    })
 }
 
 impl AccountDaoPostgresImpl {
@@ -72,7 +79,7 @@ impl AccountDao for AccountDaoPostgresImpl {
         k.iter()
             .map(|row|
                 row.try_into().unwrap()
-               ).next()
+            ).next()
     }
 
     fn create_account(&mut self, request: &CreateAccountRequest) -> i32 {
@@ -102,38 +109,14 @@ impl AccountDao for AccountDaoPostgresImpl {
 
 #[cfg(test)]
 mod account_tests {
-    use postgres::{Client, NoTls};
-    use testcontainers::clients;
-    use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
-
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
-    use crate::seeddata::seed_service::copy_tables;
-
-    fn create_postgres_client(port: u16) -> Client {
-        let con_str =
-            format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-        let client = Client::
-        connect(&con_str, NoTls)
-            .unwrap();
-        client
-    }
+    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
 
     #[test]
     fn test_account() {
-        let test_container_client = clients::Cli::default();
-        let image = "postgres";
-        let image_tag = "latest";
-        let generic_postgres = GenericImage::new(image, image_tag)
-            .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
-            .with_env_var("POSTGRES_DB", "postgres")
-            .with_env_var("POSTGRES_USER", "postgres")
-            .with_env_var("POSTGRES_PASSWORD", "postgres");
-        let node = test_container_client.run(generic_postgres);
-        let port = node.get_host_port_ipv4(5432);
-        let mut postgres_client = create_postgres_client(port);
-        copy_tables(port);
+        let port = get_postgres_image_port();
+        let postgres_client = create_postgres_client(port);
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
             tenant_id: Some(1),
             ledger_master_id: Some(1),
@@ -144,5 +127,6 @@ mod account_tests {
         let mut account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client };
         let account_id = account_dao.create_account(&an_account_request);
         let account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
+        assert_eq!(account_fetched.id, account_id)
     }
 }

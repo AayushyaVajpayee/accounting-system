@@ -3,7 +3,7 @@ use std::io::Write;
 
 use postgres::{Client, NoTls};
 
-use crate::seeddata::constants::{SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
+use crate::seeddata::constants::{FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH, SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
 
 pub fn get_seed_filenames_ordered() -> Vec<String> {
     let path = format!("{}{}", SEED_FILES_LOCATION, SEED_FILES);
@@ -33,42 +33,52 @@ fn validate_seed_file_names(names: &Vec<String>) -> Result<(), Vec<String>> {
     }
 }
 
-fn read_csv(name: &str) -> String {
+#[allow(dead_code)]
+fn read_csv(_name: &str) -> String {
     // let k = BinaryCopyInWriter::new(/* postgres::CopyInWriter<'_> */, /* &[postgres::types::Type] */);
     todo!()
 }
+
+#[allow(dead_code)]
 fn create_postgres_client(port: u16) -> Client {
     let con_str =
         format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-    let mut client = Client::
+    let client = Client::
     connect(&con_str, NoTls)
         .unwrap();
     client
 }
+
 fn create_schema(client: &mut Client) {
     let fi = std::fs::read_to_string(SCHEMA_CREATION_SCRIPT_PATH).unwrap();
     client.simple_query(&fi).unwrap();
 }
+
+fn create_functions_and_procedures(client: &mut Client) {
+    let fi = std::fs::read_to_string(FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH).unwrap();
+    client.simple_query(&fi).unwrap();
+}
+
 pub fn copy_tables(port: u16) {
-    let filenames = get_seed_filenames_ordered();
-    validate_seed_file_names(&filenames).unwrap();
+    let file_names = get_seed_filenames_ordered();
+    validate_seed_file_names(&file_names).unwrap();
     let mut client = create_postgres_client(port);
     create_schema(&mut client);
+    create_functions_and_procedures(&mut client);
     let mut txn = client.transaction().unwrap();
-    let tablenames = filenames
+    let table_names = file_names
         .iter()
         .map(|f| f.split(".")
             .next()
             .unwrap().to_string()
         ).collect::<Vec<String>>();
-    tablenames.iter().for_each(|t| {
+    table_names.iter().for_each(|t| {
         let file_path = format!("{SEED_FILES_LOCATION}{t}.csv");
         let content = std::fs::read_to_string(file_path).unwrap();
         let query = format!("copy {t} from stdin with csv header");
-        let mut k = txn.copy_in(&query).unwrap();
-        k.write_all(content.as_ref()).unwrap();
-        let rows_written = k.finish().unwrap();
-        println!("rows written {rows_written}");
+        let mut copy_in_writer = txn.copy_in(&query).unwrap();
+        copy_in_writer.write_all(content.as_ref()).unwrap();
+        let _rows_written = copy_in_writer.finish().unwrap();
     });
     txn.commit().unwrap();
 }
@@ -76,32 +86,19 @@ pub fn copy_tables(port: u16) {
 
 #[cfg(test)]
 mod tests {
-    use testcontainers::clients;
-    use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
-
-    use crate::seeddata::seed_service::{copy_tables, get_seed_filenames_ordered, validate_seed_file_names};
+    use crate::seeddata::seed_service::{get_seed_filenames_ordered, validate_seed_file_names};
 
     #[test]
     fn test_k() {
-        let mut k = get_seed_filenames_ordered();
+        let k = get_seed_filenames_ordered();
         println!("{:?}", k);
         let kk = validate_seed_file_names(&k);
         println!("{:?}", kk);
     }
 
-    #[test]
-    fn test_2() {
-        let test_container_client = clients::Cli::default();
-        let image = "postgres";
-        let image_tag = "latest";
-        let generic_postgres = GenericImage::new(image, image_tag)
-            .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
-            .with_env_var("POSTGRES_DB", "postgres")
-            .with_env_var("POSTGRES_USER", "postgres")
-            .with_env_var("POSTGRES_PASSWORD", "postgres");
-        let node = test_container_client.run(generic_postgres);
-        let port = node.get_host_port_ipv4(5432);
-        copy_tables(port)
-    }
+    // #[test]
+    // fn test_2() {
+    //     let port =get_postgres_image_port();
+    //     copy_tables(port)
+    // }
 }

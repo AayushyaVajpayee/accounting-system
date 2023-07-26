@@ -1,4 +1,4 @@
-mod account_models;
-mod account_service;
+pub(crate) mod account_models;
+pub(crate) mod account_service;
 mod account_dao;
 mod account_type;
