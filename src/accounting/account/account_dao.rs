@@ -1,6 +1,8 @@
 use std::sync::OnceLock;
+use async_trait::async_trait;
+use deadpool_postgres::Pool;
+use tokio_postgres::Row;
 
-use postgres::{Client, Row};
 
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -12,13 +14,14 @@ const ACCOUNT_TABLE_NAME: &str = "user_account";
 static ACCOUNT_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static ACCOUNT_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
+#[async_trait]
 pub trait AccountDao {
-    fn get_account_by_id(&mut self, id: &i32) -> Option<Account>;
-    fn create_account(&mut self, request: &CreateAccountRequest) -> i32;
+    async fn get_account_by_id(&self, id: &i32) -> Option<Account>;
+    async fn create_account(&self, request: &CreateAccountRequest) -> i32;
 }
 
 pub struct AccountDaoPostgresImpl {
-    postgres_client: Client,
+    postgres_client: &'static Pool,
 }
 
 impl TryFrom<&Row> for Account {
@@ -48,7 +51,7 @@ impl TryFrom<&Row> for Account {
     }
 }
 
-pub fn get_account_dao(client: Client) -> Box<dyn AccountDao> {
+pub fn get_account_dao(client: &'static Pool) -> Box<dyn AccountDao + Send + Sync> {
     Box::new(AccountDaoPostgresImpl {
         postgres_client: client
     })
@@ -69,22 +72,23 @@ impl AccountDaoPostgresImpl {
     }
 }
 
+#[async_trait]
 impl AccountDao for AccountDaoPostgresImpl {
-    fn get_account_by_id(&mut self, id: &i32) -> Option<Account> {
+    async fn get_account_by_id(&self, id: &i32) -> Option<Account> {
         let query = AccountDaoPostgresImpl::get_account_by_id_query();
-        let k = self.postgres_client.query(
+        let k = self.postgres_client.get().await.unwrap().query(
             query,
             &[id],
-        ).unwrap();
+        ).await.unwrap();
         k.iter()
             .map(|row|
                 row.try_into().unwrap()
             ).next()
     }
 
-    fn create_account(&mut self, request: &CreateAccountRequest) -> i32 {
+    async fn create_account(&self, request: &CreateAccountRequest) -> i32 {
         let query = AccountDaoPostgresImpl::get_insert_statement();
-        self.postgres_client.query(
+        self.postgres_client.get().await.unwrap().query(
             query,
             &[
                 &request.tenant_id,
@@ -98,7 +102,8 @@ impl AccountDao for AccountDaoPostgresImpl {
                 &request.audit_metadata.created_at,
                 &request.audit_metadata.updated_at
             ],
-        ).unwrap()
+        ).await
+            .unwrap()
             .iter()
             .map(|row| row.get(0))
             .next()
@@ -111,12 +116,12 @@ impl AccountDao for AccountDaoPostgresImpl {
 mod account_tests {
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
-    #[test]
-    fn test_account() {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
+    #[tokio::test]
+    async fn test_account() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
             tenant_id: Some(1),
             ledger_master_id: Some(1),
@@ -124,9 +129,9 @@ mod account_tests {
             user_id: Some(1),
             ..Default::default()
         });
-        let mut account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client };
-        let account_id = account_dao.create_account(&an_account_request);
-        let account_fetched = account_dao.get_account_by_id(&account_id).unwrap();
+        let mut account_dao = AccountDaoPostgresImpl { postgres_client };
+        let account_id = account_dao.create_account(&an_account_request).await;
+        let account_fetched = account_dao.get_account_by_id(&account_id).await.unwrap();
         assert_eq!(account_fetched.id, account_id)
     }
 }

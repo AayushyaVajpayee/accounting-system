@@ -30,8 +30,8 @@ pub struct AccountTypeHierarchy {
 
 impl AccountTypeService {
     #[allow(dead_code)]
-    pub fn get_account_type_hierarchy(&mut self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
-        let all_accounts = self.account_type_dao.get_all_account_types_for_tenant_id(&tenant_id);
+    pub async fn get_account_type_hierarchy(&mut self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
+        let all_accounts = self.account_type_dao.get_all_account_types_for_tenant_id(&tenant_id).await;
         AccountTypeService::create_hierarchy(&all_accounts)
     }
 

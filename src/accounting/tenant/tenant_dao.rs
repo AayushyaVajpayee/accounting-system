@@ -1,6 +1,7 @@
 use std::sync::OnceLock;
-
-use postgres::{Client, Row};
+use async_trait::async_trait;
+use deadpool_postgres::Pool;
+use tokio_postgres::Row;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::tenant::tenant_models::{CreateTenantRequest, Tenant};
@@ -10,14 +11,15 @@ const TABLE_NAME: &str = "tenant";
 static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
+#[async_trait]
 pub trait TenantDao {
-    fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant>;
-    fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32;
-    fn update_tenant(&mut self, tenant: &CreateTenantRequest) -> i64;
-    fn delete_tenant(&mut self, tenant_id: &str) -> i64;
+    async fn get_tenant_by_id(&self, id: &i32) -> Option<Tenant>;
+    async fn create_tenant(&self, tenant: &CreateTenantRequest) -> i32;
+    async fn update_tenant(&self, tenant: &CreateTenantRequest) -> i64;
+    async fn delete_tenant(&self, tenant_id: &str) -> i64;
 }
 
-pub fn get_tenant_dao(client: Client) -> Box<dyn TenantDao> {
+pub fn get_tenant_dao(client: &'static Pool) -> Box<dyn TenantDao + Send + Sync> {
     let td = TenantDaoImpl {
         postgres_client: client
     };
@@ -25,7 +27,7 @@ pub fn get_tenant_dao(client: Client) -> Box<dyn TenantDao> {
 }
 
 struct TenantDaoImpl {
-    postgres_client: Client,
+    postgres_client: &'static Pool,
 }
 
 impl TryFrom<&Row> for Tenant {
@@ -60,22 +62,24 @@ impl TenantDaoImpl {
     }
 }
 
+#[async_trait]
 impl TenantDao for TenantDaoImpl {
-    fn get_tenant_by_id(&mut self, id: &i32) -> Option<Tenant> {
+    async fn get_tenant_by_id(&self, id: &i32) -> Option<Tenant> {
         let query = TenantDaoImpl::get_tenant_by_id_query();
-        let k = self.postgres_client
+
+        let k = self.postgres_client.get().await.unwrap()
             .query(query
                    , &[id])
-            .unwrap();
+            .await.unwrap();
 
         k.iter().map(|row|
             row.try_into().unwrap()
         ).next()
     }
 
-    fn create_tenant(&mut self, tenant: &CreateTenantRequest) -> i32 {
+    async fn create_tenant(&self, tenant: &CreateTenantRequest) -> i32 {
         let query = TenantDaoImpl::create_insert_statement();
-        self.postgres_client.query(
+        self.postgres_client.get().await.unwrap().query(
             query, &[
                 &tenant.display_name,
                 &tenant.audit_metadata.created_by,
@@ -83,14 +87,14 @@ impl TenantDao for TenantDaoImpl {
                 &tenant.audit_metadata.created_at,
                 &tenant.audit_metadata.updated_at
             ],
-        ).unwrap().iter().map(|row| row.get(0)).next().unwrap()
+        ).await.unwrap().iter().map(|row| row.get(0)).next().unwrap()
     }
 
-    fn update_tenant(&mut self, _tenant: &CreateTenantRequest) -> i64 {
+    async fn update_tenant(&self, _tenant: &CreateTenantRequest) -> i64 {
         todo!()
     }
 
-    fn delete_tenant(&mut self, _tenant_id: &str) -> i64 {
+    async fn delete_tenant(&self, _tenant_id: &str) -> i64 {
         todo!()
     }
 }
@@ -100,17 +104,17 @@ impl TenantDao for TenantDaoImpl {
 mod tests {
     use crate::accounting::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
     use crate::accounting::tenant::tenant_models::a_create_tenant_request;
-    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
-    #[test]
-    fn should_be_able_to_create_and_fetch_tenant() {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
+    #[tokio::test]
+    async fn should_be_able_to_create_and_fetch_tenant() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
         let t1 = a_create_tenant_request(Default::default());
         let mut tenant_dao = TenantDaoImpl { postgres_client };
-        tenant_dao.create_tenant(&t1);
-        let created_tenant_id = tenant_dao.create_tenant(&t1);
-        let fetched_tenant = tenant_dao.get_tenant_by_id(&created_tenant_id).unwrap();
+        tenant_dao.create_tenant(&t1).await;
+        let created_tenant_id = tenant_dao.create_tenant(&t1).await;
+        let fetched_tenant = tenant_dao.get_tenant_by_id(&created_tenant_id).await.unwrap();
         assert_eq!(created_tenant_id, fetched_tenant.id)
     }
 }
