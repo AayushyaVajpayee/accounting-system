@@ -1,20 +1,23 @@
 use std::sync::OnceLock;
+use async_trait::async_trait;
+use deadpool_postgres::Pool;
+use tokio_postgres::{Row, SimpleQueryMessage};
 
-use postgres::{Client, Row, SimpleQueryMessage};
 use uuid::Uuid;
 
 use crate::ledger::ledger_models::{Transfer, TransferCreationDbResponse};
 use crate::ledger::ledger_models::TransferType::{Pending, PostPending, Regular, VoidPending};
 
+#[async_trait]
 pub trait LedgerTransferDao {
-    fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse>;
-    fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>>;
-    fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer>;
-    fn get_transfers_for_account_for_interval();
+    async fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse>;
+    async fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>>;
+    async fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer>;
+    async fn get_transfers_for_account_for_interval();
 }
 
 pub struct LedgerTransferDaoPostgresImpl {
-    postgres_client: Client,
+    postgres_client: &'static Pool,
 }
 
 const LEDGER_TRANSFER_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,caused_by_event_id,grouping_id,\
@@ -61,10 +64,12 @@ impl LedgerTransferDaoPostgresImpl {
     }
 }
 
+#[async_trait]
 impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
-    fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse> {
+    async fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse> {
         let query = convert_transfers_to_postgres_array(transfers);
-        let query_results = self.postgres_client.simple_query(&query);
+        let conn = self.postgres_client.get().await.unwrap();
+        let query_results = conn.simple_query(&query).await;
         let query_results = query_results;
         let query_results = &query_results.unwrap()[1];
         let transfers_db_response =
@@ -79,7 +84,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
         transfers_db_response
     }
 
-    fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>> {
+    async fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>> {
         if transfers.is_empty() {
             return vec![];
         }
@@ -92,7 +97,8 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
                     .collect::<Vec<String>>().join(","))
             }
         ).collect::<Vec<String>>().join(","));
-        let query_results = &self.postgres_client.simple_query(&formatted_array).unwrap()[1];
+        let conn = &self.postgres_client.get().await.unwrap();
+        let query_results = &conn.simple_query(&formatted_array).await.unwrap()[1];
         let batch_transfers_response = match query_results {
             SimpleQueryMessage::Row(r) => {
                 serde_json::from_str::<Vec<Vec<TransferCreationDbResponse>>>(r.get(0).unwrap()).unwrap()
@@ -104,18 +110,19 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
     }
 
 
-    fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer> {
+    async fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer> {
         let query = LedgerTransferDaoPostgresImpl::get_transfer_by_id_query();
-        let k = self.postgres_client.query(
+        let conn = self.postgres_client.get().await.unwrap();
+        let k = conn.query(
             query,
             &[&id],
-        ).unwrap();
+        ).await.unwrap();
         k.iter().map(|row|
             row.try_into().unwrap()
         ).next()
     }
 
-    fn get_transfers_for_account_for_interval() {
+    async fn get_transfers_for_account_for_interval() {
         todo!()
     }
 }
@@ -171,14 +178,14 @@ mod tests {
     use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
     use crate::ledger::ledgermaster::ledger_master_models::{a_create_ledger_master_entry_request, CreateLedgerMasterEntryRequestTestBuilder};
     use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service_for_test;
-    use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     /// need this so that every test case can act on different set of accounts and we can
     /// verify before-after account balance of transfers.
     /// returns account ids created
-    fn create_two_accounts_for_transfer() -> Vec<i32> {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
+    async fn create_two_accounts_for_transfer() -> Vec<i32> {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
         let mut account_service = get_account_service_for_test(postgres_client);
         let a1 = a_create_account_request(CreateAccountRequestTestBuilder {
             ..Default::default()
@@ -186,8 +193,8 @@ mod tests {
         let a2 = a_create_account_request(CreateAccountRequestTestBuilder {
             ..Default::default()
         });
-        let a1_id = account_service.create_account(&a1);
-        let a2_id = account_service.create_account(&a2);
+        let a1_id = account_service.create_account(&a1).await;
+        let a2_id = account_service.create_account(&a2).await;
         vec![a1_id, a2_id]
     }
 
@@ -211,17 +218,17 @@ mod tests {
         use crate::ledger::ledger_models::Transfer;
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::{create_two_accounts_for_transfer, generate_random_transfers};
-        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+        use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
         #[rstest]
         #[trace]
-        fn should_be_able_to_post_multiple_linked_transfers(
+        async fn should_be_able_to_post_multiple_linked_transfers(
             #[values(0, 1, 2)]outer_arr_size: i32,
             #[values(1, 2)]inner_arr_size: i32)
         {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
             let mut ledger_transfer_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let transfer = generate_random_transfers(accs[0],
                                                      accs[1],
@@ -229,7 +236,7 @@ mod tests {
                                                      1,
                                                      (outer_arr_size * inner_arr_size) as usize)
                 .chunks(inner_arr_size as usize).map(|a| a.to_vec()).collect::<Vec<Vec<Transfer>>>();
-            let batch_transfer_responses = ledger_transfer_dao.create_batch_transfers(&transfer);
+            let batch_transfer_responses = ledger_transfer_dao.create_batch_transfers(&transfer).await;
             println!("{:?}", batch_transfer_responses);
             for batch in batch_transfer_responses {
                 for trf_resp in batch {
@@ -239,11 +246,11 @@ mod tests {
             }
         }
 
-        #[test]
-        fn should_fail_only_one_batch_due_to_error_and_not_others() {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
+        #[tokio::test]
+        async fn should_fail_only_one_batch_due_to_error_and_not_others() {
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
             let mut ledger_transfer_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let mut a_trf = generate_random_transfers(accs[0],
                                                       accs[1],
@@ -260,26 +267,26 @@ mod tests {
                 1,
                 2);
             a_trf.push(sample_trfs);
-            let batch_trfs_resp = ledger_transfer_dao.create_batch_transfers(&a_trf);
+            let batch_trfs_resp = ledger_transfer_dao.create_batch_transfers(&a_trf).await;
             println!("{:?}", batch_trfs_resp);
             for trf_resp in &batch_trfs_resp[0] {
                 assert!(trf_resp.committed);
                 assert!(trf_resp.reason.is_empty());
-                assert!(ledger_transfer_dao.get_transfers_by_id(trf_resp.txn_id).is_some())
+                assert!(ledger_transfer_dao.get_transfers_by_id(trf_resp.txn_id).await.is_some())
             }
             for trf_resp in &batch_trfs_resp[1] {
                 assert!(!trf_resp.committed);
                 assert!(!trf_resp.reason.is_empty());
-                assert!(ledger_transfer_dao.get_transfers_by_id(trf_resp.txn_id).is_none())
+                assert!(ledger_transfer_dao.get_transfers_by_id(trf_resp.txn_id).await.is_none())
             }
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic]
-        fn should_panic_if_transfer_more_than_500() {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
+        async fn should_panic_if_transfer_more_than_500() {
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
             let mut ledger_transfer_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let mut a_trf = generate_random_transfers(accs[0],
                                                       accs[1],
@@ -296,7 +303,7 @@ mod tests {
                 1,
                 2);
             a_trf.push(sample_trfs);
-            let batch_trf_resps = ledger_transfer_dao.create_batch_transfers(&a_trf);
+            let batch_trf_resps = ledger_transfer_dao.create_batch_transfers(&a_trf).await;
             println!("{:?}", batch_trf_resps);
         }
     }
@@ -308,29 +315,29 @@ mod tests {
         use crate::ledger::ledger_models::TransferType::{Pending, Regular};
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::create_two_accounts_for_transfer;
-        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+        use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
         #[rstest]
         #[case::regular_entry(Some(Regular))]
         #[case::pending_entry(Some(Pending))]
-        fn test_posting_a_pending_entry(#[case] entry_type: Option<TransferType>) {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
+        async fn test_posting_a_pending_entry(#[case] entry_type: Option<TransferType>) {
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
             let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
-            let accs = create_two_accounts_for_transfer();
-            let mut acc_ser = get_account_service_for_test(create_postgres_client(port));
-            let acc1 = acc_ser.get_account_by_id(&accs[0]).unwrap();
-            let acc2 = acc_ser.get_account_by_id(&accs[1]).unwrap();
+            let accs = create_two_accounts_for_transfer().await;
+            let mut acc_ser = get_account_service_for_test(get_postgres_conn_pool(port).await);
+            let acc1 = acc_ser.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2 = acc_ser.get_account_by_id(&accs[1]).await.unwrap();
             let a_trf = a_transfer(TransferBuilder {
                 transfer_type: entry_type.clone(),
                 debit_account_id: Some(accs[0]),
                 credit_account_id: Some(accs[1]),
                 ..Default::default()
             });
-            let trfs_resp = led_trf_dao.create_transfers(&vec![a_trf.clone()]);
-            let fetched_trfs = led_trf_dao.get_transfers_by_id(a_trf.id).unwrap();
-            let acc_1_after = acc_ser.get_account_by_id(&accs[0]).unwrap();
-            let acc_2_after = acc_ser.get_account_by_id(&accs[1]).unwrap();
+            let trfs_resp = led_trf_dao.create_transfers(&vec![a_trf.clone()]).await;
+            let fetched_trfs = led_trf_dao.get_transfers_by_id(a_trf.id).await.unwrap();
+            let acc_1_after = acc_ser.get_account_by_id(&accs[0]).await.unwrap();
+            let acc_2_after = acc_ser.get_account_by_id(&accs[1]).await.unwrap();
             if entry_type.clone().unwrap() == Pending {
                 assert_eq!(acc1.credits_posted, acc_1_after.credits_posted);
                 assert_eq!(acc1.debits_posted, acc_1_after.debits_posted);
@@ -362,10 +369,10 @@ mod tests {
         use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder, TransferType};
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::create_two_accounts_for_transfer;
-        use crate::test_utils::test_utils_postgres::{create_postgres_client, get_postgres_image_port};
+        use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
-        fn pending_transfer() -> Transfer {
-            let accs = create_two_accounts_for_transfer();
+        async fn pending_transfer() -> Transfer {
+            let accs = create_two_accounts_for_transfer().await;
             a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
                 debit_account_id: Some(accs[0]),
@@ -376,17 +383,17 @@ mod tests {
         }
 
         #[rstest]
-        #[case::should_post_pending_entry_for_a_pending_entry_in_full(pending_transfer(),
+        #[case::should_post_pending_entry_for_a_pending_entry_in_full(pending_transfer().await,
         Some(TransferType::PostPending{pending_id: Uuid::new_v4()}),
         Some(100))]
-        #[case::should_post_pending_entry_for_a_pending_entry_partially(pending_transfer(),
+        #[case::should_post_pending_entry_for_a_pending_entry_partially(pending_transfer().await,
         Some(TransferType::PostPending{pending_id: Uuid::new_v4()}),
         Some(99))]
-        #[case::should_be_able_to_void_a_pending_entry(pending_transfer(),
+        #[case::should_be_able_to_void_a_pending_entry(pending_transfer().await,
         Some(TransferType::VoidPending{pending_id: Uuid::new_v4()}),
         Some(100))]
-        fn should_be_able_to_resolve_pending_transfer(
-            #[case]pending_transfer: Transfer,
+        async fn should_be_able_to_resolve_pending_transfer(
+            #[case] pending_transfer: Transfer,
             #[case] pending_resolution_type: Option<TransferType>, #[case] pending_resolution_amount: Option<i64>)
         {
             let pending_resolution_type = match pending_resolution_type.unwrap() {
@@ -394,8 +401,8 @@ mod tests {
                 TransferType::PostPending { .. } => { TransferType::PostPending { pending_id: pending_transfer.id } }
                 TransferType::VoidPending { .. } => { TransferType::VoidPending { pending_id: pending_transfer.id } }
             };
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
             let mut cl = LedgerTransferDaoPostgresImpl { postgres_client };
             let resolved_pending_transfer = a_transfer(TransferBuilder {
                 transfer_type: Some(pending_resolution_type),
@@ -404,13 +411,13 @@ mod tests {
                 amount: pending_resolution_amount,
                 ..Default::default()
             });
-            let mut acc_ser = get_account_service_for_test(create_postgres_client(port));
-            let acc1 = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).unwrap();
-            let acc2 = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).unwrap();
-            let trf_resps = cl.create_transfers(&vec![pending_transfer, resolved_pending_transfer.clone()]);
+            let mut acc_ser = get_account_service_for_test(get_postgres_conn_pool(port).await);
+            let acc1 = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).await.unwrap();
+            let acc2 = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).await.unwrap();
+            let trf_resps = cl.create_transfers(&vec![pending_transfer, resolved_pending_transfer.clone()]).await;
             println!("{:?}", trf_resps);
-            let acc1_after = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).unwrap();
-            let acc2_after = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).unwrap();
+            let acc1_after = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).await.unwrap();
+            let acc2_after = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).await.unwrap();
             if matches!(resolved_pending_transfer.transfer_type,TransferType::PostPending {..}) {
                 assert_eq!(acc1.debits_posted + resolved_pending_transfer.amount, acc1_after.debits_posted);
                 assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
@@ -432,7 +439,7 @@ mod tests {
                 assert_eq!(acc2.credits_posted, acc2_after.credits_posted);
             }
 
-            let _fetched_trf_resp = cl.get_transfers_by_id(resolved_pending_transfer.id).unwrap();
+            let _fetched_trf_resp = cl.get_transfers_by_id(resolved_pending_transfer.id).await.unwrap();
             assert_eq!(2, trf_resps.len());
             for x in trf_resps {
                 assert!(x.committed);
@@ -443,14 +450,15 @@ mod tests {
         #[rstest]
         #[case(Some(TransferType::PostPending{pending_id: Uuid::new_v4()}))]
         #[case(Some(TransferType::VoidPending{pending_id: Uuid::new_v4()}))]
-        fn should_error_out_posting_entry_for_an_invalid_pending_entry_id(#[case] transfer_type: Option<TransferType>)
+        #[trace]
+        async fn should_error_out_posting_entry_for_an_invalid_pending_entry_id(#[case] transfer_type: Option<TransferType>)
         {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
-            let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-            let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
+            let acc_service = get_account_service_for_test(postgres_client);
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let pending_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
@@ -466,10 +474,10 @@ mod tests {
                 amount: Some(100),
                 ..Default::default()
             });
-            let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), resolved_pending_trf.clone()]);
+            let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), resolved_pending_trf.clone()]).await;
             println!("{:?}", &trf_resps);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -478,8 +486,8 @@ mod tests {
             assert_eq!(acc2.debits_pending, acc2_after.debits_pending);
             assert_eq!(acc2.credits_pending, acc2_after.credits_pending);
             assert_eq!(acc2.credits_posted, acc2_after.credits_posted);
-            assert!(led_trf_dao.get_transfers_by_id(pending_trf.id).is_none());
-            assert!(led_trf_dao.get_transfers_by_id(resolved_pending_trf.id).is_none());
+            assert!(led_trf_dao.get_transfers_by_id(pending_trf.id).await.is_none());
+            assert!(led_trf_dao.get_transfers_by_id(resolved_pending_trf.id).await.is_none());
             assert_eq!(2, trf_resps.len());
             for trf_resp in trf_resps {
                 assert!(!trf_resp.committed);
@@ -488,7 +496,7 @@ mod tests {
         }
 
         #[rstest]
-        fn should_not_act_on_an_already_resolved_pending_transfer(
+        async fn should_not_act_on_an_already_resolved_pending_transfer(
             #[values("pp", "vp")]
             first_resolved_transfer_type: String,
             #[values("pp", "vp")]
@@ -496,12 +504,12 @@ mod tests {
         )
         {
             //todo may be this can be combined with above test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
-            let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-            let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
+            let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let pending_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
@@ -533,9 +541,9 @@ mod tests {
                 ..Default::default()
             });
             //todo first 2 should be committed together and third one should fail.
-            let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), first_resolved_trf.clone(), second_resolved_trf.clone()]);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), first_resolved_trf.clone(), second_resolved_trf.clone()]).await;
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -545,9 +553,9 @@ mod tests {
             assert_eq!(acc2.credits_pending, acc2_after.credits_pending);
             assert_eq!(acc2.credits_posted, acc2_after.credits_posted);
             println!("{:?}", &trf_resps);
-            assert!(led_trf_dao.get_transfers_by_id(pending_trf.id).is_none());
-            assert!(led_trf_dao.get_transfers_by_id(first_resolved_trf.id).is_none());
-            assert!(led_trf_dao.get_transfers_by_id(second_resolved_trf.id).is_none());
+            assert!(led_trf_dao.get_transfers_by_id(pending_trf.id).await.is_none());
+            assert!(led_trf_dao.get_transfers_by_id(first_resolved_trf.id).await.is_none());
+            assert!(led_trf_dao.get_transfers_by_id(second_resolved_trf.id).await.is_none());
             assert_eq!(3, trf_resps.len());
             for trf_resp in trf_resps {
                 assert!(!trf_resp.committed);
@@ -555,14 +563,14 @@ mod tests {
             }
         }
 
-        #[test]
-        fn should_not_post_pending_entry_for_a_pending_entry_in_excess() {
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
-            let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-            let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
+        #[tokio::test]
+        async fn should_not_post_pending_entry_for_a_pending_entry_in_excess() {
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
+            let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let pending_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
@@ -578,10 +586,10 @@ mod tests {
                 amount: Some(101),
                 ..Default::default()
             });
-            let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), post_pending_trf.clone()]);
+            let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), post_pending_trf.clone()]).await;
             println!("{:?}", &trf_resps);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -590,8 +598,8 @@ mod tests {
             assert_eq!(acc2.debits_pending, acc2_after.debits_pending);
             assert_eq!(acc2.credits_pending, acc2_after.credits_pending);
             assert_eq!(acc2.credits_posted, acc2_after.credits_posted);
-            assert!(led_trf_dao.get_transfers_by_id(pending_trf.id).is_none());
-            assert!(led_trf_dao.get_transfers_by_id(post_pending_trf.id).is_none());
+            assert!(led_trf_dao.get_transfers_by_id(pending_trf.id).await.is_none());
+            assert!(led_trf_dao.get_transfers_by_id(post_pending_trf.id).await.is_none());
             assert_eq!(2, trf_resps.len());
             for trf_resp in trf_resps {
                 assert!(!trf_resp.committed);
@@ -600,15 +608,15 @@ mod tests {
         }
 
         #[rstest]
-        fn should_not_resolve_a_post_transfer(
+        async fn should_not_resolve_a_post_transfer(
             #[values("pp")]resolution_type: String) {
             //todo important test
-            let port = get_postgres_image_port();
-            let postgres_client = create_postgres_client(port);
-            let accs = create_two_accounts_for_transfer();
-            let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-            let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let port = get_postgres_image_port().await;
+            let postgres_client = get_postgres_conn_pool(port).await;
+            let accs = create_two_accounts_for_transfer().await;
+            let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let regular_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Regular),
@@ -630,10 +638,10 @@ mod tests {
                 ..Default::default()
             });
             //todo first 2 should be committed together and third one should fail.
-            let trf_resps = led_trf_dao.create_transfers(&vec![regular_trf.clone(), resolving_trf.clone()]);
+            let trf_resps = led_trf_dao.create_transfers(&vec![regular_trf.clone(), resolving_trf.clone()]).await;
             println!("{:?}", &trf_resps);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -642,8 +650,8 @@ mod tests {
             assert_eq!(acc2.debits_pending, acc2_after.debits_pending);
             assert_eq!(acc2.credits_pending, acc2_after.credits_pending);
             assert_eq!(acc2.credits_posted, acc2_after.credits_posted);
-            assert!(led_trf_dao.get_transfers_by_id(regular_trf.id).is_none());
-            assert!(led_trf_dao.get_transfers_by_id(resolving_trf.id).is_none());
+            assert!(led_trf_dao.get_transfers_by_id(regular_trf.id).await.is_none());
+            assert!(led_trf_dao.get_transfers_by_id(resolving_trf.id).await.is_none());
             assert_eq!(2, trf_resps.len());
             for trf_resp in trf_resps {
                 assert!(!trf_resp.committed);
@@ -654,17 +662,17 @@ mod tests {
 
 
     #[rstest]
-    fn should_not_commit_transactions_which_have_been_already_persisted_idempotency() {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
-        let accs = create_two_accounts_for_transfer();
+    async fn should_not_commit_transactions_which_have_been_already_persisted_idempotency() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let accs = create_two_accounts_for_transfer().await;
         let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
 
         let initial_trfs = generate_random_transfers(accs[0], accs[1], 100, 1, 1);
-        let trf_resps_1 = led_trf_dao.create_transfers(&initial_trfs);
+        let trf_resps_1 = led_trf_dao.create_transfers(&initial_trfs).await;
         assert_eq!(trf_resps_1.len(), 1);
         assert!(trf_resps_1.first().unwrap().committed);
-        let trf_resps_2 = led_trf_dao.create_transfers(&initial_trfs);
+        let trf_resps_2 = led_trf_dao.create_transfers(&initial_trfs).await;
         assert_eq!(trf_resps_2.len(), 1);
         assert!(!trf_resps_2.first().unwrap().committed);
         assert_eq!(trf_resps_2.first().unwrap().reason.len(), 1);
@@ -673,13 +681,13 @@ mod tests {
         for initial_trf in initial_trfs {
             more_trfs.push(initial_trf);
         }
-        let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-        let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-        let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
-        let trf_resps_3 = led_trf_dao.create_transfers(&more_trfs);
+        let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let trf_resps_3 = led_trf_dao.create_transfers(&more_trfs).await;
         println!("{:?}", trf_resps_3);
-        let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-        let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
         assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
         assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
         assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -696,15 +704,15 @@ mod tests {
         }
     }
 
-    #[test]
+    #[tokio::test]
     #[should_panic]
-    fn should_fail_for_more_than_600_in_batch() {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
-        let accs = create_two_accounts_for_transfer();
+    async fn should_fail_for_more_than_600_in_batch() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let accs = create_two_accounts_for_transfer().await;
         let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], 100, 1, 601);
-        let _trf_resps = led_trf_dao.create_transfers(&transfer_candidates);
+        let _trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
     }
 
     #[rstest]
@@ -712,23 +720,23 @@ mod tests {
     #[case::single_element(1)]
     #[case::two_elements(2)]
     #[case::eight_elements(8)]
-    fn test_successful_create_transfers_of_multiple_sizes(#[case] size: usize) {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
-        let accs = create_two_accounts_for_transfer();
+    async fn test_successful_create_transfers_of_multiple_sizes(#[case] size: usize) {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let accs = create_two_accounts_for_transfer().await;
         let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
-        let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-        let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-        let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
+        let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], 100, 1, size);
         let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates);
+        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
         led_trf_dao.create_transfers(&transfer_candidates);
         let stop = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
         println!("{}", stop - start);
-        let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-        let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-        let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+        let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
         let sum: i64 = transfer_candidates.iter().map(|a| a.amount).sum();
         assert_eq!(acc1.debits_posted + sum, acc1_after.debits_posted);
         assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
@@ -753,18 +761,18 @@ mod tests {
     #[case::credit_acc_wrong(1, - 200, 3, true, false)]
     #[case::both_wrong(- 100, - 200, 1, false, false)]
     #[case::both_wrong(- 100, - 200, 3, false, false)]
-    fn should_fail_if_account_not_present(
+    async fn should_fail_if_account_not_present(
         #[case]debit_acc_id: i32,
         #[case]credit_acc_id: i32,
         #[case] size: usize,
         #[case]debit_account_correct: bool,
         #[case]credit_account_correct: bool)
     {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
         let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
         let transfer_candidates = generate_random_transfers(debit_acc_id, credit_acc_id, 100, 1, size);
-        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates);
+        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
         println!("{:?}", trf_resps);
         for i in 0..size {
             let response = &trf_resps[i];
@@ -793,50 +801,50 @@ mod tests {
     #[case::cred_acc_ledger_id_diff(false, true, false)]
     #[case::deb_acc_led_id_diff(true, false, false)]
     #[case::all_diff(true, true, true)]
-    fn should_fail_if_accounts_have_different_ledger_ids(#[case] debit_account_ledger_id_same: bool,
+    async fn should_fail_if_accounts_have_different_ledger_ids(#[case] debit_account_ledger_id_same: bool,
                                                          #[case] credit_account_ledger_same: bool, #[case] transfer_ledger_id_same: bool)
     {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
         let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
         let mut ledger_master_service = get_ledger_master_service_for_test(
-            create_postgres_client(port));
+            get_postgres_conn_pool(port).await);
         let led_mst_req = a_create_ledger_master_entry_request(CreateLedgerMasterEntryRequestTestBuilder {
             ..Default::default()
         });
-        let mut account_master_service = get_account_service_for_test(create_postgres_client(port));
+        let mut account_master_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
         let mut db_acc_led_id = 1;
         let mut cr_acc_led_id = 1;
         let mut tr_led_id = 1;
         let mut db_acc_id = 1;
         let mut cr_acc_id = 2;
         if !debit_account_ledger_id_same {
-            db_acc_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req);
+            db_acc_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req).await;
             db_acc_id = account_master_service.create_account(
                 &a_create_account_request(
                     CreateAccountRequestTestBuilder {
                         ledger_master_id: Some(db_acc_led_id),
                         ..Default::default()
-                    }));
+                    })).await;
         }
         if !credit_account_ledger_same {
-            cr_acc_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req);
+            cr_acc_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req).await;
             cr_acc_id = account_master_service.create_account(
                 &a_create_account_request(
                     CreateAccountRequestTestBuilder {
                         ledger_master_id: Some(cr_acc_led_id),
                         ..Default::default()
-                    }));
+                    })).await;
         }
         if transfer_ledger_id_same {
-            tr_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req);
+            tr_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req).await;
         }
         let transfer_candidates = generate_random_transfers(
             db_acc_id,
             cr_acc_id,
             100,
             tr_led_id, 1);
-        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates);
+        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
         assert_eq!(trf_resps.len(), 1);
         assert!(!trf_resps.first().unwrap().committed);
         println!("{:?}", trf_resps[0].reason);
@@ -848,19 +856,19 @@ mod tests {
     #[rstest]
     #[case(- 1)]
     #[case(- 0)]
-    fn should_fail_transfer_amounts_of_less_than_equal_to_zero(#[case] amount: i64)
+    async fn should_fail_transfer_amounts_of_less_than_equal_to_zero(#[case] amount: i64)
     {
-        let port = get_postgres_image_port();
-        let postgres_client = create_postgres_client(port);
-        let accs = create_two_accounts_for_transfer();
-        let mut acc_service = get_account_service_for_test(create_postgres_client(port));
-        let acc1 = acc_service.get_account_by_id(&accs[0]).unwrap();
-        let acc2 = acc_service.get_account_by_id(&accs[1]).unwrap();
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let accs = create_two_accounts_for_transfer().await;
+        let mut acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
+        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
         let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], amount, 1, 1);
-        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates);
-        let acc1_after = acc_service.get_account_by_id(&accs[0]).unwrap();
-        let acc2_after = acc_service.get_account_by_id(&accs[1]).unwrap();
+        let trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
+        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
+        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
         assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
         assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
         assert_eq!(acc1.credits_pending, acc1_after.credits_pending);

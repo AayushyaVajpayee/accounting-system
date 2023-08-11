@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 postgres = { version = "0.19.5", features = ["with-uuid-1"] }
+futures-util = "0.3.28"
+pin-utils = "0.1.0"
+bytes = "1.4.0"
 env_logger = "0.10.0"
 log = "0.4.19"
 thiserror = "1.0.43"
@@ -17,7 +20,12 @@ serde_json = "1.0.102"
 regex = "1.9.1"
 uuid = { version = "1.4.0", features = ["v4", "serde"] }
 rand = "0.8.5"
-
+actix-web = "4.3.1"
+deadpool-postgres = "0.10.5"
+tokio-postgres = { version = "0.7.8", features = ["with-uuid-1"] }
+async-trait = "0.1.72"
+async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
+tokio = { version = "1.29.1", features = ["full"] }
 [dev-dependencies]
 testcontainers = "0.14.0"
 rstest = "0.18.1"
