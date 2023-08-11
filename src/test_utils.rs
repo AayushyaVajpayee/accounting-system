@@ -3,10 +3,10 @@ pub mod test_utils_postgres {
     use std::time::Duration;
 
     use deadpool_postgres::{ManagerConfig, Pool, Runtime};
-    use deadpool_postgres::RecyclingMethod::{Clean, Fast, Verified};
+    use deadpool_postgres::RecyclingMethod::{Clean, Fast};
     use postgres::Client;
     use testcontainers::clients::Cli;
-    use testcontainers::{Container, Image};
+    use testcontainers::{Container};
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
     use tokio::sync::OnceCell;
@@ -38,12 +38,12 @@ pub mod test_utils_postgres {
         cfg.password("postgres");
         cfg.dbname("postgres");
         cfg.application_name("accounting-system");
-        // cfg.connect_timeout(Duration::from_secs(15));
+        cfg.connect_timeout(Duration::from_secs(15));
         let mgr = deadpool_postgres::Manager::from_config(cfg, NoTls, ManagerConfig { recycling_method: Clean });
         Pool::builder(mgr)
             .max_size(1)
-            // .runtime(Runtime::Tokio1)
-            // .create_timeout(Some(Duration::from_secs(10)))
+            .runtime(Runtime::Tokio1)
+            .create_timeout(Some(Duration::from_secs(10)))
             .build().unwrap()
     }
     pub fn create_postgres_client(port: u16) -> Client {
@@ -56,7 +56,7 @@ pub mod test_utils_postgres {
         cfg.application_name("accounting-system");
         cfg.connect_timeout(Duration::from_secs(20));
         let mut mgr = deadpool_postgres::Manager::from_config(cfg, NoTls, ManagerConfig { recycling_method: Fast });
-        let connection_pool1 = deadpool_postgres::Pool::builder(mgr)
+        let connection_pool1 = Pool::builder(mgr)
             .max_size(1)
             .runtime(Runtime::Tokio1)
             .create_timeout(Some(Duration::from_secs(20)))
