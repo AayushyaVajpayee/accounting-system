@@ -1,21 +1,16 @@
 use std::collections::HashSet;
-use std::pin::Pin;
+
 use async_std::io::WriteExt;
 use bytes::Bytes;
 use deadpool_postgres::Pool;
 use futures_util::{SinkExt, stream};
 use pin_utils::pin_mut;
-
-use postgres::{Client, NoTls};
 use tokio::pin;
-use tokio_postgres::binary_copy::BinaryCopyInWriter;
 use tokio_postgres::Error;
-use tokio_postgres::types::Type;
-use crate::accounting::postgres_factory::{get_postgres_conn_pool, get_postgres_conn_pool1};
 
 use crate::seeddata::constants::{FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH, SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
 
-pub fn get_seed_filenames_ordered() -> Vec<String> {
+fn get_seed_filenames_ordered() -> Vec<String> {
     let path = format!("{}{}", SEED_FILES_LOCATION, SEED_FILES);
     std::fs::read_to_string(path)
         .unwrap()
@@ -43,21 +38,6 @@ fn validate_seed_file_names(names: &Vec<String>) -> Result<(), Vec<String>> {
     }
 }
 
-#[allow(dead_code)]
-fn read_csv(_name: &str) -> String {
-    // let k = BinaryCopyInWriter::new(/* postgres::CopyInWriter<'_> */, /* &[postgres::types::Type] */);
-    todo!()
-}
-
-#[allow(dead_code)]
-fn create_postgres_client(port: u16) -> Client {
-    let con_str =
-        format!("host=localhost user=postgres password=postgres dbname=postgres port={port}");
-    let client = Client::
-    connect(&con_str, NoTls)
-        .unwrap();
-    client
-}
 
 async fn create_schema(client: &'static Pool) {
     let fi = std::fs::read_to_string(SCHEMA_CREATION_SCRIPT_PATH).unwrap();

@@ -1,31 +1,29 @@
-use std::sync::OnceLock;
 use std::time::Duration;
+
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
 use deadpool_postgres::RecyclingMethod::{Clean, Fast, Verified};
-use serde::Deserialize;
+use tokio::sync::OnceCell;
 use tokio_postgres::{Config, NoTls};
+
 use crate::configurations::{get_dev_conf, Setting};
 
-static CONNECTION_POOL: OnceLock<Pool> = OnceLock::new();
+static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
 
-
-pub fn get_postgres_conn_pool() -> &'static Pool {
-    get_postgres_conn_pool1(5432)
+pub async fn get_postgres_conn_pool() -> &'static Pool {
+    CONNECTION_POOL.get_or_init(init).await
 }
 
-pub fn get_postgres_conn_pool1(port: u16) -> &'static Pool {
-    CONNECTION_POOL.get_or_init(|| {
-        let settings: Setting = get_dev_conf();
-        let cfg = get_pg_config(&settings);
-        let mgr = deadpool_postgres::Manager::from_config(cfg, NoTls, ManagerConfig {
-            recycling_method: get_recycling_method(settings.db.recycling_method.as_str())
-        });
-        Pool::builder(mgr)
-            .max_size(settings.db.max_connections as usize)
-            .runtime(Runtime::Tokio1)
-            .create_timeout(Some(Duration::from_secs(settings.db.connect_timeout_seconds as u64)))
-            .build().unwrap()
-    })
+async fn init() -> Pool {
+    let settings: Setting = get_dev_conf();
+    let cfg = get_pg_config(&settings);
+    let mgr = deadpool_postgres::Manager::from_config(cfg, NoTls, ManagerConfig {
+        recycling_method: get_recycling_method(settings.db.recycling_method.as_str())
+    });
+    Pool::builder(mgr)
+        .max_size(settings.db.max_connections as usize)
+        .runtime(Runtime::Tokio1)
+        .create_timeout(Some(Duration::from_secs(settings.db.connect_timeout_seconds as u64)))
+        .build().unwrap()
 }
 
 fn get_pg_config(settings: &Setting) -> Config {
@@ -54,16 +52,15 @@ pub mod test_utils_postgres {
     use std::time::Duration;
 
     use deadpool_postgres::{ManagerConfig, Pool, Runtime};
-    use deadpool_postgres::RecyclingMethod::{Clean, Fast};
     use testcontainers::clients::Cli;
     use testcontainers::Container;
     use testcontainers::core::WaitFor;
     use testcontainers::images::generic::GenericImage;
     use tokio::sync::OnceCell;
     use tokio_postgres::{Config, NoTls};
+
     use crate::accounting::postgres_factory::get_recycling_method;
     use crate::configurations::configuration_test_code::{get_tests_conf, TestSettings};
-
     use crate::seeddata::seed_service::copy_tables;
 
     static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
