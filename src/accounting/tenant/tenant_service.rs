@@ -25,8 +25,8 @@ impl TenantService for TenantServiceImpl{
     }
 }
 
-pub async fn get_tenant_service() -> Box<dyn TenantService + Send + Sync> {
-    let pclient = get_postgres_conn_pool().await;
+pub fn get_tenant_service() -> Box<dyn TenantService + Send + Sync> {
+    let pclient = get_postgres_conn_pool();
     let tenant_d=get_tenant_dao(pclient);
     let tenant_s=TenantServiceImpl{tenant_dao:tenant_d};
     Box::new(tenant_s)

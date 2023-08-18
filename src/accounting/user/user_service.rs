@@ -12,8 +12,8 @@ pub trait UserService {
 }
 
 #[allow(dead_code)]
-pub async fn get_user_service() -> Box<dyn UserService + Send + Sync> {
-    let pclient = get_postgres_conn_pool().await;
+pub fn get_user_service() -> Box<dyn UserService + Send + Sync> {
+    let pclient = get_postgres_conn_pool();
     let user_dao = get_user_dao(pclient);
     let user_service = UserServiceImpl {
         user_dao

@@ -15,8 +15,8 @@ struct CurrencyServiceImpl {
 }
 
 #[allow(dead_code)]
-pub async fn get_currency_service() -> Box<dyn CurrencyService + Send + Sync> {
-    let pclient = get_postgres_conn_pool().await;
+pub fn get_currency_service() -> Box<dyn CurrencyService + Send + Sync> {
+    let pclient = get_postgres_conn_pool();
     let currency_dao = get_currency_dao(pclient);
     let currency_s = CurrencyServiceImpl { currency_dao };
     Box::new(currency_s)

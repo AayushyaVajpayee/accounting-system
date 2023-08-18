@@ -1,19 +1,19 @@
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
 use deadpool_postgres::RecyclingMethod::{Clean, Fast, Verified};
-use tokio::sync::OnceCell;
 use tokio_postgres::{Config, NoTls};
 
 use crate::configurations::{get_dev_conf, Setting};
 
-static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
+static CONNECTION_POOL: OnceLock<Pool> = OnceLock::new();
 
-pub async fn get_postgres_conn_pool() -> &'static Pool {
-    CONNECTION_POOL.get_or_init(init).await
+pub fn get_postgres_conn_pool() -> &'static Pool {
+    CONNECTION_POOL.get_or_init(init)
 }
 
-async fn init() -> Pool {
+fn init() -> Pool {
     let settings: Setting = get_dev_conf();
     let cfg = get_pg_config(&settings);
     let mgr = deadpool_postgres::Manager::from_config(cfg, NoTls, ManagerConfig {

@@ -1,7 +1,7 @@
-use actix_web::{get, Responder, web};
+use actix_web::{Responder, web};
 use crate::accounting::tenant::tenant_service::{get_tenant_service, TenantService};
 
-async fn get_tenant_by_id(mut data: web::Data<Box<dyn TenantService>>) -> actix_web::Result<impl Responder> {
+async fn get_tenant_by_id(mut data: web::Data<Box<dyn TenantService + Send + Sync>>) -> actix_web::Result<impl Responder> {
     // data.get_tenant_by_id(&1);
     Ok("oh yeah".to_string())
 }
