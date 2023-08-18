@@ -116,7 +116,7 @@ impl AccountDao for AccountDaoPostgresImpl {
 mod account_tests {
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     #[tokio::test]
     async fn test_account() {

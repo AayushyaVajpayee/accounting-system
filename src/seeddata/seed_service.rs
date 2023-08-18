@@ -73,13 +73,12 @@ async fn create_functions_and_procedures(client: &'static Pool) {
     client.get().await.unwrap().simple_query(&fi).await.unwrap();
 }
 
-pub async fn copy_tables(port: u16) {
+pub async fn copy_tables(pool: &'static Pool) {
     let file_names = get_seed_filenames_ordered();
     validate_seed_file_names(&file_names).unwrap();
-    let client = get_postgres_conn_pool1(port);
-    create_schema(client).await;
-    create_functions_and_procedures(client).await;
-    let mut conn = client.get().await.unwrap();
+    create_schema(pool).await;
+    create_functions_and_procedures(pool).await;
+    let mut conn = pool.get().await.unwrap();
     let txn = conn.transaction().await.unwrap();
     let table_names = file_names
         .iter()
@@ -98,17 +97,12 @@ pub async fn copy_tables(port: u16) {
         let query = format!("copy {t} from stdin with csv header");
 
         let ss = stream::once(content);
-        let copy_in_writer = client.get().await.unwrap().copy_in(&query).await.unwrap();
+        let copy_in_writer = txn.copy_in(&query).await.unwrap();
         pin_mut!(copy_in_writer);
         pin!(ss);
         copy_in_writer.send_all(&mut ss).await.unwrap();
         copy_in_writer.finish().await.unwrap();
-        // let writer = BinaryCopyInWriter::new(copy_in_writer, &stm[..]);
-        // pin!(writer);
-        // copy_in_writer.write_all(content.as_ref()).unwrap();
-        // let _rows_written = copy_in_writer.finish().await.unwrap();
     }
-
     txn.commit().await.unwrap();
 }
 
@@ -124,10 +118,4 @@ mod tests {
         let kk = validate_seed_file_names(&k);
         println!("{:?}", kk);
     }
-
-    // #[test]
-    // fn test_2() {
-    //     let port =get_postgres_image_port().await;
-    //     copy_tables(port)
-    // }
 }

@@ -115,7 +115,7 @@ mod account_type_tests {
     use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};
     use crate::accounting::account::account_type::account_type_models::{a_create_account_type_master_request,
                                                                         CreateAccountTypeMasterRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     #[tokio::test]
     async fn tests() {

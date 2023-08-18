@@ -102,7 +102,7 @@ impl UserDao for UserDaoPostgresImpl {
 mod tests {
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_users() {

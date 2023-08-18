@@ -178,7 +178,7 @@ mod tests {
     use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
     use crate::ledger::ledgermaster::ledger_master_models::{a_create_ledger_master_entry_request, CreateLedgerMasterEntryRequestTestBuilder};
     use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service_for_test;
-    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     /// need this so that every test case can act on different set of accounts and we can
     /// verify before-after account balance of transfers.
@@ -218,7 +218,7 @@ mod tests {
         use crate::ledger::ledger_models::Transfer;
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::{create_two_accounts_for_transfer, generate_random_transfers};
-        use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+        use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
         #[rstest]
         #[trace]
@@ -315,7 +315,7 @@ mod tests {
         use crate::ledger::ledger_models::TransferType::{Pending, Regular};
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::create_two_accounts_for_transfer;
-        use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+        use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
         #[rstest]
         #[case::regular_entry(Some(Regular))]
@@ -369,7 +369,7 @@ mod tests {
         use crate::ledger::ledger_models::{a_transfer, Transfer, TransferBuilder, TransferType};
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::create_two_accounts_for_transfer;
-        use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+        use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
         async fn pending_transfer() -> Transfer {
             let accs = create_two_accounts_for_transfer().await;

@@ -94,7 +94,7 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
 mod tests {
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
-    use crate::test_utils::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_currency() {

@@ -1,11 +1,14 @@
 use std::io;
 use actix_web::{App, HttpServer};
+use config::Config;
+use serde::Deserialize;
 use crate::accounting::tenant::tenant_http_api_routes::init_routes;
 
 mod ledger;
 mod accounting;
 mod seeddata;
-mod test_utils;
+
+mod configurations;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {

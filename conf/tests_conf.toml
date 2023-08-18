@@ -1,0 +1,16 @@
+[db]
+#this is useless in tests using test containers where the port has to be fetched via service
+port = 5432
+user = "postgres"
+db = "postgres"
+max_connections = 1
+host = "localhost"
+connect_timeout_seconds = 4
+password = "postgres"
+wait_timeout_seconds = 4
+#this can be Clean,Verified,Fast . some commands are leaky and hence nothing apart from Clean works
+recycling_method = "Clean"
+application_name = "accounting-system-test"
+[docker_postgres_detail]
+image = "postgres"
+image_tag = "latest"
