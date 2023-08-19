@@ -1,4 +1,5 @@
 use actix_web::{Responder, web};
+
 use crate::accounting::tenant::tenant_service::{get_tenant_service, TenantService};
 
 async fn get_tenant_by_id(id: web::Path<i32>, data: web::Data<Box<dyn TenantService + Send + Sync>>) -> actix_web::Result<impl Responder> {

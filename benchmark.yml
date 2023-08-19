@@ -1,0 +1,10 @@
+#drill --benchmark benchmark.yml --stats
+concurrency: 13
+base: 'http://localhost:8080'
+iterations: 55000
+rampup: 1
+
+plan:
+  - name: Fetch tenant
+    request:
+      url: /tenant/id/1
