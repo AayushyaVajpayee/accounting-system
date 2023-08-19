@@ -1,5 +1,5 @@
 ### GET request with a header
-GET http://localhost:8080/tenant/id
+GET http://localhost:8080/tenant/id/1
 Accept: application/json
 
 
