@@ -11,13 +11,14 @@ mod configurations;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
+    std::env::set_var("RUST_LOG", "info");
     env_logger::init();
     println!("{}", std::process::id());
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .configure(init_routes)
+            .configure(seeddata::seeddata_http_api_routes::init_routes)
     })
         .bind(("127.0.0.1", 8080))?
         .run()

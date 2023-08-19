@@ -1,0 +1,8 @@
+### GET request with a header
+GET http://localhost:8080/tenant/id
+Accept: application/json
+
+
+### GET request with a header
+GET http://localhost:8080/seeddata/initdb
+Accept: application/json

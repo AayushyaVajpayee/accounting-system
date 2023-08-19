@@ -1,11 +1,11 @@
 [db]
 port = 5432
 user = "postgres"
-db = "accounting_system"
+db = "postgres"
 max_connections = 5
 host = "localhost"
 connect_timeout_seconds = 10
-password = "pwd"
+password = "postgres"
 wait_timeout_seconds = 5
 #this can be Clean,Verified,Fast .some commands are leaky and hence nothing apart from Clean works
 recycling_method = "Clean"

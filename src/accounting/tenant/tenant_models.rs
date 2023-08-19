@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Tenant {
     pub id: i32,
     pub display_name: String,

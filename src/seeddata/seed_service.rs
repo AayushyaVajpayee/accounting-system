@@ -39,7 +39,7 @@ fn validate_seed_file_names(names: &Vec<String>) -> Result<(), Vec<String>> {
 }
 
 
-async fn create_schema(client: &'static Pool) {
+async fn create_schema(client: &Pool) {
     let fi = std::fs::read_to_string(SCHEMA_CREATION_SCRIPT_PATH).unwrap();
     client.get().await
         .unwrap()
@@ -48,12 +48,12 @@ async fn create_schema(client: &'static Pool) {
         .unwrap();
 }
 
-async fn create_functions_and_procedures(client: &'static Pool) {
+async fn create_functions_and_procedures(client: &Pool) {
     let fi = std::fs::read_to_string(FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH).unwrap();
     client.get().await.unwrap().simple_query(&fi).await.unwrap();
 }
 
-pub async fn copy_tables(pool: &'static Pool) {
+pub async fn copy_tables(pool: &Pool) {
     let file_names = get_seed_filenames_ordered();
     validate_seed_file_names(&file_names).unwrap();
     create_schema(pool).await;
