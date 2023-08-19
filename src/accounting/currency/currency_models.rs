@@ -28,7 +28,7 @@ pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> Aud
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CurrencyMaster {
     pub id: i16,
     pub tenant_id: i32,

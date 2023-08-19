@@ -8,7 +8,7 @@ pub struct Tenant {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CreateTenantRequest {
     //todo on what basis to uniquely identify tenant?
     // there has to be some business identifier
