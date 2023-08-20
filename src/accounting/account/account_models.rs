@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Account {
     pub id: i32,
     pub tenant_id: i32,
@@ -18,7 +19,7 @@ pub struct Account {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateAccountRequest {
     pub tenant_id: i32,
     pub display_code: String,
