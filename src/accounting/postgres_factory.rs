@@ -61,7 +61,7 @@ pub mod test_utils_postgres {
 
     use crate::accounting::postgres_factory::get_recycling_method;
     use crate::configurations::configuration_test_code::{get_tests_conf, TestSettings};
-    use crate::seeddata::seed_service::copy_tables;
+    use crate::seeddata::seed_service::get_seed_service_with_pool_supplied;
 
     static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
     static TEST_CONTAINER_CLIENT: OnceCell<Cli> = OnceCell::const_new();
@@ -116,7 +116,8 @@ pub mod test_utils_postgres {
         let container = run_postgres().await;
         let port = container.get_host_port_ipv4(5432);
         let pool = get_postgres_conn_pool(port).await;
-        copy_tables(pool).await;
+        let seed_s = get_seed_service_with_pool_supplied(pool);
+        seed_s.copy_tables().await;
         PK { container }
     }
 
