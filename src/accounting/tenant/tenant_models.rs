@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Tenant {
     pub id: i32,
     pub display_name: String,
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CreateTenantRequest {
     //todo on what basis to uniquely identify tenant?
     // there has to be some business identifier

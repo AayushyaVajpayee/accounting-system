@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use async_trait::async_trait;
 
 use serde::Serialize;
 use thiserror::Error;
@@ -6,10 +7,23 @@ use thiserror::Error;
 use crate::accounting::account::account_type::account_type_dao::AccountTypeDao;
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
 
-#[allow(dead_code)]
-pub struct AccountTypeService {
-    account_type_dao: Box<dyn AccountTypeDao>,
+#[async_trait]
+pub trait AccountTypeService {
+    async fn get_account_type_hierarchy(&self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError>;
+}
 
+struct AccountTypeServiceImpl {
+    account_type_dao: Box<dyn AccountTypeDao + Send + Sync>,
+
+}
+
+#[async_trait]
+impl AccountTypeService for AccountTypeServiceImpl {
+    async fn get_account_type_hierarchy(&self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
+        let all_accounts = self
+            .account_type_dao.get_all_account_types_for_tenant_id(tenant_id).await;
+        AccountTypeServiceImpl::create_hierarchy(&all_accounts)
+    }
 }
 
 #[allow(dead_code)]
@@ -28,12 +42,7 @@ pub struct AccountTypeHierarchy {
 
 }
 
-impl AccountTypeService {
-    #[allow(dead_code)]
-    pub async fn get_account_type_hierarchy(&mut self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
-        let all_accounts = self.account_type_dao.get_all_account_types_for_tenant_id(&tenant_id).await;
-        AccountTypeService::create_hierarchy(&all_accounts)
-    }
+impl AccountTypeServiceImpl {
 
     fn create_hierarchy(all_accounts: &[AccountTypeMaster]) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
         let account_map: HashMap<i16, &AccountTypeMaster> = all_accounts
@@ -49,7 +58,7 @@ impl AccountTypeService {
             root_accounts
         };
         root_accounts.iter()
-            .map(|acc| AccountTypeService::create_account_type_hierarchy(&account_map, acc))
+            .map(|acc| AccountTypeServiceImpl::create_account_type_hierarchy(&account_map, acc))
             .collect()
     }
 
@@ -106,7 +115,7 @@ mod tests {
     use rstest::rstest;
 
     use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
-    use crate::accounting::account::account_type::account_type_service::{AccountTypeHierarchy, AccountTypeService};
+    use crate::accounting::account::account_type::account_type_service::{AccountTypeHierarchy, AccountTypeServiceImpl};
     use crate::accounting::currency::currency_models::AuditMetadataBase;
 
     const ADJACENCY_LIST_STR: &str = r"(\d+)(\[)(((\d*)|(\d+,))*)(])";
@@ -129,7 +138,6 @@ mod tests {
             if adj_entry.is_some() {
                 curr.child_account_types.iter().for_each(|a| {
                     adj_entry.as_deref_mut().unwrap().adj_links.insert(a.current_account_id);
-
                 })
             } else {
                 adj.push(AdjacencyListEntry {
@@ -253,7 +261,7 @@ mod tests {
             })
         }
         println!("accs1: {}", serde_json::to_string(&accounts).unwrap());
-        let mut p = AccountTypeService::create_hierarchy(&accounts).unwrap();
+        let mut p = AccountTypeServiceImpl::create_hierarchy(&accounts).unwrap();
         let pp = serde_json::to_string(&p).unwrap();
         println!("hierarchy: {}", pp);
         let k = p.iter_mut()

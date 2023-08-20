@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 pub struct AuditMetadataBase {
     pub created_by: String,
     pub updated_by: String,
@@ -28,7 +28,7 @@ pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> Aud
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct CurrencyMaster {
     pub id: i16,
     pub tenant_id: i32,
@@ -41,7 +41,7 @@ pub struct CurrencyMaster {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateCurrencyMasterRequest {
     pub tenant_id: i32,
     pub scale: i16,
