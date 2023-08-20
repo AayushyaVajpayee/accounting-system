@@ -1,7 +1,6 @@
 use std::io;
 use actix_web::{App, HttpServer};
 use actix_web::middleware::Logger;
-use crate::accounting::tenant::tenant_http_api::init_routes;
 mod ledger;
 mod accounting;
 mod seeddata;
@@ -16,9 +15,12 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .configure(init_routes)
             .configure(seeddata::seeddata_http_api::init_routes)
             .configure(accounting::currency::currency_http_api::init_routes)
+            .configure(accounting::account::account_http_api::init_routes)
+            .configure(accounting::tenant::tenant_http_api::init_routes)
+            .configure(accounting::user::user_http_api::init_routes)
+
     })
         .bind(("127.0.0.1", 8080))?
         .run()
