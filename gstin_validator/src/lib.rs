@@ -1,2 +1,2 @@
-mod gstin_models;
+pub mod gstin_models;
 
