@@ -16,6 +16,7 @@ dependencies = [
  "deadpool-postgres",
  "env_logger",
  "futures-util",
+ "gstin_validator",
  "log",
  "pin-utils",
  "postgres",
@@ -1028,6 +1029,15 @@ dependencies = [
  "futures-core",
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "gstin_validator"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "regex",
+ "thiserror",
 ]
 
 [[package]]
