@@ -1,5 +1,5 @@
 
-use crate::invoicing_api::InvoiceLineError::{
+use crate::invoice_line::InvoiceLineError::{
     CessPercentageNegative, CessPercentageTooLarge, OuantityTooLarge, QuantityNegative,
     TaxPercentageNotInBounds, UnitPriceNegative, UnitPriceToolarge,
 };
@@ -99,7 +99,7 @@ pub fn compute_line_total_amount(line: &InvoiceLine) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::invoicing_api::{compute_cess_amount, compute_discount_amount, compute_line_total_amount, compute_tax_amount, compute_taxable_amount, InvoiceLine};
+    use crate::invoice_line::{compute_cess_amount, compute_discount_amount, compute_line_total_amount, compute_tax_amount, compute_taxable_amount, InvoiceLine};
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::FloatAssertions;
