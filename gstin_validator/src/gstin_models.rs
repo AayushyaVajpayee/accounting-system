@@ -5,13 +5,13 @@ use regex::Regex;
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]
-pub enum GstinValidationError<'a> {
+pub enum GstinValidationError {
     #[error("gstin no {0} should be 15 characters but was {1}")]
-    Not15Digit(&'a str, usize),
+    Not15Digit(String, usize),
     #[error("gstin no {0} is not a valid")]
-    InvalidPattern(&'a str),
+    InvalidPattern(String),
     #[error("gstin no {0} is not valid, check any typing error")]
-    TypingError(&'a str),
+    TypingError(String),
 }
 lazy_static! {
     static ref REGEX: Regex =
@@ -38,7 +38,7 @@ lazy_static! {
 fn validate_gstin_size(gstin: &str) -> Option<GstinValidationError> {
     let length = gstin.chars().count();
     if length != 15 {
-        let err = GstinValidationError::Not15Digit(gstin, length);
+        let err = GstinValidationError::Not15Digit(gstin.to_string(), length);
         return Some(err);
     }
     None
@@ -49,7 +49,7 @@ fn validate_gstin_pattern(gstin: &str) -> Option<GstinValidationError> {
     if valid {
         None
     } else {
-        Some(GstinValidationError::InvalidPattern(gstin))
+        Some(GstinValidationError::InvalidPattern(gstin.to_string()))
     }
 }
 
@@ -88,15 +88,15 @@ fn gstin_checksum(gstin: &str) -> Result<char, &str> {
 fn validate_gstin_checksum(gstin:&str)->Option<GstinValidationError>{
     let check_digit  =  gstin.chars().nth(14);
     if check_digit.is_none(){
-        return Some(GstinValidationError::TypingError(gstin));
+        return Some(GstinValidationError::TypingError(gstin.to_string()));
     }
     let l = gstin_checksum(gstin);
     if l.is_err(){
         println!("{}",l.err().unwrap());
-        return  Some(GstinValidationError::TypingError(gstin));
+        return  Some(GstinValidationError::TypingError(gstin.to_string()));
     }
     if l.unwrap()!=check_digit.unwrap(){
-        return  Some(GstinValidationError::TypingError(gstin));
+        return  Some(GstinValidationError::TypingError(gstin.to_string()));
     }
     None
 }
