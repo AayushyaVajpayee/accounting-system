@@ -1,13 +1,14 @@
-use crate::invoice_line::{GstinNo, InvoiceLine, PaymentTerms, TaxPercentage, UnitPrice};
+use crate::invoice_line1::{GstinNo, InvoiceLine, PaymentTerms, TaxPercentage, UnitPrice};
 use crate::invoice_number::InvoiceNumber;
 
 mod invoice_model;
 
 mod hsn_code_generated;
 mod sac_code_generated;
-mod invoice_line;
 mod invoice_number;
 mod hsc_sac;
+mod invoice_line1;
+mod invoice_line;
 
 
 pub struct InvoiceHeader{

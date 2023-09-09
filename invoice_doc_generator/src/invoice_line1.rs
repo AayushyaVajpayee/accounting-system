@@ -1,102 +1,19 @@
-use crate::hsn_code_generated::HSN_SET;
-use crate::invoice_line::LineNumberError::ShouldBeGreaterThan0;
-use crate::invoice_line::LineQuantityError::{NegativeValue, TooLarge};
-use crate::invoice_line::LineSubtitleError::Empty;
-use crate::invoice_line::LineTitleError::{EmptyTitle, TooLong};
-use crate::invoice_line::TaxPercentageError::NotInBounds;
-use crate::invoice_line::UnitPriceError::Negative;
+use crate::hsc_sac::GstItemCode;
 use gstin_validator::gstin_models::{validate_gstin, GstinValidationError};
 use std::ops::Not;
 use thiserror::Error;
-use crate::hsc_sac::GstItemCode;
-
-#[derive(Debug)]
-pub struct LineNumber(u16);
-
-#[derive(Debug, Error)]
-pub enum LineNumberError {
-    #[error("line number {0} should start from 1")]
-    ShouldBeGreaterThan0(u16),
-}
-impl LineNumber {
-    pub fn new(line_number: u16) -> Result<Self, LineNumberError> {
-        if line_number == 0 {
-            return Err(ShouldBeGreaterThan0(line_number));
-        }
-        Ok(Self(line_number))
-    }
-}
+use crate::invoice_line1::TaxPercentageError::NotInBounds;
+use crate::invoice_line1::UnitPriceError::Negative;
+use crate::invoice_line::line_number::LineNumber;
+use crate::invoice_line::line_quantity::LineQuantity;
+use crate::invoice_line::line_subtitle::LineSubtitle;
+use crate::invoice_line::line_title::LineTitle;
 
 //length at most 100 char
 //todo why do we need to own the string. we only need to read it
-#[derive(Debug)]
-pub struct LineTitle(String);
-#[derive(Debug, Error)]
-pub enum LineTitleError {
-    #[error("line title cannot be empty")]
-    EmptyTitle,
-    #[error("line title should not be more than {0} char")]
-    TooLong(u16),
-}
-
-impl LineTitle {
-    pub fn new(title: String) -> Result<Self, LineTitleError> {
-        if title.is_empty() {
-            return Err(EmptyTitle);
-        }
-        if title.chars().count() >= 80 {
-            return Err(TooLong(80));
-        }
-        Ok(Self(title))
-    }
-}
 
 //length at most 50 char per line and max 2 lines
-#[derive(Debug)]
-pub struct LineSubtitle(String);
-#[derive(Debug, Error)]
-pub enum LineSubtitleError {
-    #[error("line subtitle cannot be empty")]
-    Empty,
-    #[error("line subtitle should not be more than {0} char")]
-    TooLong(u16),
-}
-impl LineSubtitle {
-    pub fn new(subtitle: String) -> Result<Self, LineSubtitleError> {
-        if subtitle.is_empty() {
-            return Err(Empty);
-        }
-        if subtitle.chars().count() >= 100 {
-            return Err(LineSubtitleError::TooLong(100));
-        }
-        Ok(Self(subtitle))
-    }
-}
 
-#[derive(Debug)]
-pub struct LineQuantity {
-    quantity: f64,
-    uom: UOM,
-}
-#[derive(Debug, Error)]
-pub enum LineQuantityError {
-    #[error("quantity {0} cannot be negative")]
-    NegativeValue(f64),
-    #[error("quantity cannot be larger than {0}")]
-    TooLarge(f64),
-}
-
-impl LineQuantity {
-    pub fn new(quantity: f64, uom: UOM) -> Result<Self, LineQuantityError> {
-        if quantity < 0.0 {
-            return Err(NegativeValue(quantity));
-        }
-        if quantity > 1_000_000_000.00 {
-            return Err(TooLarge(1_000_000_000.00));
-        }
-        Ok(Self { quantity, uom })
-    }
-}
 #[derive(Debug)]
 pub enum UOM {
     MilliLitre,
@@ -188,7 +105,6 @@ impl GstinNo {
 }
 #[derive(Debug)]
 pub enum PaymentTerms {}
-
 
 #[derive(Debug)]
 pub struct InvoiceLine {
