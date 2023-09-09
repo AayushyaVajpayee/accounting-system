@@ -1,5 +1,7 @@
-use crate::invoice_line1::{GstinNo, InvoiceLine, PaymentTerms, TaxPercentage, UnitPrice};
+use crate::invoice_line1::{GstinNo, InvoiceLine, PaymentTerms};
+use crate::invoice_line::unit_price::UnitPrice;
 use crate::invoice_number::InvoiceNumber;
+use crate::percentages::tax_discount_cess::TaxPercentage;
 
 mod invoice_model;
 
@@ -9,6 +11,7 @@ mod invoice_number;
 mod hsc_sac;
 mod invoice_line1;
 mod invoice_line;
+mod percentages;
 
 
 pub struct InvoiceHeader{
