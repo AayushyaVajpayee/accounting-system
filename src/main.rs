@@ -6,6 +6,8 @@ mod accounting;
 mod seeddata;
 
 mod configurations;
+mod invoicing;
+mod masters;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
