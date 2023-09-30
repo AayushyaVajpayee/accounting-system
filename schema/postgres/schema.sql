@@ -103,8 +103,8 @@ create table transfer
 create table state_master
 (
     id         serial primary key,
-    state_name varchar(60),
     state_code smallint,
+    state_name varchar(60),
     created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
@@ -134,5 +134,5 @@ create table pincode_master
     updated_at bigint default extract(epoch from now()) * 1000000
 );
 
-alter sequence if exists city_master_id_seq restart with 500000;
+alter sequence if exists pincode_master_id_seq restart with 500000;
 
