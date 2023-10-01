@@ -29,6 +29,8 @@ tokio = { version = "1.29.1", features = ["full"] }
 config = "0.13.3"
 gstin_validator = {path="gstin_validator"}
 invoicing_calculations={path="invoicing_calculations"}
+const_format = "0.2.31"
 [dev-dependencies]
 testcontainers = "0.14.0"
 rstest = "0.18.1"
+spectral = "0.6.0"

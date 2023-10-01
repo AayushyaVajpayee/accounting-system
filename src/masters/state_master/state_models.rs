@@ -1,9 +1,10 @@
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-struct StateName(String);
+#[derive(Debug)]
+pub struct StateName(String);
 
 impl StateName {
-    fn new(name: &str) -> Result<Self, &str> {
+   pub fn new(name: &str) -> Result<Self, &'static str> {
         let name = name.trim();
         if name.len() > 60 {
             return Err("state name cannot be greater than 60 chars");
@@ -13,9 +14,9 @@ impl StateName {
     }
 }
 
-struct StateMasterModel {
-    id: i32,
-    state_code: i16,
-    state_name: StateName,
-    audit_metadata:AuditMetadataBase
+#[derive(Debug)]
+pub struct StateMasterModel {
+    pub id: i32,
+    pub state_name: StateName,
+    pub audit_metadata:AuditMetadataBase
 }
