@@ -17,13 +17,13 @@ const BY_ID_QUERY: &str = concatcp!(
     " where id =$1"
 );
 #[async_trait]
-trait StateMasterDao {
+pub trait StateMasterDao {
     async fn get_all_states(&self) -> Vec<StateMasterModel>;
 
     async fn get_state_by_id(&self, id: i32) -> Option<StateMasterModel>;
 }
 
-pub struct StateMasterDaoPostgresImpl {
+struct StateMasterDaoPostgresImpl {
     postgres_client: &'static Pool,
 }
 
@@ -42,6 +42,13 @@ impl TryFrom<&Row> for StateMasterModel {
             },
         })
     }
+}
+
+pub fn get_state_master_dao(client: &'static Pool) -> Box<dyn StateMasterDao + Send + Sync> {
+    let state_master_dao = StateMasterDaoPostgresImpl{
+        postgres_client:client
+    };
+    Box::new(state_master_dao)
 }
 
 #[async_trait]
