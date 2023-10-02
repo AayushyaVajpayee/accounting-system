@@ -67,3 +67,56 @@ impl StateMasterService for StateMasterServiceImpl {
         return item;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use moka::future::Cache;
+    use spectral::assert_that;
+    use spectral::prelude::OptionAssertions;
+
+    use crate::masters::state_master::state_master_dao::MockStateMasterDao;
+    use crate::masters::state_master::state_master_service::{
+        StateMasterService, StateMasterServiceImpl,
+    };
+    use crate::masters::state_master::state_models::{StateMasterModel, StateName};
+
+    #[tokio::test]
+    async fn test_get_all_states_should_be_called_once_and_then_entry_to_be_fetched_from_cache() {
+        let mut dao_mock = MockStateMasterDao::new();
+        dao_mock.expect_get_all_states().times(1).returning(|| {
+            vec![StateMasterModel {
+                id: 0,
+                state_name: StateName::new("Uttarakhand").unwrap(),
+                audit_metadata: Default::default(),
+            }]
+        });
+        let service = StateMasterServiceImpl {
+            dao: Box::new(dao_mock),
+            cache_all: Cache::new(1),
+            cache_by_id: Cache::new(40),
+        };
+        let p = service.get_all_states().await;
+        let _p1 = service.get_all_states().await;
+        assert_eq!(p.len(), 1);
+    }
+    #[tokio::test]
+    async fn test_get_state_by_id() {
+        let mut dao_mock = MockStateMasterDao::new();
+        dao_mock.expect_get_all_states().times(1).returning(|| {
+            vec![StateMasterModel {
+                id: 1,
+                state_name: StateName::new("Uttarakhand").unwrap(),
+                audit_metadata: Default::default(),
+            }]
+        });
+        let service = StateMasterServiceImpl {
+            dao: Box::new(dao_mock),
+            cache_all: Cache::new(1),
+            cache_by_id: Cache::new(40),
+        };
+        let p = service.get_state_by_id(1).await;
+        let p1 = service.get_state_by_id(1).await;
+        assert_that!(p).is_some();
+        assert_that!(p1).is_some();
+    }
+}

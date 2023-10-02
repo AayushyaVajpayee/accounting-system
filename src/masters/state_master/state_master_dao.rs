@@ -4,7 +4,8 @@ use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
-
+#[cfg(test)]
+use mockall::{automock, mock, predicate::*};
 const SELECT_FIELDS: &str = "id,state_name,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "state_master";
 
@@ -16,6 +17,7 @@ const BY_ID_QUERY: &str = concatcp!(
     TABLE_NAME,
     " where id =$1"
 );
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait StateMasterDao {
     async fn get_all_states(&self) -> Vec<StateMasterModel>;

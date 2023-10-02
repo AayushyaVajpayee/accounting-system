@@ -35,3 +35,4 @@ moka = {version="0.12.0",features = ["future"]}
 testcontainers = "0.14.0"
 rstest = "0.18.1"
 spectral = "0.6.0"
+mockall = "0.11.4"
