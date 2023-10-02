@@ -27,9 +27,10 @@ async-trait = "0.1.72"
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
 tokio = { version = "1.29.1", features = ["full"] }
 config = "0.13.3"
-gstin_validator = {path="gstin_validator"}
-invoicing_calculations={path="invoicing_calculations"}
+gstin_validator = { path = "gstin_validator" }
+invoicing_calculations = { path = "invoicing_calculations" }
 const_format = "0.2.31"
+moka = {version="0.12.0",features = ["future"]}
 [dev-dependencies]
 testcontainers = "0.14.0"
 rstest = "0.18.1"
