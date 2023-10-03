@@ -23,12 +23,7 @@ const BY_ID_QUERY: &str = concatcp!(
 );
 
 
-pub fn get_city_master_dao(client:&'static Pool)->Box<dyn CityMasterDao +Send+Sync>{
-    let city_master_dao = CityMasterDaoImpl{
-        postgres_client:client
-    };
-    Box::new(city_master_dao)
-}
+
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CityMasterDao {
@@ -36,7 +31,12 @@ pub trait CityMasterDao {
 
     async fn get_city_by_id(&self, id: i32) -> Option<CityMaster>;
 }
-
+pub fn get_city_master_dao(client:&'static Pool)->Box<dyn CityMasterDao +Send+Sync>{
+    let city_master_dao = CityMasterDaoImpl{
+        postgres_client:client
+    };
+    Box::new(city_master_dao)
+}
 struct CityMasterDaoImpl {
     postgres_client: &'static Pool,
 }

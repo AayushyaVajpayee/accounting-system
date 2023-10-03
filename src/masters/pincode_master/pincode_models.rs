@@ -1,24 +1,22 @@
-use std::error::Error;
-use std::num::ParseIntError;
-use std::pin::Pin;
+
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-struct Pincode(u32);
+#[derive(Debug)]
+pub struct Pincode(u32);
 
 impl Pincode {
-    fn new(pincode: &str) -> Result<Self, &str> {
-        let code = pincode
-            .parse::<u32>()
-            .map_err(|_| "cannot parse given pincode as a valid number")?;
+   pub fn new(pincode: i32) -> Result<Self, &'static str> {
+        let code = pincode;
         if code<100000 && code>999999{
            return Err("pincode should be 6 digits only")
         }
-        Ok(Self(code))
+        Ok(Self(code as u32))
     }
 }
-struct PincodeMaster {
-    id: i32,
-    pincode: Pincode,
-    city_id: i32,
-    audit:AuditMetadataBase,
+#[derive(Debug)]
+pub struct PincodeMaster {
+   pub id: i32,
+   pub pincode: Pincode,
+   pub city_id: i32,
+   pub audit_metadata:AuditMetadataBase,
 }

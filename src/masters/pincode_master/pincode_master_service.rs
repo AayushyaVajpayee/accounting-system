@@ -1,109 +1,126 @@
+use std::sync::Arc;
 use async_trait::async_trait;
-
+use moka::future::Cache;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
+use crate::masters::pincode_master::pincode_master_dao::{get_pincode_master_dao, PincodeMasterDao};
+use crate::masters::pincode_master::pincode_models::PincodeMaster;
+const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
-trait PincodeMasterService {
-    async fn get_all_pincodes();
-    async fn get_pincode_by_id();
+pub trait PincodeMasterService {
+    async fn get_all_pincodes(&self)->Option<Arc<Vec<Arc<PincodeMaster>>>>;
+    async fn get_pincode_by_id(&self, id: i32)->Option<Arc<PincodeMaster>>;
+}
+#[allow(dead_code)]
+pub async fn get_pincode_master_service() -> Box<dyn PincodeMasterService + Send + Sync> {
+    let pclient = get_postgres_conn_pool();
+    let city_master_dao = get_pincode_master_dao(pclient);
+    let cache: Cache<i32, Arc<Vec<Arc<PincodeMaster>>>> = Cache::new(1);
+    let city_master_service = PincodeMasterServiceImpl {
+        dao: city_master_dao,
+        cache_all: cache,
+        cache_by_id: Cache::new(25000),
+    };
+    Box::new(city_master_service)
 }
 
+
+struct PincodeMasterServiceImpl{
+    dao:Box<dyn PincodeMasterDao +Send+Sync>,
+    cache_all: Cache<i32,Arc<Vec<Arc<PincodeMaster>>>>,
+    cache_by_id:Cache<i32,Arc<PincodeMaster>>
+}
+
+impl PincodeMasterServiceImpl{
+    async fn populate_caches(&self) {
+        let cache = self.cache_all.clone();
+        let cache_by_id = self.cache_by_id.clone();
+        let db_pincode_list = self.dao.get_all_pincodes().await;
+        let mut cache_vec: Vec<Arc<PincodeMaster>> = Vec::with_capacity(db_pincode_list.len());
+        for pincode in db_pincode_list.into_iter() {
+            let arc_city = Arc::new(pincode);
+            cache_vec.push(arc_city.clone());
+            cache_by_id.insert(arc_city.id, arc_city.clone()).await;
+        }
+        cache.insert(CACHE_ALL_KEY, Arc::new(cache_vec)).await;
+    }
+}
+#[async_trait]
+impl PincodeMasterService for PincodeMasterServiceImpl{
+    async fn get_all_pincodes(&self) -> Option<Arc<Vec<Arc<PincodeMaster>>>> {
+        let cache = self.cache_all.clone();
+        let res = cache.get(&CACHE_ALL_KEY).await;
+        if res.is_none() {
+            self.populate_caches().await;
+            return cache.get(&CACHE_ALL_KEY).await;
+        }
+        return res;
+    }
+
+    async fn get_pincode_by_id(&self, id: i32) -> Option<Arc<PincodeMaster>> {
+        if self.cache_all.get(&CACHE_ALL_KEY).await.is_none() {
+            self.populate_caches().await;
+        }
+        return self.cache_by_id.get(&id).await;
+    }
+}
+
+
 #[cfg(test)]
-mod tests {
-    // #[test]
-    // fn test_s() {
-    //     let mut p = env::current_dir().unwrap();
-    //     p.push("pincode.csv");
-    //     let mut k = csv::Reader::from_path(p).unwrap();
-    //     println!("{}", k.has_headers());
-    //     let mut pincode_city_map: HashMap<u32, String> = HashMap::with_capacity(20000);
-    //     let mut city_state_map: HashMap<String, String> = HashMap::with_capacity(800);
-    //     let mut pincodes: HashSet<u32> = HashSet::with_capacity(40000);
-    //     let mut cities: HashSet<String> = HashSet::with_capacity(1000);
-    //     let mut states: HashSet<String> = HashSet::with_capacity(30);
-    //     for rec in k.records() {
-    //         let reca = rec.unwrap();
-    //         let pincode_raw = reca.get(4).unwrap().trim();
-    //         let city_raw = reca.get(7).unwrap().trim().to_ascii_uppercase();
-    //         let state = reca.get(8).unwrap().trim().to_ascii_uppercase();
-    //         let pincode = pincode_raw.parse::<u32>().unwrap();
-    //         cities.insert(city_raw.clone());
-    //         states.insert(state.clone());
-    //         pincodes.insert(pincode);
-    //         pincode_city_map.insert(pincode, city_raw.clone());
-    //         city_state_map.insert(city_raw, state);
-    //     }
-    //     let mut cities = cities.into_iter().collect::<Vec<String>>();
-    //     cities.sort_unstable();
-    //     let mut states = states.into_iter().collect::<Vec<String>>();
-    //     states.sort_unstable();
-    //     let mut pincodes = pincodes.into_iter().collect::<Vec<u32>>();
-    //     pincodes.sort_unstable();
-    //     let mut state_rows: Vec<String> = Vec::with_capacity(34);
-    //     let state_row_header =
-    //         "id,state_code,state_name,created_by,updated_by,created_at,updated_at".to_string();
-    //     state_rows.push(state_row_header);
-    //     for (index, state) in states.iter().enumerate() {
-    //         let now = SystemTime::now()
-    //             .duration_since(UNIX_EPOCH)
-    //             .unwrap()
-    //             .as_micros();
-    //         let row = format!("{index},,{state},system,,{now},{now}");
-    //         state_rows.push(row);
-    //     }
-    //     let city_row_header =
-    //         "id,city_name,state_id,created_by,updated_by,created_at,updated_at".to_string();
-    //     let mut city_rows: Vec<String> = Vec::with_capacity(800);
-    //     city_rows.push(city_row_header);
-    //     for (index, city) in cities.iter().enumerate() {
-    //         let now = SystemTime::now()
-    //             .duration_since(UNIX_EPOCH)
-    //             .unwrap()
-    //             .as_micros();
-    //         let state = city_state_map.get(city.as_str()).unwrap();
-    //         let state_index = states
-    //             .iter()
-    //             .enumerate()
-    //             .find(|(i, s)| state.eq_ignore_ascii_case(s))
-    //             .unwrap()
-    //             .0;
-    //         let row = format!("{index},{city},{state_index},system,,{now},{now}");
-    //         city_rows.push(row);
-    //     }
-    //
-    //     let pincode_header_row =
-    //         "id,pincode,city_id,created_by,updated_by,created_at,updated_at".to_string();
-    //     let mut pincode_rows = Vec::with_capacity(20_000);
-    //     pincode_rows.push(pincode_header_row);
-    //     for (index, pincode) in pincodes.iter().enumerate() {
-    //         let now = SystemTime::now()
-    //             .duration_since(UNIX_EPOCH)
-    //             .unwrap()
-    //             .as_micros();
-    //         let city = pincode_city_map.get(pincode).unwrap();
-    //         let city_index = cities
-    //             .iter()
-    //             .enumerate()
-    //             .find(|(i, c)| city.eq_ignore_ascii_case(c))
-    //             .unwrap()
-    //             .0;
-    //         let row = format!("{index},{pincode},{city_index},system,,{now},{now}");
-    //         pincode_rows.push(row);
-    //     }
-    //     let mut state_master_file =File::create("state_master.csv").unwrap();
-    //     let mut city_master_file = File::create("city_master.csv").unwrap();
-    //     let mut pincode_master_file = File::create("pincode_master.csv").unwrap();
-    //     state_master_file.write_all(state_rows.join("\n").as_bytes()).unwrap();
-    //     city_master_file.write_all(city_rows.join("\n").as_bytes()).unwrap();
-    //     pincode_master_file.write_all(pincode_rows.join("\n").as_bytes()).unwrap();
-    //
-    //     //created_by,updated_by,created_at,updated_at
-    //     //pincode_master
-    //     //id,pincode,city_id,created_by,updated_by,created_at,updated_at
-    //     //city_master
-    //     //id,city_name,state_id,created_by,updated_by,created_at,updated_at
-    //     //state_master
-    //     //id,state_code,state_name,created_by,updated_by,created_at,updated_at
-    //     println!("{}", pincodes.len());
-    //     println!("{}", cities.len());
-    //     println!("{}", states.len())
-    // }
+mod tests{
+    use moka::future::Cache;
+    use spectral::assert_that;
+    use spectral::option::OptionAssertions;
+    use crate::masters::pincode_master::pincode_master_dao::MockPincodeMasterDao;
+    use crate::masters::pincode_master::pincode_master_service::{PincodeMasterService, PincodeMasterServiceImpl};
+    use crate::masters::pincode_master::pincode_models::{Pincode, PincodeMaster};
+
+    #[tokio::test]
+    async fn test_get_all_pincodes_to_be_called_once_and_then_entry_to_be_fetched_from_cache(){
+        let mut dao_mock = MockPincodeMasterDao::new();
+        dao_mock.expect_get_all_pincodes()
+            .times(1)
+            .returning(||{
+                vec![PincodeMaster{
+                    id: 0,
+                    pincode: Pincode::new(123456).unwrap(),
+                    city_id:3,
+                    audit_metadata: Default::default(),
+                }]
+            });
+        let service = PincodeMasterServiceImpl{
+            dao:Box::new(dao_mock),
+            cache_all:Cache::new(1),
+            cache_by_id:Cache::new(25000)
+        };
+        let p = service.get_all_pincodes().await.unwrap();
+        let p1 = service.get_all_pincodes().await.unwrap();
+        assert_eq!(p.len(),1);
+        assert_eq!(p1.len(),1);
+    }
+
+
+    #[tokio::test]
+    async fn test_get_pincode_by_id() {
+        let mut dao_mock = MockPincodeMasterDao::new();
+        dao_mock.expect_get_all_pincodes()
+            .times(1)
+            .returning(||{
+                vec![PincodeMaster{
+                    id: 0,
+                    pincode: Pincode::new(123456).unwrap(),
+                    city_id: 0,
+                    audit_metadata: Default::default(),
+                }]
+            });
+        let service = PincodeMasterServiceImpl{
+            dao: Box::new(dao_mock),
+            cache_all: Cache::new(1),
+            cache_by_id: Cache::new(25000),
+        };
+
+        let p = service.get_pincode_by_id(0).await;
+        let p1 = service.get_pincode_by_id(0).await;
+        assert_that!(p).is_some();
+        assert_that!(p1).is_some();
+    }
 }
