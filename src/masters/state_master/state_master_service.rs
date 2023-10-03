@@ -10,7 +10,7 @@ use crate::masters::state_master::state_models::StateMasterModel;
 const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
 pub trait StateMasterService {
-    async fn get_all_states(&self) -> Arc<Vec<Arc<StateMasterModel>>>;
+    async fn get_all_states(&self) -> Option<Arc<Vec<Arc<StateMasterModel>>>>;
     async fn get_state_by_id(&self, id: i32) -> Option<Arc<StateMasterModel>>;
 }
 
@@ -24,7 +24,6 @@ pub async fn get_state_master_service() -> Box<dyn StateMasterService + Send + S
     let pclient = get_postgres_conn_pool();
     let state_master_dao = get_state_master_dao(pclient);
     let cache: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>> = Cache::new(40);
-    cache.insert(CACHE_ALL_KEY, Arc::new(vec![])).await;
     let state_master_s = StateMasterServiceImpl {
         dao: state_master_dao,
         cache_by_id: Cache::new(40),
@@ -50,12 +49,14 @@ impl StateMasterServiceImpl {
 
 #[async_trait]
 impl StateMasterService for StateMasterServiceImpl {
-    async fn get_all_states(&self) -> Arc<Vec<Arc<StateMasterModel>>> {
+    async fn get_all_states(&self) -> Option<Arc<Vec<Arc<StateMasterModel>>>> {
         let cache = self.cache_all.clone();
-        if cache.get(&CACHE_ALL_KEY).await.is_none() {
+        let res = cache.get(&CACHE_ALL_KEY).await;
+        if res.is_none() {
             self.populate_caches().await;
+            return cache.get(&CACHE_ALL_KEY).await;
         }
-        cache.get(&CACHE_ALL_KEY).await.unwrap() //safe to call unwrap because we are initialising with empty vector
+        return res //safe to call unwrap because we are initialising with empty vector
     }
 
     async fn get_state_by_id(&self, id: i32) -> Option<Arc<StateMasterModel>> {
@@ -95,7 +96,7 @@ mod tests {
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(40),
         };
-        let p = service.get_all_states().await;
+        let p = service.get_all_states().await.unwrap();
         let _p1 = service.get_all_states().await;
         assert_eq!(p.len(), 1);
     }

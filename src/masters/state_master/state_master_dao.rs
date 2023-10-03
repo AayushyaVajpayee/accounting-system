@@ -26,7 +26,7 @@ pub trait StateMasterDao {
 }
 
 struct StateMasterDaoPostgresImpl {
-    postgres_client: &'static Pool,
+    postgres_client: &'static Pool
 }
 
 impl TryFrom<&Row> for StateMasterModel {
