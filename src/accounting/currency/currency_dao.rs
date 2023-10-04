@@ -1,9 +1,8 @@
 use std::sync::OnceLock;
-use actix_web::web::Buf;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
-
 
 use crate::accounting::currency::currency_models::{AuditMetadataBase, CreateCurrencyMasterRequest, CurrencyMaster};
 
@@ -106,7 +105,7 @@ mod tests {
                 ..Default::default()
             }
         );
-        let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client };
+        let  currency_dao = CurrencyDaoPostgresImpl { postgres_client };
         let curr_id = currency_dao.create_currency_entry(&currency_master).await;
         let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).await.unwrap();
         assert_eq!(curr_id, fetched_curr.id)

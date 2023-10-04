@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use deadpool_postgres::Pool;
-use crate::ledger::ledgermaster::ledger_master_dao::{get_ledger_master_dao, LedgerMasterDao};
+
+use crate::ledger::ledgermaster::ledger_master_dao::{ LedgerMasterDao};
 use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryRequest, LedgerMaster};
 
 #[async_trait]
@@ -25,8 +25,8 @@ impl LedgerMasterService for LedgerMasterServiceImpl {
 }
 
 #[cfg(test)]
-pub fn get_ledger_master_service_for_test(postgres_client: &'static Pool) -> Box<dyn LedgerMasterService + Send + Sync> {
-    let ledger_master_dao = get_ledger_master_dao(postgres_client);
+pub fn get_ledger_master_service_for_test(postgres_client: &'static deadpool_postgres::Pool) -> Box<dyn LedgerMasterService + Send + Sync> {
+    let ledger_master_dao = crate::ledger::ledgermaster::ledger_master_dao::get_ledger_master_dao(postgres_client);
     Box::new(LedgerMasterServiceImpl {
         ledger_master_dao
     })

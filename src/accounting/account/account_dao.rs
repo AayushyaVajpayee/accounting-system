@@ -1,8 +1,8 @@
 use std::sync::OnceLock;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
-
 
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -129,7 +129,7 @@ mod account_tests {
             user_id: Some(1),
             ..Default::default()
         });
-        let mut account_dao = AccountDaoPostgresImpl { postgres_client };
+        let  account_dao = AccountDaoPostgresImpl { postgres_client };
         let account_id = account_dao.create_account(&an_account_request).await;
         let account_fetched = account_dao.get_account_by_id(&account_id).await.unwrap();
         assert_eq!(account_fetched.id, account_id)

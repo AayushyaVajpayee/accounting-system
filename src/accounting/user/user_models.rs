@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

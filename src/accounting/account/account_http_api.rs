@@ -1,5 +1,6 @@
 use actix_web::{Responder, Scope, web};
 use actix_web::web::{Data, Path};
+
 use crate::accounting::account::account_models::CreateAccountRequest;
 use crate::accounting::account::account_service::{AccountService, get_account_service};
 
@@ -35,6 +36,7 @@ fn map_endpoints_to_functions() -> Scope {
 mod tests {
     use actix_web::{App, test};
     use async_trait::async_trait;
+
     use crate::accounting::account::account_http_api::map_endpoints_to_functions;
     use crate::accounting::account::account_models::{Account, CreateAccountRequest};
     use crate::accounting::account::account_service::AccountService;
@@ -43,11 +45,11 @@ mod tests {
 
     #[async_trait]
     impl AccountService for MockAccountService {
-        async fn get_account_by_id(&self, id: &i32) -> Option<Account> {
+        async fn get_account_by_id(&self, _id: &i32) -> Option<Account> {
             Some(Default::default())
         }
 
-        async fn create_account(&self, request: &CreateAccountRequest) -> i32 {
+        async fn create_account(&self, _request: &CreateAccountRequest) -> i32 {
             0
         }
     }

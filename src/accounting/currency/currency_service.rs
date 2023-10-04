@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use deadpool_postgres::Pool;
+
 use crate::accounting::currency::currency_dao::{CurrencyDao, get_currency_dao};
 use crate::accounting::currency::currency_models::{CreateCurrencyMasterRequest, CurrencyMaster};
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
@@ -24,7 +24,7 @@ pub fn get_currency_service() -> Box<dyn CurrencyService + Send + Sync> {
 
 #[allow(dead_code)]
 #[cfg(test)]
-pub fn get_currency_service_for_test(postgres_client: &'static Pool) -> Box<dyn CurrencyService + Send + Sync> {
+pub fn get_currency_service_for_test(postgres_client: &'static deadpool_postgres::Pool) -> Box<dyn CurrencyService + Send + Sync> {
     let currency_dao = get_currency_dao(postgres_client);
     let currency_service = CurrencyServiceImpl {
         currency_dao

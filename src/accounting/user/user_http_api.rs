@@ -43,9 +43,9 @@ mod tests {
 
     #[async_trait]
     impl UserService for UserServiceMock {
-        async fn get_user_by_id(&self, id: &i32) -> Option<User> {
+        async fn get_user_by_id(&self, _id: &i32) -> Option<User> {
             Some(User {
-                id: 0,
+                id:0,
                 tenant_id: 0,
                 first_name: "a".to_string(),
                 last_name: None,
@@ -60,7 +60,7 @@ mod tests {
             })
         }
 
-        async fn create_user(&self, user: &CreateUserRequest) -> i32 {
+        async fn create_user(&self, _user: &CreateUserRequest) -> i32 {
             1
         }
     }

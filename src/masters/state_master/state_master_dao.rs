@@ -1,11 +1,13 @@
-use crate::accounting::currency::currency_models::AuditMetadataBase;
-use crate::masters::state_master::state_models::{StateMasterModel, StateName};
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
-use tokio_postgres::Row;
 #[cfg(test)]
-use mockall::{automock, mock, predicate::*};
+use mockall::{automock, predicate::*};
+use tokio_postgres::Row;
+
+use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::masters::state_master::state_models::{StateMasterModel, StateName};
+
 const SELECT_FIELDS: &str = "id,state_name,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "state_master";
 
@@ -70,14 +72,15 @@ impl StateMasterDao for StateMasterDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
+    use spectral::assert_that;
+    use spectral::prelude::OptionAssertions;
+
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
-    };
+        };
     use crate::masters::state_master::state_master_dao::{
         StateMasterDao, StateMasterDaoPostgresImpl,
     };
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
 
     #[tokio::test]
     async fn should_be_able_to_fetch_all_states() {

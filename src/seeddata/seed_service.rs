@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use async_std::io::WriteExt;
 use async_trait::async_trait;
 use bytes::Bytes;
 use deadpool_postgres::Pool;
@@ -8,8 +7,8 @@ use futures_util::{SinkExt, stream};
 use pin_utils::pin_mut;
 use tokio::pin;
 use tokio_postgres::Error;
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::seeddata::constants::{FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH, SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
 
 #[async_trait]
@@ -64,7 +63,7 @@ pub fn get_seed_service() -> Box<dyn SeedService + Send + Sync> {
     let seed_s = SeedServiceImpl { pool };
     Box::new(seed_s)
 }
-
+#[allow(dead_code)]
 pub fn get_seed_service_with_pool_supplied(pool: &'static Pool) -> Box<dyn SeedService + Send + Sync> {
     let seed_s = SeedServiceImpl { pool };
     Box::new(seed_s)

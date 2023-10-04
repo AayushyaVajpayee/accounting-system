@@ -1,12 +1,12 @@
-use crate::accounting::currency::currency_models::AuditMetadataBase;
-use crate::masters::city_master::city_master_models::{CityMaster, CityName};
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
-use futures_util::TryFutureExt;
 #[cfg(test)]
 use mockall::automock;
 use tokio_postgres::Row;
+
+use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::masters::city_master::city_master_models::{CityMaster, CityName};
 
 const SELECT_FIELDS: &str = "id,city_name,state_id,created_by,updated_by,created_at,updated_at";
 
@@ -79,6 +79,7 @@ impl CityMasterDao for CityMasterDaoImpl {
 mod tests{
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::city_master::city_master_dao::{CityMasterDao, CityMasterDaoImpl};
 

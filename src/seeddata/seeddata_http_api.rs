@@ -1,8 +1,6 @@
 use actix_web::{Responder, Scope, web};
-use deadpool_postgres::Pool;
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
-use crate::seeddata::seed_service::{get_seed_service, SeedService};
 
+use crate::seeddata::seed_service::{get_seed_service, SeedService};
 
 pub async fn init_schema_and_create_seed_data(data: web::Data<Box<dyn SeedService + Send + Sync>>) -> actix_web::Result<impl Responder> {
     data.copy_tables().await;
@@ -25,6 +23,7 @@ fn map_endpoints_to_functions() -> Scope {
 mod tests {
     use actix_web::{App, test};
     use async_trait::async_trait;
+
     use crate::seeddata::seed_service::SeedService;
     use crate::seeddata::seeddata_http_api::map_endpoints_to_functions;
 

@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use deadpool_postgres::Pool;
 
 use crate::accounting::account::account_dao::{AccountDao, get_account_dao};
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
@@ -33,6 +32,6 @@ pub fn get_account_service() -> Box<dyn AccountService + Send + Sync> {
     Box::new(service)
 }
 #[cfg(test)]
-pub fn get_account_service_for_test(client: &'static Pool) -> Box<dyn AccountService + Send + Sync> {
+pub fn get_account_service_for_test(client: &'static deadpool_postgres::Pool) -> Box<dyn AccountService + Send + Sync> {
     Box::new(AccountServiceImpl { account_dao: get_account_dao(client) })
 }

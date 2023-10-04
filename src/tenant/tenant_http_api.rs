@@ -1,8 +1,8 @@
 use actix_web::{Responder, Scope, web};
 use web::{Data, Path};
-use crate::accounting::tenant::tenant_models::CreateTenantRequest;
 
-use crate::accounting::tenant::tenant_service::{get_tenant_service, TenantService};
+use crate::tenant::tenant_models::CreateTenantRequest;
+use crate::tenant::tenant_service::{get_tenant_service, TenantService};
 
 async fn get_tenant_by_id(id: Path<i32>,
                           data: Data<Box<dyn TenantService + Send + Sync>>)
@@ -40,19 +40,20 @@ fn map_endpoints_to_functions() -> Scope {
 mod tests {
     use actix_web::{App, test};
     use async_trait::async_trait;
-    use crate::accounting::tenant::tenant_http_api::map_endpoints_to_functions;
-    use crate::accounting::tenant::tenant_models::{CreateTenantRequest, Tenant};
-    use crate::accounting::tenant::tenant_service::TenantService;
+
+    use crate::tenant::tenant_http_api::map_endpoints_to_functions;
+    use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
+    use crate::tenant::tenant_service::TenantService;
 
     struct MockTenantService {}
 
     #[async_trait]
     impl TenantService for MockTenantService {
-        async fn get_tenant_by_id(&self, id: &i32) -> Option<Tenant> {
+        async fn get_tenant_by_id(&self, _id: &i32) -> Option<Tenant> {
             Some(Default::default())
         }
 
-        async fn create_tenant(&self, tenant: &CreateTenantRequest) -> i32 {
+        async fn create_tenant(&self, _tenant: &CreateTenantRequest) -> i32 {
             0
         }
     }

@@ -1,9 +1,11 @@
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
-use crate::masters::city_master::city_master_dao::{get_city_master_dao, CityMasterDao};
-use crate::masters::city_master::city_master_models::CityMaster;
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use moka::future::Cache;
-use std::sync::Arc;
+
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
+use crate::masters::city_master::city_master_dao::{CityMasterDao, get_city_master_dao};
+use crate::masters::city_master::city_master_models::CityMaster;
 
 const CACHE_ALL_KEY: i32 = 1;
 
@@ -70,9 +72,11 @@ mod tests{
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+
     use crate::masters::city_master::city_master_dao::MockCityMasterDao;
     use crate::masters::city_master::city_master_models::{CityMaster, CityName};
     use crate::masters::city_master::city_master_service::{CityMasterService, CityMasterServiceImpl};
+
     #[tokio::test]
    async fn test_get_all_cities_to_be_called_once_and_then_entry_to_be_fetched_from_cache(){
         let mut dao_mock = MockCityMasterDao::new();

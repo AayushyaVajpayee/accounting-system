@@ -1,8 +1,6 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use serde::Deserialize;
 use uuid::Uuid;
-use crate::ledger::ledger_models::TransferType::Regular;
+
 
 #[derive(Debug, Deserialize)]
 pub struct TransferCreationDbResponse {
@@ -96,7 +94,7 @@ pub fn a_transfer(builder: TransferBuilder) -> Transfer {
         code: builder.code.unwrap_or(0),
         amount: builder.amount.unwrap_or(100),
         remarks: builder.remarks,
-        created_at: builder.created_at.unwrap_or_else(|| SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_micros() as i64),
-        transfer_type: builder.transfer_type.unwrap_or(Regular),
+        created_at: builder.created_at.unwrap_or_else(|| std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as i64),
+        transfer_type: builder.transfer_type.unwrap_or(crate::ledger::ledger_models::TransferType::Regular),
     }
 }

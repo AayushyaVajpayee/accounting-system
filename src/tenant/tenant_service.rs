@@ -1,8 +1,8 @@
 use async_trait::async_trait;
-use deadpool_postgres::Pool;
+
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
-use crate::accounting::tenant::tenant_dao::{get_tenant_dao, TenantDao};
-use crate::accounting::tenant::tenant_models::{CreateTenantRequest, Tenant};
+use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
+use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
 
 #[async_trait]
 pub trait TenantService {
@@ -35,7 +35,7 @@ pub fn get_tenant_service() -> Box<dyn TenantService + Send + Sync> {
 
 #[allow(dead_code)]
 #[cfg(test)]
-pub fn get_tenant_service_for_test(postgres_client: &'static Pool) -> Box<dyn TenantService + Send + Sync> {
+pub fn get_tenant_service_for_test(postgres_client: &'static deadpool_postgres::Pool) -> Box<dyn TenantService + Send + Sync> {
     let tenant_d=get_tenant_dao(postgres_client);
     let tenant_s=TenantServiceImpl{tenant_dao:tenant_d};
     Box::new(tenant_s)

@@ -1,6 +1,10 @@
 use std::io;
+
 use actix_web::{App, HttpServer};
 use actix_web::middleware::Logger;
+
+use crate::tenant::tenant_http_api;
+
 mod ledger;
 mod accounting;
 mod seeddata;
@@ -8,6 +12,7 @@ mod seeddata;
 mod configurations;
 mod invoicing;
 mod masters;
+mod tenant;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
@@ -20,7 +25,7 @@ async fn main() -> io::Result<()> {
             .configure(seeddata::seeddata_http_api::init_routes)
             .configure(accounting::currency::currency_http_api::init_routes)
             .configure(accounting::account::account_http_api::init_routes)
-            .configure(accounting::tenant::tenant_http_api::init_routes)
+            .configure(tenant_http_api::init_routes)
             .configure(accounting::user::user_http_api::init_routes)
 
     })

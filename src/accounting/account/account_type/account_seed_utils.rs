@@ -5,7 +5,7 @@ use csv::StringRecord;
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::seeddata::constants::SEED_FILES_LOCATION;
-
+#[allow(dead_code)]
 pub fn read_account_type_seed_file() -> Vec<AccountTypeMaster> {
     let pth = format!("{}account_type_master.csv", SEED_FILES_LOCATION);
     let mut fil = csv::Reader::from_path(pth).unwrap();
@@ -14,7 +14,7 @@ pub fn read_account_type_seed_file() -> Vec<AccountTypeMaster> {
         .map(|k| map_csv_row_to_account_type(k.unwrap(), &header))
         .collect::<Vec<AccountTypeMaster>>()
 }
-
+#[allow(dead_code)]
 fn map_csv_row_to_account_type(row: StringRecord, header: &StringRecord) -> AccountTypeMaster {
     let map = header
         .iter()
@@ -36,7 +36,7 @@ fn map_csv_row_to_account_type(row: StringRecord, header: &StringRecord) -> Acco
         },
     }
 }
-
+#[allow(dead_code)]
 fn map_csv_child_ids_to_rust_model(csv_field: &str) -> Option<Vec<i16>> {
     if csv_field.trim() == "" {
         return None;

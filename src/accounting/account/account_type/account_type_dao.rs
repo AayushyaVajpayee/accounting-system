@@ -1,8 +1,8 @@
 use std::sync::OnceLock;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
-
 
 use crate::accounting::account::account_type::account_type_models::{AccountTypeMaster, CreateAccountTypeMasterRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -120,7 +120,7 @@ mod account_type_tests {
     #[tokio::test]
     async fn tests() {
         let port = get_postgres_image_port().await;
-        let mut account_type_dao = AccountTypeDaoPostgresImpl {
+        let  account_type_dao = AccountTypeDaoPostgresImpl {
             postgres_client: get_postgres_conn_pool(port).await
         };
         let an_account_type = a_create_account_type_master_request(

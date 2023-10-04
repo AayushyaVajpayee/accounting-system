@@ -1,4 +1,5 @@
 use std::sync::OnceLock;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
@@ -100,9 +101,9 @@ impl UserDao for UserDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_users() {
@@ -114,7 +115,7 @@ mod tests {
             }
         );
         let postgres_client = get_postgres_conn_pool(port).await;
-        let mut user_dao = UserDaoPostgresImpl { postgres_client };
+        let  user_dao = UserDaoPostgresImpl { postgres_client };
         let user_id = user_dao.create_user(&user).await;
         let user = user_dao.get_user_by_id(&user_id).await.unwrap();
         assert_eq!(user.id, user_id);
