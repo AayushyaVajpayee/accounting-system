@@ -6,6 +6,7 @@ mod accounting;
 mod seeddata;
 
 mod configurations;
+mod audit_table;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {

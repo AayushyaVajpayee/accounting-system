@@ -384,13 +384,13 @@ mod tests {
 
         #[rstest]
         #[case::should_post_pending_entry_for_a_pending_entry_in_full(pending_transfer().await,
-        Some(TransferType::PostPending{pending_id: Uuid::new_v4()}),
+        Some(TransferType::PostPending{pending_id: Uuid::now_v7()}),
         Some(100))]
         #[case::should_post_pending_entry_for_a_pending_entry_partially(pending_transfer().await,
-        Some(TransferType::PostPending{pending_id: Uuid::new_v4()}),
+        Some(TransferType::PostPending{pending_id: Uuid::now_v7()}),
         Some(99))]
         #[case::should_be_able_to_void_a_pending_entry(pending_transfer().await,
-        Some(TransferType::VoidPending{pending_id: Uuid::new_v4()}),
+        Some(TransferType::VoidPending{pending_id: Uuid::now_v7()}),
         Some(100))]
         async fn should_be_able_to_resolve_pending_transfer(
             #[case] pending_transfer: Transfer,
@@ -448,8 +448,8 @@ mod tests {
         }
 
         #[rstest]
-        #[case(Some(TransferType::PostPending{pending_id: Uuid::new_v4()}))]
-        #[case(Some(TransferType::VoidPending{pending_id: Uuid::new_v4()}))]
+        #[case(Some(TransferType::PostPending{pending_id: Uuid::now_v7()}))]
+        #[case(Some(TransferType::VoidPending{pending_id: Uuid::now_v7()}))]
         #[trace]
         async fn should_error_out_posting_entry_for_an_invalid_pending_entry_id(#[case] transfer_type: Option<TransferType>)
         {

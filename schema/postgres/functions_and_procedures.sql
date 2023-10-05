@@ -1,3 +1,32 @@
+--link of code from where this implementation is taken: https://gist.github.com/kjmph/5bd772b2c2df145aa645b837da7eca74
+create or replace function uuid_generate_v7()
+    returns uuid
+as
+$$
+begin
+    -- use random v4 uuid as starting point (which has the same variant we need)
+    -- then overlay timestamp
+    -- then set version 7 by flipping the 2 and 1 bit in the version 4 string
+    return encode(
+            set_bit(
+                    set_bit(
+                            overlay(uuid_send(gen_random_uuid())
+                                    placing
+                                    substring(int8send(floor(extract(epoch from clock_timestamp()) * 1000)::bigint) from
+                                              3)
+                                    from 1 for 6
+                                ),
+                            52, 1
+                        ),
+                    53, 1
+                ),
+            'hex')::uuid;
+end
+$$
+    language plpgsql
+    volatile;
+
+
 create or replace procedure validate_pending_transfer(trf transfer, pending_trf transfer, inout output_result jsonb) as
 $$
 declare
@@ -125,7 +154,7 @@ DECLARE
     existing_entry   transfer.id%type;
     pending_transfer transfer;
 BEGIN
-    select id from transfer where id = txn.id and tenant_id = txn.tenant_id into existing_entry;
+    select id from transfer where id = txn.id and tenant_id = txn.tenant_id into existing_entry;--isn't this uuid, how to ensure idempotency from client side?
     if existing_entry is not null then
         result['committed'] = 'false';
         result['reason'] = result['reason'] || concat('["transfer already exists with this id"]')::jsonb;
@@ -225,3 +254,24 @@ end;
 $$
     language plpgsql;
 
+create or replace function create_audit_entry() returns trigger as
+$$
+DECLARE
+    op_type char;
+BEGIN
+    if (TG_OP = 'DELETE') then
+        op_type = 'd';
+    elsif (TG_OP = 'UPDATE') then
+        op_type = 'u';
+    end if;
+    insert into audit_entries(id, tenant_id, audit_record_id, table_id, operation_type, old_record)
+    values (uuid_generate_v7(), old.tenant_id, old.id, TG_RELID, op_type, to_jsonb(old));
+    return null;
+END ;
+$$
+    LANGUAGE plpgsql;
+--
+-- create trigger audit_company_master
+--  after update or delete on company_master
+--  for each row
+--  EXECUTE function create_audit_entry()
