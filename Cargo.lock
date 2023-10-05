@@ -63,7 +63,7 @@ dependencies = [
  "actix-utils",
  "ahash 0.8.3",
  "base64 0.21.2",
-    "bitflags 2.3.3",
+ "bitflags 2.3.3",
  "brotli",
  "bytes",
  "bytestring",
@@ -97,7 +97,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e01ed3140b2f8d422c68afa1ed2e85d996ea619c988ac834d255db32138655cb"
 dependencies = [
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -177,7 +177,7 @@ dependencies = [
  "actix-service",
  "actix-utils",
  "actix-web-codegen",
-    "ahash 0.8.3",
+ "ahash 0.8.3",
  "bytes",
  "bytestring",
  "cfg-if",
@@ -197,8 +197,8 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "smallvec",
-    "socket2 0.5.3",
-    "time",
+ "socket2 0.5.3",
+ "time",
  "url",
 ]
 
@@ -412,7 +412,7 @@ checksum = "bc00ceb34980c03614e35a3a4e218276a0a824e911d07651cd0d858a51e8c0f0"
 dependencies = [
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -580,7 +580,7 @@ dependencies = [
  "js-sys",
  "num-traits",
  "wasm-bindgen",
-    "windows-targets",
+ "windows-targets",
 ]
 
 [[package]]
@@ -644,7 +644,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e859cd57d0710d9e06c381b550c06e76992472a8c6d527aecd2fc673dcc231fb"
 dependencies = [
  "percent-encoding",
-    "time",
+ "time",
  "version_check",
 ]
 
@@ -768,7 +768,7 @@ dependencies = [
  "deadpool",
  "tokio",
  "tokio-postgres",
-    "tracing",
+ "tracing",
 ]
 
 [[package]]
@@ -970,7 +970,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -1027,7 +1027,7 @@ checksum = "be4136b2a15dd319360be1c07d9933517ccf0be8f16bf62a3bee4f0d618df427"
 dependencies = [
  "cfg-if",
  "libc",
-    "wasi",
+ "wasi",
 ]
 
 [[package]]
@@ -1390,7 +1390,7 @@ checksum = "927a765cd3fc26206e66b296465fa9d3e5ab003e651c1b3c060e7956d96b19d2"
 dependencies = [
  "libc",
  "log",
-    "wasi",
+ "wasi",
  "windows-sys",
 ]
 
@@ -1525,7 +1525,7 @@ dependencies = [
  "pest_meta",
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -1771,7 +1771,7 @@ dependencies = [
  "regex",
  "relative-path",
  "rustc_version",
-    "syn 2.0.32",
+ "syn 2.0.32",
  "unicode-ident",
 ]
 
@@ -1862,7 +1862,7 @@ checksum = "4eca7ac642d82aa35b60049a6eccb4be6be75e599bd2e9adb5f875a737654af2"
 dependencies = [
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -2069,7 +2069,7 @@ checksum = "10712f02019e9288794769fba95cd6847df9874d49d871d062172f9dd41bc4cc"
 dependencies = [
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -2128,7 +2128,7 @@ dependencies = [
  "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
-    "socket2 0.5.3",
+ "socket2 0.5.3",
  "tokio-macros",
  "windows-sys",
 ]
@@ -2141,7 +2141,7 @@ checksum = "630bdcf245f78637c13ec01ffae6187cca34625e8c63150d424b59e55af2675e"
 dependencies = [
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -2163,11 +2163,11 @@ dependencies = [
  "pin-project-lite",
  "postgres-protocol",
  "postgres-types",
-    "rand",
+ "rand",
  "socket2 0.5.3",
  "tokio",
  "tokio-util",
-    "whoami",
+ "whoami",
 ]
 
 [[package]]
@@ -2202,7 +2202,7 @@ dependencies = [
  "cfg-if",
  "log",
  "pin-project-lite",
-    "tracing-attributes",
+ "tracing-attributes",
  "tracing-core",
 ]
 
@@ -2212,9 +2212,9 @@ version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f4f31f56159e98206da9efd823404b79b6ef3143b4a7ab76e67b1751b25a4ab"
 dependencies = [
-    "proc-macro2",
-    "quote",
-    "syn 2.0.32",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.32",
 ]
 
 [[package]]
@@ -2333,7 +2333,7 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
  "wasm-bindgen-shared",
 ]
 
@@ -2367,7 +2367,7 @@ checksum = "54681b18a46765f095758388f2d0cf16eb8d4169b639ab575a8f5693af210c7b"
 dependencies = [
  "proc-macro2",
  "quote",
-    "syn 2.0.32",
+ "syn 2.0.32",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -2394,8 +2394,8 @@ version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22fc3756b8a9133049b26c7f61ab35416c130e8c09b660f5b3958b446f52cc50"
 dependencies = [
-    "wasm-bindgen",
-    "web-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
