@@ -53,9 +53,8 @@ pub mod test_utils_postgres {
 
     use deadpool_postgres::{ManagerConfig, Pool, Runtime};
     use testcontainers::clients::Cli;
-    use testcontainers::Container;
+    use testcontainers::{Container, GenericImage};
     use testcontainers::core::WaitFor;
-    use testcontainers::images::generic::GenericImage;
     use tokio::sync::OnceCell;
     use tokio_postgres::{Config, NoTls};
 
