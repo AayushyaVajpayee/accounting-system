@@ -99,6 +99,17 @@ create table transfer
     created_at         bigint default extract(epoch from now()) * 1000000
 );
 
+create table audit_entries
+(
+    id              UUID primary key,
+    tenant_id       integer references tenant (id),
+    audit_record_id Uuid,
+    operation_type "char",--u for update d for delete
+    old_record      jsonb,
+    table_id       oid,
+    created_at      bigint default extract(epoch from now()) * 1000000
+);
+
 create table country_master
 (
     id         uuid primary key,
@@ -164,4 +175,4 @@ create table address
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
     updated_at bigint default extract(epoch from now()) * 1000000
-)
+);

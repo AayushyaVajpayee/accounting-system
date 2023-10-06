@@ -1,5 +1,4 @@
 use std::io;
-
 use actix_web::{App, HttpServer};
 use actix_web::middleware::Logger;
 
@@ -10,6 +9,7 @@ mod accounting;
 mod seeddata;
 
 mod configurations;
+mod audit_table;
 mod invoicing;
 mod masters;
 mod tenant;

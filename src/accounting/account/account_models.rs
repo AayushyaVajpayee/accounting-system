@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-
+use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
@@ -45,7 +45,7 @@ pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> Cre
     CreateAccountRequest {
         tenant_id: builder.tenant_id.unwrap_or(1),
         display_code: builder.display_code.unwrap_or_else(|| {
-            uuid::Uuid::new_v4().to_string().split_at(19).0.to_string()
+            Uuid::now_v7().to_string().split_at(19).0.to_string()
         }),
         account_type_id: builder.account_type_id.unwrap_or(1),
         ledger_master_id: builder.ledger_master_id.unwrap_or(1),

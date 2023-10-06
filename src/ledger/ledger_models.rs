@@ -84,12 +84,12 @@ pub struct TransferBuilder {
 #[cfg(test)]
 pub fn a_transfer(builder: TransferBuilder) -> Transfer {
     Transfer {
-        id: builder.id.unwrap_or_else(Uuid::new_v4),
+        id: builder.id.unwrap_or_else(Uuid::now_v7),
         tenant_id: builder.tenant_id.unwrap_or(1),
         debit_account_id: builder.debit_account_id.unwrap_or(0),
         credit_account_id: builder.credit_account_id.unwrap_or(1),
-        caused_by_event_id: builder.caused_by_event_id.unwrap_or_else(Uuid::new_v4),
-        grouping_id: builder.grouping_id.unwrap_or_else(Uuid::new_v4),
+        caused_by_event_id: builder.caused_by_event_id.unwrap_or_else(Uuid::now_v7),
+        grouping_id: builder.grouping_id.unwrap_or_else(Uuid::now_v7),
         ledger_master_id: builder.ledger_master_id.unwrap_or(1),
         code: builder.code.unwrap_or(0),
         amount: builder.amount.unwrap_or(100),
