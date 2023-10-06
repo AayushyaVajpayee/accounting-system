@@ -99,22 +99,33 @@ create table transfer
     created_at         bigint default extract(epoch from now()) * 1000000
 );
 
-
+create table country_master
+(
+    id         uuid primary key,
+    name       varchar(60) not null,
+    created_by varchar(50) not null,
+    updated_by varchar(50),
+    created_at bigint default extract(epoch from now()) * 1000000,
+    updated_at bigint default extract(epoch from now()) * 1000000
+);
 create table state_master
 (
     id         serial primary key,
     state_name varchar(60),
-    created_by   varchar(50) not null,
+    country_id uuid references country_master (id),
+    created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
     updated_at bigint default extract(epoch from now()) * 1000000
 );
 alter sequence if exists state_master_id_seq restart with 1000;
+
 create table city_master
 (
     id         serial primary key,
     city_name  varchar(60),
     state_id   integer references state_master (id),
+    country_id uuid references country_master (id),
     created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
@@ -125,7 +136,7 @@ alter sequence if exists city_master_id_seq restart with 10000;
 create table pincode_master
 (
     id         serial primary key,
-    pincode    integer,
+    pincode    varchar(20),--if india then integer otherwise varchar
     city_id    integer references city_master (id),
     created_by varchar(50) not null,
     updated_by varchar(50),
@@ -135,3 +146,22 @@ create table pincode_master
 
 alter sequence if exists pincode_master_id_seq restart with 500000;
 
+
+
+-- assumption is address will be of india only. how do we make this internationsl?
+-- what will be required to make the system be able to serve international boundaries without much change
+create table address
+(
+    id         uuid primary key,
+    tenant_id  integer references tenant (id),
+    pincode_id integer references pincode_master (id),
+    city_id    integer references city_master (id),
+    country    uuid references country_master (id) not null,
+    line_1     varchar(60)                         not null,
+    line_2     varchar(60)                         not null,
+    line_3     varchar(60), -- mostly landmark
+    created_by varchar(50)                         not null,
+    updated_by varchar(50),
+    created_at bigint default extract(epoch from now()) * 1000000,
+    updated_at bigint default extract(epoch from now()) * 1000000
+)
