@@ -1,3 +1,4 @@
 mod country_dao;
-mod country_model;
+pub mod country_model;
 mod country_service;
+pub mod country_utils;

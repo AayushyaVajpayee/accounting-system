@@ -7,7 +7,7 @@ use deadpool_postgres::{GenericClient, Pool};
 use mockall::automock;
 use tokio_postgres::Row;
 
-const SELECT_FIELDS: &str = "";
+const SELECT_FIELDS: &str = "id,name,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "country_master";
 
 const FETCH_ALL_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABLE_NAME);

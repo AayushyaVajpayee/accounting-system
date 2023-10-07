@@ -1,3 +1,4 @@
+use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug)]
@@ -19,4 +20,5 @@ pub struct CityMaster {
     pub city_name: CityName, //worst case it should not be more than 60
     pub state_id: i32,
     pub audit_metadata: AuditMetadataBase,
+    pub country_id:Uuid
 }

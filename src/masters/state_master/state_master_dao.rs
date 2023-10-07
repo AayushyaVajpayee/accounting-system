@@ -8,7 +8,7 @@ use tokio_postgres::Row;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::state_master::state_models::{StateMasterModel, StateName};
 
-const SELECT_FIELDS: &str = "id,state_name,created_by,updated_by,created_at,updated_at";
+const SELECT_FIELDS: &str = "id,state_name,created_by,updated_by,created_at,updated_at,country_id";
 const TABLE_NAME: &str = "state_master";
 
 const FETCH_ALL_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABLE_NAME);
@@ -44,6 +44,7 @@ impl TryFrom<&Row> for StateMasterModel {
                 created_at: row.get(4),
                 updated_at: row.get(5),
             },
+            country_id:row.get(6)
         })
     }
 }

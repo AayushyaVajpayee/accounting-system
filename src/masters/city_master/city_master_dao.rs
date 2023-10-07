@@ -8,7 +8,7 @@ use tokio_postgres::Row;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::city_master::city_master_models::{CityMaster, CityName};
 
-const SELECT_FIELDS: &str = "id,city_name,state_id,created_by,updated_by,created_at,updated_at";
+const SELECT_FIELDS: &str = "id,city_name,state_id,created_by,updated_by,created_at,updated_at,country_id";
 
 const TABLE_NAME: &str = "city_master";
 
@@ -55,6 +55,7 @@ impl TryFrom<&Row> for CityMaster {
                 created_at: row.get(5),
                 updated_at: row.get(6),
             },
+            country_id: row.get(7)
         })
     }
 }

@@ -72,6 +72,7 @@ mod tests{
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+    use uuid::Uuid;
 
     use crate::masters::city_master::city_master_dao::MockCityMasterDao;
     use crate::masters::city_master::city_master_models::{CityMaster, CityName};
@@ -88,6 +89,7 @@ mod tests{
                     city_name: CityName::new("Haridwar").unwrap(),
                     state_id: 0,
                     audit_metadata: Default::default(),
+                    country_id:Uuid::now_v7()
                 }]
             });
         let service = CityMasterServiceImpl{
@@ -111,6 +113,7 @@ mod tests{
                     city_name: CityName::new("Haridwar").unwrap(),
                     state_id: 0,
                     audit_metadata: Default::default(),
+                    country_id:Uuid::now_v7()
                 }]
             });
         let service = CityMasterServiceImpl{

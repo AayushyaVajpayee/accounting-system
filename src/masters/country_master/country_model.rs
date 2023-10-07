@@ -1,6 +1,16 @@
+use std::str::FromStr;
+use lazy_static::lazy_static;
 use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
+lazy_static! {
+pub static ref INDIA_COUNTRY_ID:Uuid = Uuid::from_str("018b05dd-2983-7809-a2d1-95b3f1776eb3").unwrap();
+}
+#[derive(Debug)]
+pub enum CountryEnum {
+    India,
+    Others
+}
 
 #[derive(Debug)]
 pub struct CountryName(String);

@@ -31,6 +31,7 @@ gstin_validator = {path="gstin_validator"}
 invoicing_calculations={path="invoicing_calculations"}
 const_format = "0.2.31"
 moka = {version="0.12.0",features = ["future"]}
+lazy_static = "1.4.0"
 [dev-dependencies]
 testcontainers = "0.15.0"
 rstest = "0.18.2"

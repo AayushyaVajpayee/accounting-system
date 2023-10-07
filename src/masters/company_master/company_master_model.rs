@@ -9,18 +9,3 @@ pub struct CompanyMaster{
 
 }
 
-
-#[cfg(test)]
-mod tests{
-
-    #[test]
-    fn test_uuid(){
-        // let k =
-    }
-}
-
-// b2b companies will raise financial docs between itself and other company
-// b2c companies will raise financial docs between itself and other customer
-// shipping party will be other
-
-

@@ -73,6 +73,7 @@ mod tests{
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+    use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
 
     use crate::masters::pincode_master::pincode_master_dao::MockPincodeMasterDao;
     use crate::masters::pincode_master::pincode_master_service::{PincodeMasterService, PincodeMasterServiceImpl};
@@ -86,9 +87,10 @@ mod tests{
             .returning(||{
                 vec![PincodeMaster{
                     id: 0,
-                    pincode: Pincode::new(123456).unwrap(),
+                    pincode: Pincode::new("123456",*INDIA_COUNTRY_ID).unwrap(),
                     city_id:3,
                     audit_metadata: Default::default(),
+                    country_id: *INDIA_COUNTRY_ID
                 }]
             });
         let service = PincodeMasterServiceImpl{
@@ -111,9 +113,10 @@ mod tests{
             .returning(||{
                 vec![PincodeMaster{
                     id: 0,
-                    pincode: Pincode::new(123456).unwrap(),
+                    pincode: Pincode::new("123456", *INDIA_COUNTRY_ID).unwrap(),
                     city_id: 0,
                     audit_metadata: Default::default(),
+                    country_id:*INDIA_COUNTRY_ID
                 }]
             });
         let service = PincodeMasterServiceImpl{

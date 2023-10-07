@@ -8,7 +8,7 @@ use tokio_postgres::Row;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::pincode_master::pincode_models::{Pincode, PincodeMaster};
 
-const SELECT_FIELDS: &str = "id,pincode,city_id,created_by,updated_by,created_at,updated_at";
+const SELECT_FIELDS: &str = "id,pincode,city_id,created_by,updated_by,created_at,updated_at,country_id";
 
 const TABLE_NAME: &str = "pincode_master";
 
@@ -34,7 +34,7 @@ impl TryFrom<&Row> for PincodeMaster {
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(PincodeMaster {
             id: row.get(0),
-            pincode: Pincode::new(row.get(1))?,
+            pincode: Pincode::new(row.get(1),row.get(7))?,
             city_id: row.get(2),
             audit_metadata: AuditMetadataBase {
                 created_by: row.get(3),
@@ -42,6 +42,7 @@ impl TryFrom<&Row> for PincodeMaster {
                 created_at: row.get(5),
                 updated_at: row.get(6),
             },
+            country_id:row.get(7)
         })
     }
 }

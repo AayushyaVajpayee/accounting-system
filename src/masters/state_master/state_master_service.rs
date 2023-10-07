@@ -74,6 +74,7 @@ mod tests {
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
+    use uuid::Uuid;
 
     use crate::masters::state_master::state_master_dao::MockStateMasterDao;
     use crate::masters::state_master::state_master_service::{
@@ -89,6 +90,7 @@ mod tests {
                 id: 0,
                 state_name: StateName::new("Uttarakhand").unwrap(),
                 audit_metadata: Default::default(),
+                country_id:Uuid::now_v7()
             }]
         });
         let service = StateMasterServiceImpl {
@@ -108,6 +110,7 @@ mod tests {
                 id: 1,
                 state_name: StateName::new("Uttarakhand").unwrap(),
                 audit_metadata: Default::default(),
+                country_id:Uuid::now_v7()
             }]
         });
         let service = StateMasterServiceImpl {

@@ -1,3 +1,4 @@
+use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 #[derive(Debug)]
@@ -18,5 +19,6 @@ impl StateName {
 pub struct StateMasterModel {
     pub id: i32,
     pub state_name: StateName,
-    pub audit_metadata:AuditMetadataBase
+    pub audit_metadata:AuditMetadataBase,
+    pub country_id:Uuid
 }

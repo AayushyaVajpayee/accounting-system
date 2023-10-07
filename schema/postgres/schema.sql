@@ -123,11 +123,12 @@ create table state_master
 (
     id         serial primary key,
     state_name varchar(60),
-    country_id uuid references country_master (id),
     created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
-    updated_at bigint default extract(epoch from now()) * 1000000
+    updated_at bigint default extract(epoch from now()) * 1000000,
+    country_id uuid references country_master (id)
+
 );
 alter sequence if exists state_master_id_seq restart with 1000;
 
@@ -136,11 +137,11 @@ create table city_master
     id         serial primary key,
     city_name  varchar(60),
     state_id   integer references state_master (id),
-    country_id uuid references country_master (id),
     created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
-    updated_at bigint default extract(epoch from now()) * 1000000
+    updated_at bigint default extract(epoch from now()) * 1000000,
+    country_id uuid references country_master (id)
 );
 alter sequence if exists city_master_id_seq restart with 10000;
 
@@ -152,7 +153,8 @@ create table pincode_master
     created_by varchar(50) not null,
     updated_by varchar(50),
     created_at bigint default extract(epoch from now()) * 1000000,
-    updated_at bigint default extract(epoch from now()) * 1000000
+    updated_at bigint default extract(epoch from now()) * 1000000,
+    country_id uuid references country_master(id)
 );
 
 alter sequence if exists pincode_master_id_seq restart with 500000;

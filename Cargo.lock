@@ -19,6 +19,7 @@ dependencies = [
  "futures-util",
  "gstin_validator",
  "invoicing_calculations",
+ "lazy_static",
  "log",
  "mockall",
  "moka",
@@ -1974,7 +1975,7 @@ dependencies = [
  "mach2",
  "once_cell",
  "raw-cpuid",
- "wasi 0.11.0+wasi-snapshot-preview1",
+ "wasi",
  "web-sys",
  "winapi",
 ]
@@ -2603,7 +2604,7 @@ dependencies = [
  "pin-project-lite",
  "postgres-protocol",
  "postgres-types",
- "rand",
+ "rand 0.8.5",
  "socket2 0.5.3",
  "tokio",
  "tokio-util",
@@ -2739,7 +2740,7 @@ checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
 dependencies = [
  "atomic",
  "getrandom",
- "rand",
+ "rand 0.8.5",
  "serde",
 ]
 
