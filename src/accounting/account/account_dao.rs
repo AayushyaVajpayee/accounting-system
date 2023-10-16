@@ -117,16 +117,18 @@ mod account_tests {
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_account() {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port).await;
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
-            tenant_id: Some(1),
+            tenant_id: Some(*SEED_TENANT_ID),
             ledger_master_id: Some(1),
             account_type_id: Some(1),
-            user_id: Some(1),
+            user_id: Some(*SEED_USER_ID),
             ..Default::default()
         });
         let  account_dao = AccountDaoPostgresImpl { postgres_client };

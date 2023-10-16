@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use uuid::Uuid;
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::audit_table::audit_dao::{AuditDao, get_audit_dao};
@@ -24,6 +25,14 @@ pub fn get_audit_service() -> Box<dyn AuditService + Send + Sync> {
     Box::new(audit_service)
 }
 
+#[cfg(test)]
+pub fn get_audit_service_for_tests(pool:&'static Pool)->Box<dyn AuditService+Send+Sync>{
+    let audit_dao = get_audit_dao(pool);
+    let audit_service = AuditServiceImpl {
+        audit_dao
+    };
+    Box::new(audit_service)
+}
 #[async_trait]
 impl AuditService for AuditServiceImpl {
     async fn get_audit_logs_for_id_and_table(&self, id: Uuid, table_name: &str) -> Vec<AuditEntry> {

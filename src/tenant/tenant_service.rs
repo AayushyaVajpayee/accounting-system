@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
@@ -6,8 +7,8 @@ use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
 
 #[async_trait]
 pub trait TenantService {
-    async fn get_tenant_by_id(&self, id: &i32) -> Option<Tenant>;
-    async fn create_tenant(&self, tenant: &CreateTenantRequest) -> i32;
+    async fn get_tenant_by_id(&self, id: Uuid) -> Option<Tenant>;
+    async fn create_tenant(&self, tenant: &CreateTenantRequest) -> Uuid;
 }
 
 struct TenantServiceImpl {
@@ -16,11 +17,11 @@ struct TenantServiceImpl {
 
 #[async_trait]
 impl TenantService for TenantServiceImpl{
-    async fn get_tenant_by_id(&self, id: &i32) -> Option<Tenant> {
+    async fn get_tenant_by_id(&self, id: Uuid) -> Option<Tenant> {
         self.tenant_dao.get_tenant_by_id(id).await
     }
 
-    async fn create_tenant(&self, tenant: &CreateTenantRequest) -> i32 {
+    async fn create_tenant(&self, tenant: &CreateTenantRequest) -> Uuid {
         self.tenant_dao.create_tenant(tenant).await
     }
 }

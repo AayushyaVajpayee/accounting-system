@@ -94,6 +94,7 @@ mod tests {
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_currency() {
@@ -101,7 +102,7 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let currency_master = a_create_currency_master_request(
             CreateCurrencyMasterRequestTestBuilder {
-                tenant_id: Some(1),
+                tenant_id: Some(*SEED_TENANT_ID),
                 ..Default::default()
             }
         );

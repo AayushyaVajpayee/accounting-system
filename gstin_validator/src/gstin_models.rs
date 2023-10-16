@@ -53,7 +53,7 @@ fn validate_gstin_pattern(gstin: &str) -> Option<GstinValidationError> {
     }
 }
 
-fn gstin_checksum(gstin: &str) -> Result<char, &str> {
+pub fn gstin_checksum(gstin: &str) -> Result<char, &str> {
     let gstin = gstin.to_uppercase();
     let checked_digit = gstin.chars().nth(14);
     if checked_digit.is_none() {
@@ -80,7 +80,7 @@ fn gstin_checksum(gstin: &str) -> Result<char, &str> {
         }
     }
     let hash_sum_remainder = hash_sum % 36;
-    let check_digit = 36 - hash_sum_remainder;
+    let check_digit = (36 - hash_sum_remainder)%36;
     let check_alpha = INT_TO_ALPHABET_MAP.get(&check_digit).unwrap();
     Ok(*check_alpha)
 }
@@ -162,6 +162,7 @@ mod test {
     #[case("05AABCA5291p1ZD", 'D', true)]
     #[case("18AABCU9603R1zM", 'M', true)]
     #[case("16AaBCU9603R1Zq", 'Q', true)]
+    #[case("11EJKCY5291P1ZD", '0', true)]
     fn test_compute_gstin_checksum(
         #[case] gstin: String,
         #[case] checksum_char: char,

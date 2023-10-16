@@ -1,3 +1,3 @@
-mod audit_service;
+pub mod audit_service;
 mod audit_dao;
-mod audit_model;
+pub mod audit_model;

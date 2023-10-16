@@ -17,7 +17,7 @@ pub struct CreateTransfersRequest {
 #[allow(dead_code)]
 pub struct CreateTransferRequest {
     id: Uuid,
-    tenant_id: i32,
+    tenant_id: Uuid,
     caused_by_event_id: Uuid,
     grouping_id: Uuid,
     debit_account_id: i32,
@@ -51,13 +51,13 @@ pub struct CreateTransferResponse {
 
 #[allow(dead_code)]
 pub struct GetTransferByIdRequest {
-    tenant_id: i32,
+    tenant_id: Uuid,
     id: Vec<Uuid>,
 }
 
 #[allow(dead_code)]
 pub struct GetTransfersForAccountForInterval {
-    tenant_id: i32,
+    tenant_id: Uuid,
     account_id: i32,
     //for now this can be 2 year
     from: i64,

@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use uuid::Uuid;
+use crate::tenant::tenant_models::SEED_TENANT_ID;
 
 
 #[derive(Debug, Deserialize)]
@@ -21,7 +22,7 @@ pub enum TransferType {
 #[derive(Debug, Clone)]
 pub struct Transfer {
     pub id: Uuid,
-    pub tenant_id: i32,
+    pub tenant_id: Uuid,
     pub debit_account_id: i32,
     pub credit_account_id: i32,
     // this will be physical event like an invoice
@@ -54,7 +55,7 @@ pub struct Transfer {
 #[derive(Default)]
 pub struct TransferBuilder {
     pub id: Option<Uuid>,
-    pub tenant_id: Option<i32>,
+    pub tenant_id: Option<Uuid>,
     pub debit_account_id: Option<i32>,
     pub credit_account_id: Option<i32>,
     // this will be physical event like an invoice
@@ -85,7 +86,7 @@ pub struct TransferBuilder {
 pub fn a_transfer(builder: TransferBuilder) -> Transfer {
     Transfer {
         id: builder.id.unwrap_or_else(Uuid::now_v7),
-        tenant_id: builder.tenant_id.unwrap_or(1),
+        tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         debit_account_id: builder.debit_account_id.unwrap_or(0),
         credit_account_id: builder.credit_account_id.unwrap_or(1),
         caused_by_event_id: builder.caused_by_event_id.unwrap_or_else(Uuid::now_v7),

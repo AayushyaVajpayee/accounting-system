@@ -19,7 +19,7 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.107"
 regex = "1.9.6"
 uuid = { version = "1.4.1", features = ["v7", "serde", "fast-rng"] }
-rand = "0.8.5"
+rand = { version="0.8.5",features = ["small_rng"] }
 actix-web = "4.4.0"
 deadpool-postgres = "0.11.0"
 tokio-postgres = { version = "0.7.10", features = ["with-uuid-1"] }
@@ -32,6 +32,7 @@ invoicing_calculations={path="invoicing_calculations"}
 const_format = "0.2.31"
 moka = {version="0.12.0",features = ["future"]}
 lazy_static = "1.4.0"
+anyhow = "1.0.75"
 [dev-dependencies]
 testcontainers = "0.15.0"
 rstest = "0.18.2"

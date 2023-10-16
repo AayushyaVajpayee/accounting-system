@@ -275,3 +275,10 @@ $$
 --  after update or delete on company_master
 --  for each row
 --  EXECUTE function create_audit_entry()
+
+
+
+create trigger company_master_audit_trigger
+    after update or delete on company_master
+    for each row
+execute function create_audit_entry()
