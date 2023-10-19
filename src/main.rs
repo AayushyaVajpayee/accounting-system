@@ -13,6 +13,7 @@ mod audit_table;
 mod invoicing;
 mod masters;
 mod tenant;
+mod common_utils;
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {

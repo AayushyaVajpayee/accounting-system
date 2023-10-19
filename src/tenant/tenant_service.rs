@@ -4,7 +4,10 @@ use uuid::Uuid;
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
 use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
+#[cfg(test)]
+use mockall::automock;
 
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait TenantService {
     async fn get_tenant_by_id(&self, id: Uuid) -> Option<Tenant>;
@@ -18,6 +21,7 @@ struct TenantServiceImpl {
 #[async_trait]
 impl TenantService for TenantServiceImpl{
     async fn get_tenant_by_id(&self, id: Uuid) -> Option<Tenant> {
+        //todo to be cached locally
         self.tenant_dao.get_tenant_by_id(id).await
     }
 

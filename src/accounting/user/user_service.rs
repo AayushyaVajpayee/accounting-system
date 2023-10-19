@@ -1,10 +1,13 @@
 use async_trait::async_trait;
+#[cfg(test)]
+use mockall::automock;
 use uuid::Uuid;
 
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::accounting::user::user_dao::{get_user_dao, UserDao};
 use crate::accounting::user::user_models::{CreateUserRequest, User};
 
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UserService {
     async fn get_user_by_id(&self, id: Uuid) -> Option<User>;
@@ -38,6 +41,7 @@ struct UserServiceImpl {
 #[async_trait]
 impl UserService for UserServiceImpl {
     async fn get_user_by_id(&self, id: Uuid) -> Option<User> {
+        //todo to be cached locally
         self.user_dao.get_user_by_id(id).await
     }
 

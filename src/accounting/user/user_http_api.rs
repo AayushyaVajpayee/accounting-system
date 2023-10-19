@@ -38,7 +38,8 @@ mod tests {
 
     use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_http_api::map_endpoints_to_functions;
-    use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequest, SEED_USER_ID, User};
+    use crate::accounting::user::user_models::{ CreateUserRequest, SEED_USER_ID, User};
+    use crate::accounting::user::user_models::tests::a_create_user_request;
     use crate::accounting::user::user_service::UserService;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 

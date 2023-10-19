@@ -13,6 +13,7 @@ const TABLE_NAME: &str = "app_user";
 static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
+
 #[async_trait]
 pub trait UserDao {
     async fn get_user_by_id(&self, id: Uuid) -> Option<User>;
@@ -106,7 +107,7 @@ impl UserDao for UserDaoPostgresImpl {
 mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
-    use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
+    use crate::accounting::user::user_models::tests::{a_create_user_request, CreateUserRequestTestBuilder};
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     #[tokio::test]

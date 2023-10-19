@@ -1,8 +1,12 @@
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::{GenericClient, Pool, PoolError};
+use tokio_postgres::error::{DbError, SqlState};
 use tokio_postgres::Row;
+use tracing::{error, instrument};
 use uuid::Uuid;
+#[cfg(test)]
+use mockall::automock;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_dao::DaoError::InvalidEntityToDbRowConversion;
@@ -53,15 +57,40 @@ pub struct CompanyMasterDaoPostgresImpl {
     postgres_client: &'static Pool,
 }
 
-#[derive(Debug, thiserror::Error)]
+pub fn get_company_master_dao(pool: &'static Pool) -> Box<dyn CompanyMasterDao + Send + Sync> {
+    let dao = CompanyMasterDaoPostgresImpl {
+        postgres_client: pool,
+    };
+    Box::new(dao)
+}
+#[derive(Debug, thiserror::Error,PartialEq)]
 pub enum DaoError {
     #[error("error while fetching db connection. {0}")]
-    ConnectionPool(#[from] PoolError),
+    ConnectionPool(String),
     #[error("error while executing query. {0}")]
-    PostgresQueryError(#[from] tokio_postgres::Error),
+    PostgresQueryError(String),
     #[error("cannot convert entity to db row {0}")]
     InvalidEntityToDbRowConversion(&'static str),
+    #[error("unique constraint violated {}",0)]
+    UniqueConstraintViolated{constraint_name:String}
 }
+
+impl From<PoolError> for DaoError{
+    fn from(value: PoolError) -> Self {
+       DaoError::ConnectionPool(value.to_string())
+    }
+}
+impl From<tokio_postgres::Error> for DaoError{
+    fn from(value:tokio_postgres::Error)->Self{
+        if let Some(k) = value.as_db_error(){
+            if k.code().code()==SqlState::UNIQUE_VIOLATION.code(){
+               return DaoError::UniqueConstraintViolated {constraint_name:k.constraint().unwrap().to_string()};
+            }
+        }
+            return DaoError::PostgresQueryError(value.to_string())
+    }
+}
+
 
 impl TryFrom<&Row> for CompanyMaster {
     type Error = DaoError;
@@ -84,12 +113,12 @@ impl TryFrom<&Row> for CompanyMaster {
                 approval_status: MasterStatusEnum::get_enum_for_value(
                     row.get::<usize, i16>(4) as usize
                 )
-                .map_err(|a| InvalidEntityToDbRowConversion(a))?,
+                .map_err(InvalidEntityToDbRowConversion)?,
                 remarks,
             },
-            name: CompanyName::new(row.get(6)).map_err(|a| InvalidEntityToDbRowConversion(a))?,
+            name: CompanyName::new(row.get(6)).map_err(InvalidEntityToDbRowConversion)?,
             cin: CompanyIdentificationNumber::new(row.get(7))
-                .map_err(|a| InvalidEntityToDbRowConversion(a))?,
+                .map_err(InvalidEntityToDbRowConversion)?,
             audit_metadata: AuditMetadataBase {
                 created_by: row.get(8),
                 updated_by: row.get(9),
@@ -100,6 +129,8 @@ impl TryFrom<&Row> for CompanyMaster {
     }
 }
 
+
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CompanyMasterDao {
     async fn get_company_by_id(
@@ -119,7 +150,7 @@ pub trait CompanyMasterDao {
         company_id: Uuid,
         entity_version_id: i32,
         remarks: &MasterUpdationRemarks,
-        updated_by:Uuid,
+        updated_by: Uuid,
     ) -> Result<u64, DaoError>;
 }
 
@@ -155,36 +186,33 @@ impl CompanyMasterDao for CompanyMasterDaoPostgresImpl {
             .collect::<Result<Vec<CompanyMaster>, DaoError>>()?;
         Ok(rows)
     }
-
-    async fn create_new_company_for_tenant(
-        &self,
-        entity: &CompanyMaster,
-    ) -> Result<u64, DaoError> {
+    #[instrument(skip(self))]
+    async fn create_new_company_for_tenant(&self, entity: &CompanyMaster) -> Result<u64, DaoError> {
         let conn = self.postgres_client.get().await?;
-        let inserted_rows =conn.execute(
-            INSERT,
-            &[
-                &entity.base_master_fields.id,
-                &entity.base_master_fields.entity_version_id,
-                &entity.base_master_fields.tenant_id,
-                &entity.base_master_fields.active,
-                &(entity.base_master_fields.approval_status as i16),
-                &entity
-                    .base_master_fields
-                    .remarks
-                    .as_ref()
-                    .map(|a| a.get_str()),
-                &entity.name.get_str(),
-                &entity.cin.get_str(),
-                &entity.audit_metadata.created_by,
-                &entity.audit_metadata.updated_by,
-                &entity.audit_metadata.created_at,
-                &entity.audit_metadata.updated_at,
-            ],
-        )
-        .await?;
+        let inserted_rows = conn
+            .execute(
+                INSERT,
+                &[
+                    &entity.base_master_fields.id,
+                    &entity.base_master_fields.entity_version_id,
+                    &entity.base_master_fields.tenant_id,
+                    &entity.base_master_fields.active,
+                    &(entity.base_master_fields.approval_status as i16),
+                    &entity
+                        .base_master_fields
+                        .remarks
+                        .as_ref()
+                        .map(|a| a.get_str()),
+                    &entity.name.get_str(),
+                    &entity.cin.get_str(),
+                    &entity.audit_metadata.created_by,
+                    &entity.audit_metadata.updated_by,
+                    &entity.audit_metadata.created_at,
+                    &entity.audit_metadata.updated_at,
+                ],
+            )
+            .await?;
         Ok(inserted_rows)
-
     }
 
     async fn soft_delete_company_for_tenant(
@@ -194,7 +222,7 @@ impl CompanyMasterDao for CompanyMasterDaoPostgresImpl {
         entity_version_id: i32,
         remarks: &MasterUpdationRemarks,
         updated_by: Uuid,
-    ) -> Result<u64,DaoError> {
+    ) -> Result<u64, DaoError> {
         let conn = self.postgres_client.get().await?;
 
         let updated_rows = conn
@@ -321,7 +349,8 @@ mod tests {
             .unwrap();
         let p = dao
             .get_all_companies_for_tenant(company_master.base_master_fields.tenant_id)
-            .await.unwrap();
+            .await
+            .unwrap();
         assert!(!p.is_empty())
     }
 }

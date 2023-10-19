@@ -95,11 +95,16 @@ pub struct CompanyName(String);
 
 impl CompanyName {
     pub fn new(name: &str) -> Result<Self, &'static str> {
+        Self::validate(name)?;
+        Ok(Self(name.to_string()))
+    }
+
+    pub fn validate(name:&str)->Result<(),&'static str>{
         let name = name.trim();
         if name.is_empty() || name.len() > 50 {
             return Err("company name cannot be empty or more than 50 chars");
         }
-        Ok(Self(name.to_string()))
+        Ok(())
     }
     pub fn get_str(&self) -> &str {
         self.0.as_str()
@@ -134,11 +139,15 @@ mod company_name_tests {
 pub struct CompanyIdentificationNumber(String);
 impl CompanyIdentificationNumber {
     pub fn new(cin: &str) -> Result<Self, &'static str> {
+        Self::validate(cin)?;
+        Ok(CompanyIdentificationNumber(cin.to_string()))
+    }
+    pub fn validate(cin:&str)->Result<(),&'static str>{
         let cin = cin.trim();
         if cin.len() != 21 {
-            return Err("cin length should be 31 chars and should be alphanumeric");
+            return Err("cin length should be 21 chars and should be alphanumeric");
         }
-        Ok(CompanyIdentificationNumber(cin.to_string()))
+        Ok(())
     }
     pub fn get_str(&self) -> &str {
         self.0.as_str()

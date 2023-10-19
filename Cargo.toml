@@ -33,8 +33,11 @@ const_format = "0.2.31"
 moka = {version="0.12.0",features = ["future"]}
 lazy_static = "1.4.0"
 anyhow = "1.0.75"
+tracing = "0.1.39"
+tracing-subscriber = "0.3.17"
 [dev-dependencies]
 testcontainers = "0.15.0"
 rstest = "0.18.2"
 spectral = "0.6.0"
 mockall = "0.11.4"
+tracing-test = "0.2.4"
