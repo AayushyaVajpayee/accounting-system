@@ -15,6 +15,28 @@ mod masters;
 mod tenant;
 mod common_utils;
 
+pub fn build_dependencies(){
+    //1. seeddata dependencies
+    // seed service
+    //2.global dependencies which are likely to be used everywhere
+    //audit table service
+    //tenant service
+    //user service
+    //3.masters dependencies
+    //pincode master service
+    //city master service
+    //state master service
+    //country master service
+    //address master service
+    //currency master service
+    //ledger master service
+    //account type master service
+    //4. functional dependencies
+    // accounts service
+    // ledger service
+    // invoice template service
+    // invoice no series service
+}
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
@@ -23,7 +45,7 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .configure(seeddata::seeddata_http_api::init_routes)
+            .configure(|a|seeddata::seeddata_http_api::init_routes(a))
             .configure(accounting::currency::currency_http_api::init_routes)
             .configure(accounting::account::account_http_api::init_routes)
             .configure(tenant_http_api::init_routes)

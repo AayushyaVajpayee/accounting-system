@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
@@ -13,7 +13,7 @@ static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 #[async_trait]
-pub trait CurrencyDao {
+pub trait CurrencyDao:Send+Sync {
     async fn get_currency_entry_by_id(&self, id: &i16) -> Option<CurrencyMaster>;
     async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> i16;
 }
@@ -58,11 +58,11 @@ impl CurrencyDaoPostgresImpl {
     }
 }
 
-pub fn get_currency_dao(client: &'static Pool) -> Box<dyn CurrencyDao + Send + Sync> {
+pub fn get_currency_dao(client: &'static Pool) -> Arc<dyn CurrencyDao> {
     let currency_dao = CurrencyDaoPostgresImpl {
         postgres_client: client
     };
-    Box::new(currency_dao)
+    Arc::new(currency_dao)
 }
 
 #[async_trait]

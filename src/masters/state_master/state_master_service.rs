@@ -9,18 +9,18 @@ use crate::masters::state_master::state_models::StateMasterModel;
 
 const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
-pub trait StateMasterService {
+pub trait StateMasterService:Send+Sync {
     async fn get_all_states(&self) -> Option<Arc<Vec<Arc<StateMasterModel>>>>;
     async fn get_state_by_id(&self, id: i32) -> Option<Arc<StateMasterModel>>;
 }
 
 struct StateMasterServiceImpl {
-    dao: Box<dyn StateMasterDao + Send + Sync>,
+    dao: Arc<dyn StateMasterDao>,
     cache_by_id: Cache<i32, Arc<StateMasterModel>>,
     cache_all: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>>,
 }
 #[allow(dead_code)]
-pub async fn get_state_master_service() -> Box<dyn StateMasterService + Send + Sync> {
+pub async fn get_state_master_service() -> Arc<dyn StateMasterService> {
     let pclient = get_postgres_conn_pool();
     let state_master_dao = get_state_master_dao(pclient);
     let cache: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>> = Cache::new(40);
@@ -29,7 +29,7 @@ pub async fn get_state_master_service() -> Box<dyn StateMasterService + Send + S
         cache_by_id: Cache::new(40),
         cache_all: cache,
     };
-    Box::new(state_master_s)
+    Arc::new(state_master_s)
 }
 
 impl StateMasterServiceImpl {
@@ -71,6 +71,7 @@ impl StateMasterService for StateMasterServiceImpl {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
@@ -94,7 +95,7 @@ mod tests {
             }]
         });
         let service = StateMasterServiceImpl {
-            dao: Box::new(dao_mock),
+            dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(40),
         };
@@ -114,7 +115,7 @@ mod tests {
             }]
         });
         let service = StateMasterServiceImpl {
-            dao: Box::new(dao_mock),
+            dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(40),
         };

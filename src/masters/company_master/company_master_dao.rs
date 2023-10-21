@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::{GenericClient, Pool, PoolError};
@@ -57,11 +58,11 @@ pub struct CompanyMasterDaoPostgresImpl {
     postgres_client: &'static Pool,
 }
 
-pub fn get_company_master_dao(pool: &'static Pool) -> Box<dyn CompanyMasterDao + Send + Sync> {
+pub fn get_company_master_dao(pool: &'static Pool) -> Arc<dyn CompanyMasterDao> {
     let dao = CompanyMasterDaoPostgresImpl {
         postgres_client: pool,
     };
-    Box::new(dao)
+    Arc::new(dao)
 }
 #[derive(Debug, thiserror::Error,PartialEq)]
 pub enum DaoError {
@@ -132,7 +133,7 @@ impl TryFrom<&Row> for CompanyMaster {
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait CompanyMasterDao {
+pub trait CompanyMasterDao:Send+Sync {
     async fn get_company_by_id(
         &self,
         tenant_id: Uuid,

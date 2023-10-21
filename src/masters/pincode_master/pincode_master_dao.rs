@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
@@ -18,7 +19,7 @@ const BY_ID_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABLE_NA
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait PincodeMasterDao {
+pub trait PincodeMasterDao:Send+Sync {
     async fn get_all_pincodes(&self) -> Vec<PincodeMaster>;
 
     async fn get_pincode_by_id(&self, id: i32) -> Option<PincodeMaster>;
@@ -62,11 +63,11 @@ impl PincodeMasterDao for PincodeMasterDaoImpl {
     }
 }
 
-pub fn get_pincode_master_dao(client: &'static Pool)->Box<dyn PincodeMasterDao+Send+Sync>{
+pub fn get_pincode_master_dao(client: &'static Pool)->Arc<dyn PincodeMasterDao>{
     let pincode_master_dao = PincodeMasterDaoImpl{
         postgres_client:client
     };
-    Box::new(pincode_master_dao)
+    Arc::new(pincode_master_dao)
 }
 
 #[cfg(test)]

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::country_master::country_model::{CountryMaster, CountryName};
 use async_trait::async_trait;
@@ -14,7 +15,7 @@ const FETCH_ALL_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABL
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait CountryMasterDao {
+pub trait CountryMasterDao:Send+Sync {
     async fn get_all_countries(&self) -> Vec<CountryMaster>;
 }
 
@@ -39,11 +40,11 @@ impl TryFrom<&Row> for CountryMaster {
     }
 }
 
-pub fn get_country_master_dao(client: &'static Pool)->Box<dyn CountryMasterDao+Send+Sync>{
+pub fn get_country_master_dao(client: &'static Pool)->Arc<dyn CountryMasterDao>{
     let country_master_dao = CountryMasterDaoPostgresImpl{
         postgres_client:client
     };
-    Box::new(country_master_dao)
+    Arc::new(country_master_dao)
 }
 
 #[async_trait]

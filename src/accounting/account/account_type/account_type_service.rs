@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde::Serialize;
@@ -9,12 +10,12 @@ use crate::accounting::account::account_type::account_type_dao::AccountTypeDao;
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
 
 #[async_trait]
-pub trait AccountTypeService {
+pub trait AccountTypeService:Send+Sync {
     async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, HierarchyError>;
 }
 
 struct AccountTypeServiceImpl {
-    account_type_dao: Box<dyn AccountTypeDao + Send + Sync>,
+    account_type_dao: Arc<dyn AccountTypeDao>,
 
 }
 

@@ -16,7 +16,7 @@ static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 static ALL_TYPES_FOR_TENANT: OnceLock<String> = OnceLock::new();
 
 #[async_trait]
-pub trait AccountTypeDao {
+pub trait AccountTypeDao:Send+Sync {
     async fn get_account_type_by_id(&self, id: &i16) -> Option<AccountTypeMaster>;
     async fn create_account_type(&self, request: &CreateAccountTypeMasterRequest) -> i16;
     async fn get_all_account_types_for_tenant_id(&self, tenant_id: Uuid) -> Vec<AccountTypeMaster>;

@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
@@ -8,15 +8,15 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryRequest, LedgerMaster};
 
 #[async_trait]
-pub trait LedgerMasterDao {
+pub trait LedgerMasterDao:Send+Sync {
     async fn get_ledger_master_by_id(&self, id: &i32) -> Option<LedgerMaster>;
     async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> i32;
 }
 
 
 #[allow(dead_code)]
-pub fn get_ledger_master_dao(client: &'static Pool) -> Box<dyn LedgerMasterDao + Send + Sync> {
-    Box::new(LedgerMasterPostgresDaoImpl {
+pub fn get_ledger_master_dao(client: &'static Pool) -> Arc<dyn LedgerMasterDao> {
+    Arc::new(LedgerMasterPostgresDaoImpl {
         postgres_client: client
     })
 }

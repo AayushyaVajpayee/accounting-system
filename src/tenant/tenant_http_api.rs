@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use actix_web::{Responder, Scope, web};
 use uuid::Uuid;
 use web::{Data, Path};
@@ -6,7 +7,7 @@ use crate::tenant::tenant_models::CreateTenantRequest;
 use crate::tenant::tenant_service::{get_tenant_service, TenantService};
 
 async fn get_tenant_by_id(id: Path<Uuid>,
-                          data: Data<Box<dyn TenantService + Send + Sync>>)
+                          data: Data<Arc<dyn TenantService>>)
                           -> actix_web::Result<impl Responder> {
     let t = data.get_tenant_by_id(id.into_inner()).await;
     Ok(web::Json(t))
@@ -15,7 +16,7 @@ async fn get_tenant_by_id(id: Path<Uuid>,
 
 //todo need to write a test for this. How?
 async fn create_tenant(request: web::Json<CreateTenantRequest>,
-                       data: Data<Box<dyn TenantService + Send + Sync>>)
+                       data: Data<Arc<dyn TenantService>>)
                        -> actix_web::Result<impl Responder> {
     let p = data.create_tenant(&request.0).await;
     Ok(web::Json(p))
@@ -39,6 +40,7 @@ fn map_endpoints_to_functions() -> Scope {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use actix_web::{App, test};
     use async_trait::async_trait;
     use uuid::Uuid;
@@ -63,7 +65,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_api() {
-        let mock: Box<dyn TenantService + Send + Sync> = Box::new(MockTenantService {});
+        let mock: Arc<dyn TenantService> = Arc::new(MockTenantService {});
         let tenant_expected = mock.get_tenant_by_id(*SEED_TENANT_ID).await.unwrap();
         let app_data = actix_web::web::Data::new(mock);
         let app = App::new()

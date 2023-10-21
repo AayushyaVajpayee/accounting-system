@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use thiserror::Error;
 use tracing::{error, instrument};
@@ -12,7 +13,7 @@ use crate::masters::company_master::company_master_service::ServiceError::OtherE
 use crate::tenant::tenant_service::TenantService;
 
 #[async_trait]
-pub trait CompanyMasterService {
+pub trait CompanyMasterService:Send+Sync {
     // async fn get_all_companies_for_tenant_id(&self,tenant_id:i32);
 
     // async fn get_all_company_units_for_company_id_and_tenant_id(&self,tenant_id:i32);
@@ -28,9 +29,9 @@ pub trait CompanyMasterService {
 }
 
 pub struct CompanyMasterServiceImpl {
-    dao: Box<dyn CompanyMasterDao + Send + Sync>,
-    tenant_service: Box<dyn TenantService + Send + Sync>,
-    user_service: Box<dyn UserService + Send + Sync>,
+    dao: Arc<dyn CompanyMasterDao>,
+    tenant_service: Arc<dyn TenantService>,
+    user_service: Arc<dyn UserService>,
 }
 
 #[derive(Debug, Error, PartialEq)]
@@ -134,6 +135,7 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
 #[cfg(test)]
 pub mod tests {
     use std::mem::discriminant;
+    use std::sync::Arc;
 
     use rstest::rstest;
     use spectral::assert_that;
@@ -162,7 +164,7 @@ pub mod tests {
     };
 
     pub async fn get_company_master_service_for_tests(
-    ) -> Box<dyn CompanyMasterService + Send + Sync> {
+    ) -> Arc<dyn CompanyMasterService> {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port).await;
         let tenant_service = get_tenant_service_for_test(postgres_client);
@@ -173,7 +175,7 @@ pub mod tests {
             tenant_service,
             user_service,
         };
-        Box::new(service)
+        Arc::new(service)
     }
     #[traced_test]
     #[rstest]
@@ -204,9 +206,9 @@ pub mod tests {
             .returning(|_a| Some(a_user(Default::default())))
             .once();
         let mut company_service = CompanyMasterServiceImpl {
-            dao: Box::new(dao),
-            tenant_service: Box::new(tenant_service),
-            user_service: Box::new(user_service),
+            dao: Arc::new(dao),
+            tenant_service: Arc::new(tenant_service),
+            user_service: Arc::new(user_service),
         };
         let company_request = a_create_company_request(Default::default());
         let output = company_service
@@ -237,9 +239,9 @@ pub mod tests {
             .returning(|_a| Some(a_user(Default::default())))
             .once();
         let company_service = CompanyMasterServiceImpl {
-            dao: Box::new(dao),
-            tenant_service: Box::new(tenant_service),
-            user_service: Box::new(user_service),
+            dao: Arc::new(dao),
+            tenant_service: Arc::new(tenant_service),
+            user_service: Arc::new(user_service),
         };
         let company_request = a_create_company_request(Default::default());
         let p = company_service
@@ -265,10 +267,10 @@ pub mod tests {
             .expect_get_tenant_by_id()
             .returning(|a| Some(a_tenant(Default::default())));
         let company_request = a_create_company_request(Default::default());
-        let user_service: Box<dyn UserService + Send + Sync> = Box::new(user_service);
-        let tenant_service: Box<dyn TenantService + Send + Sync> = Box::new(tenant_service);
+        let user_service: Arc<dyn UserService> = Arc::new(user_service);
+        let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);
         let company_master_service = CompanyMasterServiceImpl {
-            dao: Box::new(MockCompanyMasterDao::new()),
+            dao: Arc::new(MockCompanyMasterDao::new()),
             user_service,
             tenant_service,
         };
@@ -294,10 +296,10 @@ pub mod tests {
             .expect_get_tenant_by_id()
             .returning(|_a| None);
         let company_request = a_create_company_request(Default::default());
-        let user_service: Box<dyn UserService + Send + Sync> = Box::new(user_service);
-        let tenant_service: Box<dyn TenantService + Send + Sync> = Box::new(tenant_service);
+        let user_service: Arc<dyn UserService> = Arc::new(user_service);
+        let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);
         let company_master_service = CompanyMasterServiceImpl {
-            dao: Box::new(MockCompanyMasterDao::new()),
+            dao: Arc::new(MockCompanyMasterDao::new()),
             user_service,
             tenant_service,
         };
@@ -331,10 +333,10 @@ pub mod tests {
             ..Default::default()
         });
 
-        let user_service: Box<dyn UserService + Send + Sync> = Box::new(user_service);
-        let tenant_service: Box<dyn TenantService + Send + Sync> = Box::new(tenant_service);
+        let user_service: Arc<dyn UserService> = Arc::new(user_service);
+        let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);
         let company_master_service = CompanyMasterServiceImpl {
-            dao: Box::new(MockCompanyMasterDao::new()),
+            dao: Arc::new(MockCompanyMasterDao::new()),
             user_service,
             tenant_service,
         };

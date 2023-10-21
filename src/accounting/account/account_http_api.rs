@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use actix_web::{Responder, Scope, web};
 use actix_web::web::{Data, Path};
 
@@ -5,7 +6,7 @@ use crate::accounting::account::account_models::CreateAccountRequest;
 use crate::accounting::account::account_service::{AccountService, get_account_service};
 
 async fn get_account_by_id(id: Path<i32>,
-                           data: Data<Box<dyn AccountService + Send + Sync>>)
+                           data: Data<Arc<dyn AccountService>>)
                            -> actix_web::Result<impl Responder> {
     let account = data.get_account_by_id(&id).await;
     Ok(web::Json(account))
@@ -13,7 +14,7 @@ async fn get_account_by_id(id: Path<i32>,
 
 
 async fn create_account(request: web::Json<CreateAccountRequest>,
-                        data: Data<Box<dyn AccountService + Send + Sync>>)
+                        data: Data<Arc<dyn AccountService>>)
                         -> actix_web::Result<impl Responder> {
     let account_id = data.create_account(&request.0).await;
     Ok(web::Json(account_id))
@@ -34,6 +35,7 @@ fn map_endpoints_to_functions() -> Scope {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use actix_web::{App, test};
     use async_trait::async_trait;
 
@@ -56,7 +58,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_api() {
-        let mock: Box<dyn AccountService + Send + Sync> = Box::new(MockAccountService {});
+        let mock: Arc<dyn AccountService> = Arc::new(MockAccountService {});
         let tenant_expected = mock.get_account_by_id(&1).await.unwrap();
         let app_data = actix_web::web::Data::new(mock);
         let app = App::new()

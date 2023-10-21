@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
@@ -21,7 +22,7 @@ const BY_ID_QUERY: &str = concatcp!(
 );
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait StateMasterDao {
+pub trait StateMasterDao:Send+Sync {
     async fn get_all_states(&self) -> Vec<StateMasterModel>;
 
     async fn get_state_by_id(&self, id: i32) -> Option<StateMasterModel>;
@@ -49,11 +50,11 @@ impl TryFrom<&Row> for StateMasterModel {
     }
 }
 
-pub fn get_state_master_dao(client: &'static Pool) -> Box<dyn StateMasterDao + Send + Sync> {
+pub fn get_state_master_dao(client: &'static Pool) -> Arc<dyn StateMasterDao> {
     let state_master_dao = StateMasterDaoPostgresImpl{
         postgres_client:client
     };
-    Box::new(state_master_dao)
+    Arc::new(state_master_dao)
 }
 
 #[async_trait]

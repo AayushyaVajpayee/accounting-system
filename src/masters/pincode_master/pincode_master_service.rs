@@ -9,12 +9,12 @@ use crate::masters::pincode_master::pincode_models::PincodeMaster;
 
 const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
-pub trait PincodeMasterService {
+pub trait PincodeMasterService:Send+Sync {
     async fn get_all_pincodes(&self)->Option<Arc<Vec<Arc<PincodeMaster>>>>;
     async fn get_pincode_by_id(&self, id: i32)->Option<Arc<PincodeMaster>>;
 }
 #[allow(dead_code)]
-pub async fn get_pincode_master_service() -> Box<dyn PincodeMasterService + Send + Sync> {
+pub async fn get_pincode_master_service() -> Arc<dyn PincodeMasterService> {
     let pclient = get_postgres_conn_pool();
     let city_master_dao = get_pincode_master_dao(pclient);
     let cache: Cache<i32, Arc<Vec<Arc<PincodeMaster>>>> = Cache::new(1);
@@ -23,12 +23,12 @@ pub async fn get_pincode_master_service() -> Box<dyn PincodeMasterService + Send
         cache_all: cache,
         cache_by_id: Cache::new(25000),
     };
-    Box::new(city_master_service)
+    Arc::new(city_master_service)
 }
 
 
 struct PincodeMasterServiceImpl{
-    dao:Box<dyn PincodeMasterDao +Send+Sync>,
+    dao:Arc<dyn PincodeMasterDao>,
     cache_all: Cache<i32,Arc<Vec<Arc<PincodeMaster>>>>,
     cache_by_id:Cache<i32,Arc<PincodeMaster>>
 }
@@ -70,6 +70,7 @@ impl PincodeMasterService for PincodeMasterServiceImpl{
 
 #[cfg(test)]
 mod tests{
+    use std::sync::Arc;
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
@@ -94,7 +95,7 @@ mod tests{
                 }]
             });
         let service = PincodeMasterServiceImpl{
-            dao:Box::new(dao_mock),
+            dao:Arc::new(dao_mock),
             cache_all:Cache::new(1),
             cache_by_id:Cache::new(25000)
         };
@@ -120,7 +121,7 @@ mod tests{
                 }]
             });
         let service = PincodeMasterServiceImpl{
-            dao: Box::new(dao_mock),
+            dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(25000),
         };

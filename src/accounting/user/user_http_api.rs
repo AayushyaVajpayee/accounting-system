@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use actix_web::{Responder, Scope, web};
 use actix_web::web::Data;
 use uuid::Uuid;
@@ -5,13 +6,13 @@ use uuid::Uuid;
 use crate::accounting::user::user_models::CreateUserRequest;
 use crate::accounting::user::user_service::{get_user_service, UserService};
 
-async fn get_user_by_id(id: web::Path<Uuid>, data: web::Data<Box<dyn UserService + Send + Sync>>) -> actix_web::Result<impl Responder> {
+async fn get_user_by_id(id: web::Path<Uuid>, data: web::Data<Arc<dyn UserService>>) -> actix_web::Result<impl Responder> {
     let p = data.get_user_by_id(id.into_inner()).await;
     Ok(web::Json(p))
 }
 
 async fn create_user(request: web::Json<CreateUserRequest>,
-                     data: Data<Box<dyn UserService + Send + Sync>>) -> actix_web::Result<impl Responder> {
+                     data: Data<Arc<dyn UserService>>) -> actix_web::Result<impl Responder> {
     let p = data.create_user(&request.0).await;
     Ok(web::Json(p))
 }
@@ -32,6 +33,7 @@ fn map_endpoints_to_functions() -> Scope {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use actix_web::{App, test};
     use async_trait::async_trait;
     use uuid::Uuid;
@@ -71,7 +73,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_api() {
-        let mock: Box<dyn UserService + Send + Sync> = Box::new(UserServiceMock {});
+        let mock: Arc<dyn UserService> = Arc::new(UserServiceMock {});
         let exp = mock.get_user_by_id(*SEED_USER_ID).await.unwrap();
         let exp1 = mock.create_user(&a_create_user_request(Default::default())).await;
         let app_data = actix_web::web::Data::new(mock);

@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
@@ -15,7 +15,7 @@ static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 
 #[async_trait]
-pub trait UserDao {
+pub trait UserDao:Send+Sync {
     async fn get_user_by_id(&self, id: Uuid) -> Option<User>;
     async fn create_user(&self, request: &CreateUserRequest) -> Uuid;
 }
@@ -61,11 +61,11 @@ impl UserDaoPostgresImpl {
 }
 
 #[allow(dead_code)]
-pub fn get_user_dao(client: &'static Pool) -> Box<dyn UserDao + Send + Sync> {
+pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
     let user_dao = UserDaoPostgresImpl {
         postgres_client: client
     };
-    Box::new(user_dao)
+    Arc::new(user_dao)
 }
 
 #[async_trait]

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
@@ -6,7 +7,7 @@ use uuid::Uuid;
 use crate::audit_table::audit_model::AuditEntry;
 
 #[async_trait]
-pub trait AuditDao {
+pub trait AuditDao:Send+Sync {
     async fn get_audit_logs_for_id_and_table(&self, id: Uuid, table_name: &str) -> Vec<AuditEntry>;
 }
 
@@ -17,11 +18,11 @@ const TABLE_NAME: &str = "audit_entries";
 
 const QUERY_BY_TABLE_AND_ID: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," ae join pg_class pc on pc.oid=ae.table_id  where pc.relname=$1 and ae.audit_record_id=$2");
 
-pub fn get_audit_dao(client: &'static Pool) -> Box<dyn AuditDao + Send + Sync> {
+pub fn get_audit_dao(client: &'static Pool) -> Arc<dyn AuditDao> {
     let audit_dao = AuditDaoImpl {
         postgres_client: client
     };
-    Box::new(audit_dao)
+    Arc::new(audit_dao)
 }
 
 impl TryFrom<&Row> for AuditEntry {

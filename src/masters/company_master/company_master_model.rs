@@ -1,9 +1,11 @@
+use uuid::Uuid;
+
+use gstin_validator::gstin_models::validate_gstin;
+
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_model::MasterStatusEnum::{
     Approved, ChangesRequested, Deleted, PendingApproval,
 };
-use gstin_validator::gstin_models::validate_gstin;
-use uuid::Uuid;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum MasterStatusEnum {
@@ -25,13 +27,14 @@ impl MasterStatusEnum {
 }
 #[cfg(test)]
 mod master_status_enum_tests {
+    use rstest::rstest;
+    use spectral::assert_that;
+
     use crate::masters::company_master::company_master_model::MasterStatusEnum;
     use crate::masters::company_master::company_master_model::MasterStatusEnum::Approved;
     use crate::masters::company_master::company_master_model::MasterStatusEnum::ChangesRequested;
     use crate::masters::company_master::company_master_model::MasterStatusEnum::Deleted;
     use crate::masters::company_master::company_master_model::MasterStatusEnum::PendingApproval;
-    use rstest::rstest;
-    use spectral::assert_that;
 
     #[rstest]
     #[case(0, Ok(PendingApproval))]
@@ -65,10 +68,11 @@ impl MasterUpdationRemarks {
 }
 #[cfg(test)]
 mod master_updation_remarks_tests {
-    use crate::masters::company_master::company_master_model::MasterUpdationRemarks;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
+    use crate::masters::company_master::company_master_model::MasterUpdationRemarks;
 
     #[rstest]
     #[case("abdfad", true)]
@@ -112,10 +116,11 @@ impl CompanyName {
 }
 #[cfg(test)]
 mod company_name_tests {
-    use crate::masters::company_master::company_master_model::CompanyName;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
+    use crate::masters::company_master::company_master_model::CompanyName;
 
     #[rstest]
     #[case("abdfad", true)]
@@ -156,10 +161,11 @@ impl CompanyIdentificationNumber {
 
 #[cfg(test)]
 mod cin_tests {
-    use crate::masters::company_master::company_master_model::CompanyIdentificationNumber;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
+    use crate::masters::company_master::company_master_model::CompanyIdentificationNumber;
 
     #[rstest]
     #[case("", false)]
@@ -214,10 +220,11 @@ impl GstinNo {
 }
 #[cfg(test)]
 mod gstin_no_tests {
-    use crate::masters::company_master::company_master_model::GstinNo;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
+    use crate::masters::company_master::company_master_model::GstinNo;
 
     #[rstest]
     #[case("", false)]
@@ -237,16 +244,14 @@ mod gstin_no_tests {
 
 #[cfg(test)]
 pub mod test_data {
-    use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase, AuditMetadataBaseTestBuilder};
-    use crate::masters::company_master::company_master_model::{BaseMasterFields, CompanyIdentificationNumber, CompanyMaster, CompanyName, GstinNo, MasterStatusEnum, MasterUpdationRemarks};
-    use gstin_validator::gstin_models::gstin_checksum;
+    use rand::Rng;
     use rand::distributions::Alphanumeric;
-    use rand::{Rng, SeedableRng};
-    use rstest::rstest;
-    use std::fmt::format;
-    use std::sync::OnceLock;
-    use rand::rngs::SmallRng;
     use uuid::Uuid;
+
+    use gstin_validator::gstin_models::gstin_checksum;
+
+    use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+    use crate::masters::company_master::company_master_model::{BaseMasterFields, CompanyIdentificationNumber, CompanyMaster, CompanyName, GstinNo, MasterStatusEnum, MasterUpdationRemarks};
     use crate::masters::company_master::company_master_model::MasterStatusEnum::PendingApproval;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 

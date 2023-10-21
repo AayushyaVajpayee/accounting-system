@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -12,7 +13,7 @@ use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::seeddata::constants::{FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH, SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
 
 #[async_trait]
-pub trait SeedService {
+pub trait SeedService:Send+Sync {
     async fn copy_tables(&self);
 }
 
@@ -58,15 +59,15 @@ impl SeedService for SeedServiceImpl {
 }
 
 
-pub fn get_seed_service() -> Box<dyn SeedService + Send + Sync> {
+pub fn get_seed_service() -> Arc<dyn SeedService> {
     let pool = get_postgres_conn_pool();
     let seed_s = SeedServiceImpl { pool };
-    Box::new(seed_s)
+    Arc::new(seed_s)
 }
 #[allow(dead_code)]
-pub fn get_seed_service_with_pool_supplied(pool: &'static Pool) -> Box<dyn SeedService + Send + Sync> {
+pub fn get_seed_service_with_pool_supplied(pool: &'static Pool) -> Arc<dyn SeedService> {
     let seed_s = SeedServiceImpl { pool };
-    Box::new(seed_s)
+    Arc::new(seed_s)
 }
 fn get_seed_filenames_ordered() -> Vec<String> {
     let path = format!("{}{}", SEED_FILES_LOCATION, SEED_FILES);

@@ -10,19 +10,19 @@ use crate::masters::city_master::city_master_models::CityMaster;
 const CACHE_ALL_KEY: i32 = 1;
 
 #[async_trait]
-pub trait CityMasterService {
+pub trait CityMasterService:Send+Sync {
     async fn get_city_by_id(&self, id: i32) -> Option<Arc<CityMaster>>;
     async fn get_all_cities(&self) -> Option<Arc<Vec<Arc<CityMaster>>>>;
 }
 
 struct CityMasterServiceImpl {
-    dao: Box<dyn CityMasterDao + Send + Sync>,
+    dao: Arc<dyn CityMasterDao>,
     cache_all: Cache<i32, Arc<Vec<Arc<CityMaster>>>>,
     cache_by_id: Cache<i32, Arc<CityMaster>>,
 }
 
 #[allow(dead_code)]
-pub async fn get_city_master_service() -> Box<dyn CityMasterService + Send + Sync> {
+pub async fn get_city_master_service() -> Arc<dyn CityMasterService> {
     let pclient = get_postgres_conn_pool();
     let city_master_dao = get_city_master_dao(pclient);
     let cache: Cache<i32, Arc<Vec<Arc<CityMaster>>>> = Cache::new(733);
@@ -31,7 +31,7 @@ pub async fn get_city_master_service() -> Box<dyn CityMasterService + Send + Syn
         cache_all: cache,
         cache_by_id: Cache::new(733),
     };
-    Box::new(city_master_service)
+    Arc::new(city_master_service)
 }
 impl CityMasterServiceImpl {
     async fn populate_caches(&self) {
@@ -69,6 +69,7 @@ impl CityMasterService for CityMasterServiceImpl {
 
 #[cfg(test)]
 mod tests{
+    use std::sync::Arc;
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
@@ -93,7 +94,7 @@ mod tests{
                 }]
             });
         let service = CityMasterServiceImpl{
-            dao:Box::new(dao_mock),
+            dao:Arc::new(dao_mock),
             cache_all:Cache::new(1),
             cache_by_id:Cache::new(750)
         };
@@ -117,7 +118,7 @@ mod tests{
                 }]
             });
         let service = CityMasterServiceImpl{
-            dao: Box::new(dao_mock),
+            dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(740),
         };

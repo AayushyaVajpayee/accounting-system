@@ -9,19 +9,19 @@ use uuid::Uuid;
 const CACHE_ALL_KEY: i32 = 1;
 
 #[async_trait]
-pub trait CountryMasterService {
+pub trait CountryMasterService:Send+Sync {
     async fn get_all_countries(&self) -> Option<Arc<Vec<Arc<CountryMaster>>>>;
     async fn get_country_by_id(&self, id: Uuid) -> Option<Arc<CountryMaster>>;
 }
 
 struct CountryMasterServiceImpl {
-    dao: Box<dyn CountryMasterDao + Send + Sync>,
+    dao: Arc<dyn CountryMasterDao>,
     cache_by_id: Cache<Uuid, Arc<CountryMaster>>,
     cache_all: Cache<i32, Arc<Vec<Arc<CountryMaster>>>>,
 }
 
 #[allow(dead_code)]
-pub async fn get_country_master_service() -> Box<dyn CountryMasterService + Send + Sync> {
+pub async fn get_country_master_service() -> Arc<dyn CountryMasterService> {
     let pclient = get_postgres_conn_pool();
     let country_master_dao = get_country_master_dao(pclient);
     let country_master_service = CountryMasterServiceImpl {
@@ -29,7 +29,7 @@ pub async fn get_country_master_service() -> Box<dyn CountryMasterService + Send
         cache_by_id: Cache::new(200),
         cache_all: Cache::new(1),
     };
-    Box::new(country_master_service)
+    Arc::new(country_master_service)
 }
 
 impl CountryMasterServiceImpl {
@@ -74,6 +74,7 @@ impl CountryMasterService for CountryMasterServiceImpl {
 
 #[cfg(test)]
 mod tests{
+    use std::sync::Arc;
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
@@ -92,7 +93,7 @@ mod tests{
             }]
         });
         let service = CountryMasterServiceImpl {
-            dao: Box::new(dao_mock),
+            dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(200),
         };
@@ -113,7 +114,7 @@ mod tests{
             }]
         });
         let service = CountryMasterServiceImpl{
-            dao: Box::new(dao_mock),
+            dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(200),
         };

@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-pub trait LedgerTransferService {
+pub trait LedgerTransferService:Send+Sync {
     fn create_transfers(request: CreateTransfersRequest);
     fn get_transfers_by_id(request: GetTransferByIdRequest);
     fn get_transfers_for_account_for_interval(request: GetTransfersForAccountForInterval);
