@@ -1,10 +1,13 @@
-use std::sync::Arc;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use async_trait::async_trait;
+use std::sync::Arc;
 use thiserror::Error;
 use tracing::{error, instrument};
 
 use crate::accounting::user::user_service::UserService;
-use crate::masters::company_master::company_master_dao::{CompanyMasterDao, DaoError};
+use crate::masters::company_master::company_master_dao::{
+    get_company_master_dao, CompanyMasterDao, DaoError,
+};
 use crate::masters::company_master::company_master_model::{
     CompanyIdentificationNumber, CompanyName,
 };
@@ -13,7 +16,7 @@ use crate::masters::company_master::company_master_service::ServiceError::OtherE
 use crate::tenant::tenant_service::TenantService;
 
 #[async_trait]
-pub trait CompanyMasterService:Send+Sync {
+pub trait CompanyMasterService: Send + Sync {
     // async fn get_all_companies_for_tenant_id(&self,tenant_id:i32);
 
     // async fn get_all_company_units_for_company_id_and_tenant_id(&self,tenant_id:i32);
@@ -132,6 +135,11 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
     }
 }
 
+pub fn get_company_master_service(tenant_service:Arc<dyn TenantService>,user_service:Arc<dyn UserService>) -> Arc<dyn CompanyMasterService> {
+    let p_client = get_postgres_conn_pool();
+    let dao = get_company_master_dao(p_client);
+    Arc::new(CompanyMasterServiceImpl { dao,tenant_service,user_service })
+}
 #[cfg(test)]
 pub mod tests {
     use std::mem::discriminant;
@@ -150,7 +158,7 @@ pub mod tests {
         get_user_service_for_test, MockUserService, UserService,
     };
     use crate::masters::company_master::company_master_dao::{
-        DaoError, get_company_master_dao, MockCompanyMasterDao,
+        get_company_master_dao, DaoError, MockCompanyMasterDao,
     };
     use crate::masters::company_master::company_master_requests::tests::{
         a_create_company_request, CreateCompanyRequestBuilder,
@@ -163,8 +171,7 @@ pub mod tests {
         get_tenant_service_for_test, MockTenantService, TenantService,
     };
 
-    pub async fn get_company_master_service_for_tests(
-    ) -> Arc<dyn CompanyMasterService> {
+    pub async fn get_company_master_service_for_tests() -> Arc<dyn CompanyMasterService> {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port).await;
         let tenant_service = get_tenant_service_for_test(postgres_client);
@@ -217,8 +224,7 @@ pub mod tests {
         let expected_err = discriminant(&error);
         let actual_err = discriminant(output.as_ref().unwrap_err());
         assert_that!(output).is_err();
-        assert_that!(actual_err)
-            .is_equal_to(expected_err);
+        assert_that!(actual_err).is_equal_to(expected_err);
     }
 
     #[traced_test]

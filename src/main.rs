@@ -11,6 +11,7 @@ use crate::audit_table::audit_service::get_audit_service;
 use crate::ledger::ledger_transfer_service::get_ledger_transfer_service;
 use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service;
 use crate::masters::city_master::city_master_service::get_city_master_service;
+use crate::masters::company_master::company_master_service::get_company_master_service;
 use crate::masters::country_master::country_service::get_country_master_service;
 use crate::masters::pincode_master::pincode_master_service::get_pincode_master_service;
 use crate::masters::state_master::state_master_service::get_state_master_service;
@@ -69,6 +70,7 @@ async fn main() -> io::Result<()> {
     let account_type_master_service= get_account_type_master_service();
     let account_service = get_account_service();
     let ledger_service =get_ledger_transfer_service();
+    let company_master_service = get_company_master_service(tenant_service.clone(),user_service.clone());
     // let invoice_template_service= get_invoice_template_service();
 
     println!("{}", std::process::id());
@@ -83,6 +85,7 @@ async fn main() -> io::Result<()> {
             .configure(|conf|masters::city_master::city_master_http_api::init_routes(conf, city_master_service.clone()))
             .configure(|conf|masters::state_master::state_master_http_api::init_routes(conf, state_master_service.clone()))
             .configure(|conf|masters::country_master::country_master_http_api::init_routes(conf, country_master_service.clone()))
+            .configure(|conf|masters::company_master::company_master_http_api::init_routes(conf,company_master_service.clone()))
             .configure(|conf|accounting::currency::currency_http_api::init_routes(conf,currency_service.clone()))
             .configure(|conf|ledger::ledgermaster::ledger_master_http_api::init_routes(conf,ledger_master_service.clone()))
             .configure(|conf|accounting::account::account_type::account_type_http_api::init_routes(conf,account_type_master_service.clone()))
