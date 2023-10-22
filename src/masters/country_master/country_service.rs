@@ -20,8 +20,7 @@ struct CountryMasterServiceImpl {
     cache_all: Cache<i32, Arc<Vec<Arc<CountryMaster>>>>,
 }
 
-#[allow(dead_code)]
-pub async fn get_country_master_service() -> Arc<dyn CountryMasterService> {
+pub fn get_country_master_service() -> Arc<dyn CountryMasterService> {
     let pclient = get_postgres_conn_pool();
     let country_master_dao = get_country_master_dao(pclient);
     let country_master_service = CountryMasterServiceImpl {

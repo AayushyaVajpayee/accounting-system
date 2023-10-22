@@ -23,8 +23,7 @@ async fn create_tenant(request: web::Json<CreateTenantRequest>,
 }
 
 
-pub fn init_routes(config: &mut web::ServiceConfig) {
-    let tenant_service = get_tenant_service();
+pub fn init_routes(config: &mut web::ServiceConfig, tenant_service: Arc<dyn TenantService>) {
     let data = Data::new(tenant_service);
     config.service(
         map_endpoints_to_functions()

@@ -6,8 +6,9 @@ use serde::Serialize;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::accounting::account::account_type::account_type_dao::AccountTypeDao;
+use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, get_account_type_dao};
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
 
 #[async_trait]
 pub trait AccountTypeService:Send+Sync {
@@ -15,7 +16,7 @@ pub trait AccountTypeService:Send+Sync {
 }
 
 struct AccountTypeServiceImpl {
-    account_type_dao: Arc<dyn AccountTypeDao>,
+    dao: Arc<dyn AccountTypeDao>,
 
 }
 
@@ -23,10 +24,20 @@ struct AccountTypeServiceImpl {
 impl AccountTypeService for AccountTypeServiceImpl {
     async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
         let all_accounts = self
-            .account_type_dao.get_all_account_types_for_tenant_id(tenant_id).await;
+            .dao.get_all_account_types_for_tenant_id(tenant_id).await;
         AccountTypeServiceImpl::create_hierarchy(&all_accounts)
     }
 }
+
+pub fn get_account_type_master_service()->Arc<dyn AccountTypeService>{
+    let pclient = get_postgres_conn_pool();
+    let dao = get_account_type_dao(pclient);
+    let service =AccountTypeServiceImpl{
+        dao
+    };
+    Arc::new(service)
+}
+
 
 #[allow(dead_code)]
 #[derive(Debug, Error)]

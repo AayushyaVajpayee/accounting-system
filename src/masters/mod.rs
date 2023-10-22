@@ -1,6 +1,6 @@
-mod pincode_master;
-mod city_master;
-mod state_master;
-mod company_master;
-mod address_master;
-mod country_master;
+pub mod pincode_master;
+pub mod city_master;
+pub mod state_master;
+pub mod company_master;
+pub mod address_master;
+pub mod country_master;

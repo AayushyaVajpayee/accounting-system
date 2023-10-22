@@ -19,8 +19,7 @@ struct StateMasterServiceImpl {
     cache_by_id: Cache<i32, Arc<StateMasterModel>>,
     cache_all: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>>,
 }
-#[allow(dead_code)]
-pub async fn get_state_master_service() -> Arc<dyn StateMasterService> {
+pub fn get_state_master_service() -> Arc<dyn StateMasterService> {
     let pclient = get_postgres_conn_pool();
     let state_master_dao = get_state_master_dao(pclient);
     let cache: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>> = Cache::new(40);

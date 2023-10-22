@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
@@ -22,7 +22,7 @@ pub trait AccountTypeDao:Send+Sync {
     async fn get_all_account_types_for_tenant_id(&self, tenant_id: Uuid) -> Vec<AccountTypeMaster>;
 }
 
-pub struct AccountTypeDaoPostgresImpl {
+ struct AccountTypeDaoPostgresImpl {
     postgres_client: &'static Pool,
 }
 
@@ -111,6 +111,13 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
 }
 
 
+
+pub fn get_account_type_dao(pool:&'static Pool)->Arc<dyn AccountTypeDao>{
+    let dao = AccountTypeDaoPostgresImpl{
+        postgres_client:pool
+    };
+    Arc::new(dao)
+}
 #[cfg(test)]
 mod account_type_tests {
     use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, AccountTypeDaoPostgresImpl};

@@ -21,8 +21,7 @@ async fn create_account(request: web::Json<CreateAccountRequest>,
 }
 
 
-pub fn init_routes(config: &mut web::ServiceConfig) {
-    let account_service = get_account_service();
+pub fn init_routes(config: &mut web::ServiceConfig, account_service: Arc<dyn AccountService>) {
     let data = Data::new(account_service);
     config.service(map_endpoints_to_functions().app_data(data));
 }

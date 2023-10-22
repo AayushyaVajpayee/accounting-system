@@ -21,9 +21,8 @@ async fn create_currency(
     Ok(web::Json(p))
 }
 
-pub fn init_routes(config: &mut web::ServiceConfig) {
-    let conn_pool = get_currency_service();
-    let data = Data::new(conn_pool);
+pub fn init_routes(config: &mut web::ServiceConfig, currency_service: Arc<dyn CurrencyService>) {
+    let data = Data::new(currency_service);
     config.service(
         map_endpoints_to_functions()
             .app_data(data));

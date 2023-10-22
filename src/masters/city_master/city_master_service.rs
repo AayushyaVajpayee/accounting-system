@@ -21,8 +21,7 @@ struct CityMasterServiceImpl {
     cache_by_id: Cache<i32, Arc<CityMaster>>,
 }
 
-#[allow(dead_code)]
-pub async fn get_city_master_service() -> Arc<dyn CityMasterService> {
+pub fn get_city_master_service() -> Arc<dyn CityMasterService> {
     let pclient = get_postgres_conn_pool();
     let city_master_dao = get_city_master_dao(pclient);
     let cache: Cache<i32, Arc<Vec<Arc<CityMaster>>>> = Cache::new(733);

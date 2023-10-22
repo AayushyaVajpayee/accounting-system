@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
@@ -10,13 +10,13 @@ use crate::ledger::ledger_models::TransferType::{Pending, PostPending, Regular, 
 
 #[async_trait]
 pub trait LedgerTransferDao:Send+Sync {
-    async fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse>;
-    async fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>>;
-    async fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer>;
-    async fn get_transfers_for_account_for_interval();
+    async fn create_transfers(&self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse>;
+    async fn create_batch_transfers(&self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>>;
+    async fn get_transfers_by_id(&self, id: Uuid) -> Option<Transfer>;
+    async fn get_transfers_for_account_for_interval(&self);
 }
 
-pub struct LedgerTransferDaoPostgresImpl {
+ struct LedgerTransferDaoPostgresImpl {
     postgres_client: &'static Pool,
 }
 
@@ -64,13 +64,16 @@ impl LedgerTransferDaoPostgresImpl {
     }
 }
 
+
+pub fn get_ledger_transfer_dao(pool:&'static Pool)->Arc<dyn LedgerTransferDao>{
+    Arc::new(LedgerTransferDaoPostgresImpl{postgres_client:pool})
+}
 #[async_trait]
 impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
-    async fn create_transfers(&mut self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse> {
+    async fn create_transfers(&self, transfers: &[Transfer]) -> Vec<TransferCreationDbResponse> {
         let query = convert_transfers_to_postgres_array(transfers);
         let conn = self.postgres_client.get().await.unwrap();
         let query_results = conn.simple_query(&query).await;
-        let query_results = query_results;
         let query_results = &query_results.unwrap()[1];
         let transfers_db_response =
             match query_results {
@@ -84,7 +87,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
         transfers_db_response
     }
 
-    async fn create_batch_transfers(&mut self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>> {
+    async fn create_batch_transfers(&self, transfers: &[Vec<Transfer>]) -> Vec<Vec<TransferCreationDbResponse>> {
         if transfers.is_empty() {
             return vec![];
         }
@@ -110,7 +113,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
     }
 
 
-    async fn get_transfers_by_id(&mut self, id: Uuid) -> Option<Transfer> {
+    async fn get_transfers_by_id(&self, id: Uuid) -> Option<Transfer> {
         let query = LedgerTransferDaoPostgresImpl::get_transfer_by_id_query();
         let conn = self.postgres_client.get().await.unwrap();
         let k = conn.query(
@@ -122,7 +125,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
         ).next()
     }
 
-    async fn get_transfers_for_account_for_interval() {
+    async fn get_transfers_for_account_for_interval(&self) {
         todo!()
     }
 }

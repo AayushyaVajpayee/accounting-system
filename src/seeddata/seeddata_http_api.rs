@@ -8,8 +8,7 @@ pub async fn init_schema_and_create_seed_data(data: web::Data<Arc<dyn SeedServic
     Ok("oh yeah seed data".to_string())
 }
 
-pub fn init_routes(config: &mut web::ServiceConfig) {
-    let seed_service = get_seed_service();
+pub fn init_routes(config: &mut web::ServiceConfig, seed_service: Arc<dyn SeedService>) {
     let data = web::Data::new(seed_service);
     config.service(map_endpoints_to_functions()
         .app_data(data));

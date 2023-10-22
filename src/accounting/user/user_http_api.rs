@@ -17,8 +17,7 @@ async fn create_user(request: web::Json<CreateUserRequest>,
     Ok(web::Json(p))
 }
 
-pub fn init_routes(config: &mut web::ServiceConfig) {
-    let user_service = get_user_service();
+pub fn init_routes(config: &mut web::ServiceConfig, user_service: Arc<dyn UserService>) {
     let data = Data::new(user_service);
     config.service(
         map_endpoints_to_functions().app_data(data)

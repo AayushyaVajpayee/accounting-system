@@ -1,9 +1,42 @@
+use std::sync::Arc;
+use async_trait::async_trait;
 use uuid::Uuid;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
+use crate::ledger::ledger_transfer_dao::{get_ledger_transfer_dao, LedgerTransferDao};
 
+#[async_trait]
 pub trait LedgerTransferService:Send+Sync {
-    fn create_transfers(request: CreateTransfersRequest);
-    fn get_transfers_by_id(request: GetTransferByIdRequest);
-    fn get_transfers_for_account_for_interval(request: GetTransfersForAccountForInterval);
+    async fn create_transfers(&self,request: CreateTransfersRequest);
+    async fn get_transfers_by_id(&self,request: GetTransferByIdRequest);
+    async fn get_transfers_for_account_for_interval(&self,request: GetTransfersForAccountForInterval);
+}
+
+
+struct LedgerTransferServiceImpl{
+    dao:Arc<dyn LedgerTransferDao>
+}
+
+pub fn get_ledger_transfer_service()->Arc<dyn LedgerTransferService>{
+let pclient = get_postgres_conn_pool();
+    let dao = get_ledger_transfer_dao(pclient);
+    let service = LedgerTransferServiceImpl{
+        dao
+    };
+    Arc::new(service)
+}
+#[async_trait]
+impl LedgerTransferService for LedgerTransferServiceImpl{
+    async fn create_transfers(&self, request: CreateTransfersRequest) {
+        todo!()
+    }
+
+    async fn get_transfers_by_id(&self, request: GetTransferByIdRequest) {
+        todo!()
+    }
+
+    async fn get_transfers_for_account_for_interval(&self, request: GetTransfersForAccountForInterval) {
+        todo!()
+    }
 }
 
 
