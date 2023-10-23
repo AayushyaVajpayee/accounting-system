@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use thiserror::Error;
 use tracing::{error, instrument};
+use uuid::Uuid;
 
 use crate::accounting::user::user_service::UserService;
 use crate::masters::company_master::company_master_dao::{
@@ -14,7 +15,9 @@ use crate::masters::company_master::company_master_model::{
 use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
 use crate::masters::company_master::company_master_service::ServiceError::OtherError;
 use crate::tenant::tenant_service::TenantService;
-
+#[cfg(test)]
+use mockall::automock;
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CompanyMasterService: Send + Sync {
     // async fn get_all_companies_for_tenant_id(&self,tenant_id:i32);
@@ -24,7 +27,7 @@ pub trait CompanyMasterService: Send + Sync {
     async fn create_new_company_for_tenant(
         &self,
         request: &CreateCompanyRequest,
-    ) -> Result<(), ServiceError>;
+    ) -> Result<Uuid, ServiceError>;
 
     // async fn create_new_company_unit_for_tenant_and_company_id(&self,tenant_id:i32);
     //
@@ -41,7 +44,7 @@ pub struct CompanyMasterServiceImpl {
 pub enum ServiceError {
     #[error("validation failures \n {}",.0.join("\n"))]
     ValidationError(Vec<String>), //4xx
-    #[error("jd")]
+    #[error("error in db {}",0)]
     DBError(DaoError), //5xx
     //have to separate out idempotency check
     #[error("company with this cin already exists")]
@@ -108,7 +111,7 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
     async fn create_new_company_for_tenant(
         &self,
         request: &CreateCompanyRequest,
-    ) -> Result<(), ServiceError> {
+    ) -> Result<Uuid, ServiceError> {
         let validations = self.validate_create_company_request(request).await;
         if !validations.is_empty() {
             return Err(ServiceError::ValidationError(validations));
@@ -131,7 +134,7 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
                 res
             )));
         }
-        Ok(())
+        Ok(company_master.base_master_fields.id)
     }
 }
 
