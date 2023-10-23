@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::tenant::tenant_models::SEED_TENANT_ID;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccountTypeMaster {
     pub id: i16,
-    pub tenant_id: i32,
+    pub tenant_id: Uuid,
     pub child_ids: Option<Vec<i16>>,
     pub parent_id: Option<i16>,
     pub display_name: String,
@@ -15,7 +17,7 @@ pub struct AccountTypeMaster {
 
 #[derive(Debug)]
 pub struct CreateAccountTypeMasterRequest {
-    pub tenant_id: i32,
+    pub tenant_id: Uuid,
     pub child_ids: Option<Vec<i16>>,
     pub parent_id: Option<i16>,
     pub display_name: String,
@@ -26,7 +28,7 @@ pub struct CreateAccountTypeMasterRequest {
 #[cfg(test)]
 #[derive(Debug, Default)]
 pub struct CreateAccountTypeMasterRequestTestBuilder {
-    pub tenant_id: Option<i32>,
+    pub tenant_id: Option<Uuid>,
     pub child_ids: Option<Vec<i16>>,
     pub parent_id: Option<i16>,
     pub display_name: Option<String>,
@@ -37,7 +39,7 @@ pub struct CreateAccountTypeMasterRequestTestBuilder {
 #[cfg(test)]
 pub fn a_create_account_type_master_request(builder: CreateAccountTypeMasterRequestTestBuilder) -> CreateAccountTypeMasterRequest {
     CreateAccountTypeMasterRequest {
-        tenant_id: builder.tenant_id.unwrap_or(0),
+        tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         child_ids: builder.child_ids,
         parent_id: builder.parent_id,
         account_code: builder.account_code,

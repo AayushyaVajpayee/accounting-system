@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+use crate::accounting::user::user_models::SEED_USER_ID;
+use crate::tenant::tenant_models::SEED_TENANT_ID;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 pub struct AuditMetadataBase {
-    pub created_by: String,
-    pub updated_by: String,
+    pub created_by: Uuid,
+    pub updated_by: Uuid,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -11,8 +14,8 @@ pub struct AuditMetadataBase {
 #[cfg(test)]
 #[derive(Default)]
 pub struct AuditMetadataBaseTestBuilder {
-    pub created_by: Option<String>,
-    pub updated_by: Option<String>,
+    pub created_by: Option<Uuid>,
+    pub updated_by: Option<Uuid>,
     pub created_at: Option<i64>,
     pub updated_at: Option<i64>,
 }
@@ -20,9 +23,10 @@ pub struct AuditMetadataBaseTestBuilder {
 
 #[cfg(test)]
 pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> AuditMetadataBase {
+
     AuditMetadataBase {
-        created_by: test_builder.created_by.unwrap_or("".to_string()),
-        updated_by: test_builder.updated_by.unwrap_or("".to_string()),
+        created_by: test_builder.created_by.unwrap_or(*SEED_USER_ID),
+        updated_by: test_builder.updated_by.unwrap_or(*SEED_USER_ID),
         created_at: test_builder.created_at.unwrap_or(0),
         updated_at: test_builder.updated_at.unwrap_or(0),
     }
@@ -31,7 +35,7 @@ pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> Aud
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct CurrencyMaster {
     pub id: i16,
-    pub tenant_id: i32,
+    pub tenant_id: Uuid,
     pub scale: i16,
     ///16 char
     pub display_name: String,
@@ -43,7 +47,7 @@ pub struct CurrencyMaster {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateCurrencyMasterRequest {
-    pub tenant_id: i32,
+    pub tenant_id: Uuid,
     pub scale: i16,
     pub display_name: String,
     pub description: String,
@@ -53,7 +57,7 @@ pub struct CreateCurrencyMasterRequest {
 #[cfg(test)]
 #[derive(Debug, Default)]
 pub struct CreateCurrencyMasterRequestTestBuilder {
-    pub tenant_id: Option<i32>,
+    pub tenant_id: Option<Uuid>,
     pub scale: Option<i16>,
     pub display_name: Option<String>,
     pub description: Option<String>,
@@ -65,7 +69,7 @@ pub fn a_create_currency_master_request(builder:
                                         CreateCurrencyMasterRequestTestBuilder)
                                         -> CreateCurrencyMasterRequest {
     CreateCurrencyMasterRequest {
-        tenant_id: builder.tenant_id.unwrap_or(0),
+        tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         scale: builder.scale.unwrap_or(0),
         display_name: builder.display_name.unwrap_or("".to_string()),
         description: builder.description.unwrap_or("".to_string()),
@@ -80,7 +84,7 @@ pub fn a_create_currency_master_request(builder:
 #[derive(Default)]
 pub struct CurrencyMasterTestBuilder {
     pub id: Option<i16>,
-    pub tenant_id: Option<i32>,
+    pub tenant_id: Option<Uuid>,
     pub scale: Option<i16>,
     pub display_name: Option<String>,
     pub description: Option<String>,
@@ -92,7 +96,7 @@ pub struct CurrencyMasterTestBuilder {
 pub fn a_currency_master(builder: CurrencyMasterTestBuilder) -> CurrencyMaster {
     CurrencyMaster {
         id: builder.id.unwrap_or(0),
-        tenant_id: builder.tenant_id.unwrap_or(0),
+        tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         scale: builder.scale.unwrap_or(0),
         display_name: builder.display_name.unwrap_or("".to_string()),
         description: builder.description.unwrap_or("".to_string()),

@@ -32,6 +32,7 @@ pub fn get_dev_conf() -> Setting {
 #[cfg(test)]
 pub mod configuration_test_code {
     use serde::Deserialize;
+
     use crate::configurations::Database;
 
     #[derive(Debug, Deserialize)]

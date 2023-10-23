@@ -1,7 +1,9 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::user::user_models::{CreateUserRequest, User};
@@ -11,10 +13,11 @@ const TABLE_NAME: &str = "app_user";
 static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
+
 #[async_trait]
-pub trait UserDao {
-    async fn get_user_by_id(&self, id: &i32) -> Option<User>;
-    async fn create_user(&self, request: &CreateUserRequest) -> i32;
+pub trait UserDao:Send+Sync {
+    async fn get_user_by_id(&self, id: Uuid) -> Option<User>;
+    async fn create_user(&self, request: &CreateUserRequest) -> Uuid;
 }
 
 pub struct UserDaoPostgresImpl {
@@ -51,23 +54,23 @@ impl UserDaoPostgresImpl {
     fn create_insert_statement() -> &'static String {
         INSERT_STATEMENT.get_or_init(|| {
             format!("insert into {} ({}) values \
-            (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,$9) returning id",
+            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id",
                     TABLE_NAME, SELECT_FIELDS)
         })
     }
 }
 
 #[allow(dead_code)]
-pub fn get_user_dao(client: &'static Pool) -> Box<dyn UserDao + Send + Sync> {
+pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
     let user_dao = UserDaoPostgresImpl {
         postgres_client: client
     };
-    Box::new(user_dao)
+    Arc::new(user_dao)
 }
 
 #[async_trait]
 impl UserDao for UserDaoPostgresImpl {
-    async fn get_user_by_id(&self, id: &i32) -> Option<User> {
+    async fn get_user_by_id(&self, id: Uuid) -> Option<User> {
         let query = UserDaoPostgresImpl::get_user_by_id_query();
         let rows = self.postgres_client.get()
             .await.unwrap()
@@ -78,10 +81,12 @@ impl UserDao for UserDaoPostgresImpl {
         ).next()
     }
 
-    async fn create_user(&self, request: &CreateUserRequest) -> i32 {
+    async fn create_user(&self, request: &CreateUserRequest) -> Uuid {
         let query = UserDaoPostgresImpl::create_insert_statement();
+        let id = Uuid::now_v7();
         self.postgres_client.get().await.unwrap().query(
             query, &[
+                &id,
                 &request.tenant_id,
                 &request.first_name,
                 &request.last_name,
@@ -100,23 +105,24 @@ impl UserDao for UserDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
-    use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
-    use crate::accounting::user::user_models::{a_create_user_request, CreateUserRequestTestBuilder};
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
+    use crate::accounting::user::user_models::tests::{a_create_user_request, CreateUserRequestTestBuilder};
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_users() {
         let port = get_postgres_image_port().await;
         let user = a_create_user_request(
             CreateUserRequestTestBuilder {
-                tenant_id: Some(1),
+                tenant_id: Some(*SEED_TENANT_ID),
                 ..Default::default()
             }
         );
         let postgres_client = get_postgres_conn_pool(port).await;
-        let mut user_dao = UserDaoPostgresImpl { postgres_client };
+        let  user_dao = UserDaoPostgresImpl { postgres_client };
         let user_id = user_dao.create_user(&user).await;
-        let user = user_dao.get_user_by_id(&user_id).await.unwrap();
+        let user = user_dao.get_user_by_id(user_id).await.unwrap();
         assert_eq!(user.id, user_id);
     }
 }

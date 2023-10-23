@@ -1,9 +1,8 @@
-use std::sync::OnceLock;
-use actix_web::web::Buf;
+use std::sync::{Arc, OnceLock};
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
-
 
 use crate::accounting::currency::currency_models::{AuditMetadataBase, CreateCurrencyMasterRequest, CurrencyMaster};
 
@@ -14,7 +13,7 @@ static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 #[async_trait]
-pub trait CurrencyDao {
+pub trait CurrencyDao:Send+Sync {
     async fn get_currency_entry_by_id(&self, id: &i16) -> Option<CurrencyMaster>;
     async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> i16;
 }
@@ -59,11 +58,11 @@ impl CurrencyDaoPostgresImpl {
     }
 }
 
-pub fn get_currency_dao(client: &'static Pool) -> Box<dyn CurrencyDao + Send + Sync> {
+pub fn get_currency_dao(client: &'static Pool) -> Arc<dyn CurrencyDao> {
     let currency_dao = CurrencyDaoPostgresImpl {
         postgres_client: client
     };
-    Box::new(currency_dao)
+    Arc::new(currency_dao)
 }
 
 #[async_trait]
@@ -95,6 +94,7 @@ mod tests {
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::{a_create_currency_master_request, CreateCurrencyMasterRequestTestBuilder};
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_currency() {
@@ -102,11 +102,11 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let currency_master = a_create_currency_master_request(
             CreateCurrencyMasterRequestTestBuilder {
-                tenant_id: Some(1),
+                tenant_id: Some(*SEED_TENANT_ID),
                 ..Default::default()
             }
         );
-        let mut currency_dao = CurrencyDaoPostgresImpl { postgres_client };
+        let  currency_dao = CurrencyDaoPostgresImpl { postgres_client };
         let curr_id = currency_dao.create_currency_entry(&currency_master).await;
         let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).await.unwrap();
         assert_eq!(curr_id, fetched_curr.id)

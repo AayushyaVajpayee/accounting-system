@@ -1,30 +1,43 @@
 use std::collections::HashMap;
-use async_trait::async_trait;
+use std::sync::Arc;
 
+use async_trait::async_trait;
 use serde::Serialize;
 use thiserror::Error;
+use uuid::Uuid;
 
-use crate::accounting::account::account_type::account_type_dao::AccountTypeDao;
+use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, get_account_type_dao};
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
 
 #[async_trait]
-pub trait AccountTypeService {
-    async fn get_account_type_hierarchy(&self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError>;
+pub trait AccountTypeService:Send+Sync {
+    async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, HierarchyError>;
 }
 
 struct AccountTypeServiceImpl {
-    account_type_dao: Box<dyn AccountTypeDao + Send + Sync>,
+    dao: Arc<dyn AccountTypeDao>,
 
 }
 
 #[async_trait]
 impl AccountTypeService for AccountTypeServiceImpl {
-    async fn get_account_type_hierarchy(&self, tenant_id: &i32) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
+    async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
         let all_accounts = self
-            .account_type_dao.get_all_account_types_for_tenant_id(tenant_id).await;
+            .dao.get_all_account_types_for_tenant_id(tenant_id).await;
         AccountTypeServiceImpl::create_hierarchy(&all_accounts)
     }
 }
+
+pub fn get_account_type_master_service()->Arc<dyn AccountTypeService>{
+    let pclient = get_postgres_conn_pool();
+    let dao = get_account_type_dao(pclient);
+    let service =AccountTypeServiceImpl{
+        dao
+    };
+    Arc::new(service)
+}
+
 
 #[allow(dead_code)]
 #[derive(Debug, Error)]
@@ -117,6 +130,8 @@ mod tests {
     use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
     use crate::accounting::account::account_type::account_type_service::{AccountTypeHierarchy, AccountTypeServiceImpl};
     use crate::accounting::currency::currency_models::AuditMetadataBase;
+    use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     const ADJACENCY_LIST_STR: &str = r"(\d+)(\[)(((\d*)|(\d+,))*)(])";
     static ADJACENCY_LIST_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -215,14 +230,14 @@ mod tests {
     fn create_account_type_master(id: i16, child_ids: &HashSet<i16>, parent_id: Option<i16>) -> AccountTypeMaster {
         AccountTypeMaster {
             id,
-            tenant_id: 0,
+            tenant_id: *SEED_TENANT_ID,
             child_ids: Some(child_ids.iter().copied().collect::<Vec<i16>>()),
             parent_id,
             display_name: "".to_string(),
             account_code: None,
             audit_metadata: AuditMetadataBase {
-                created_by: "".to_string(),
-                updated_by: "".to_string(),
+                created_by: *SEED_USER_ID,
+                updated_by: *SEED_USER_ID,
                 created_at: 0,
                 updated_at: 0,
             },

@@ -6,7 +6,7 @@ use uuid::{Builder, Uuid};
 #[derive(Debug)]
 pub struct AuditEntry {
     pub id: Uuid,
-    pub tenant_id: i32,
+    pub tenant_id: Uuid,
     //v7
     pub audit_record_id: Uuid,
     pub operation_type: i8,

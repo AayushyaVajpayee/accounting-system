@@ -1,21 +1,22 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
-
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryRequest, LedgerMaster};
 
 #[async_trait]
-pub trait LedgerMasterDao {
+pub trait LedgerMasterDao:Send+Sync {
     async fn get_ledger_master_by_id(&self, id: &i32) -> Option<LedgerMaster>;
     async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> i32;
 }
 
 
-pub fn get_ledger_master_dao(client: &'static Pool) -> Box<dyn LedgerMasterDao + Send + Sync> {
-    Box::new(LedgerMasterPostgresDaoImpl {
+#[allow(dead_code)]
+pub fn get_ledger_master_dao(client: &'static Pool) -> Arc<dyn LedgerMasterDao> {
+    Arc::new(LedgerMasterPostgresDaoImpl {
         postgres_client: client
     })
 }
@@ -103,9 +104,9 @@ impl LedgerMasterDao for LedgerMasterPostgresDaoImpl {
 
 #[cfg(test)]
 mod tests {
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::ledger::ledgermaster::ledger_master_dao::{LedgerMasterDao, LedgerMasterPostgresDaoImpl};
     use crate::ledger::ledgermaster::ledger_master_models::a_create_ledger_master_entry_request;
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_ledger_master() {
@@ -113,7 +114,7 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let ledger_master = a_create_ledger_master_entry_request(
             Default::default());
-        let mut ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
+        let  ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
         let id = ledger_master_dao.create_ledger_master_entry(&ledger_master).await;
         let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(&id).await.unwrap();
         assert_eq!(fetched_ledger_master.id, id);

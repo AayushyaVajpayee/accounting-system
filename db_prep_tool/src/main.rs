@@ -1,4 +1,3 @@
-use std::fmt::format;
 use clap::{Parser, Subcommand, ValueEnum};
 use postgres::{Client, NoTls};
 
