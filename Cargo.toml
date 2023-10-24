@@ -1,3 +1,4 @@
 [workspace]
+resolver="1"
 
 members=["db_prep_tool","gstin_validator","invoice_doc_generator","invoicing_calculations","accounting_system"]
