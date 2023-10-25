@@ -15,13 +15,12 @@ use crate::masters::company_master::company_master_service::get_company_master_s
 use crate::masters::country_master::country_service::get_country_master_service;
 use crate::masters::pincode_master::pincode_master_service::get_pincode_master_service;
 use crate::masters::state_master::state_master_service::get_state_master_service;
-use crate::seeddata::seed_service::get_seed_service;
 use crate::tenant::tenant_http_api;
 use crate::tenant::tenant_service::get_tenant_service;
 
 mod ledger;
 mod accounting;
-mod seeddata;
+
 
 mod configurations;
 mod audit_table;
@@ -56,7 +55,6 @@ pub fn build_dependencies(){
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
-    let seed_service = get_seed_service();
     let audit_table_service = get_audit_service();
     let tenant_service = get_tenant_service();
     let user_service = get_user_service();
@@ -77,7 +75,6 @@ async fn main() -> io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .configure(|conf|seeddata::seeddata_http_api::init_routes(conf,seed_service.clone()))
             .configure(|conf|audit_table::audit_table_http_api::init_routes(conf,audit_table_service.clone()))
             .configure(|conf|tenant_http_api::init_routes(conf,tenant_service.clone()))
             .configure(|conf|accounting::user::user_http_api::init_routes(conf,user_service.clone()))

@@ -57,10 +57,10 @@ pub mod test_utils_postgres {
     use testcontainers::core::WaitFor;
     use tokio::sync::OnceCell;
     use tokio_postgres::{Config, NoTls};
+    use db_prep_tool::get_seed_service_with_pool_supplied;
 
     use crate::accounting::postgres_factory::get_recycling_method;
     use crate::configurations::configuration_test_code::{get_tests_conf, TestSettings};
-    use crate::seeddata::seed_service::get_seed_service_with_pool_supplied;
 
     static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
     static TEST_CONTAINER_CLIENT: OnceCell<Cli> = OnceCell::const_new();

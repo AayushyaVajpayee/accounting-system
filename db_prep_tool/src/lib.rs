@@ -1,17 +1,18 @@
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
 use bytes::Bytes;
 use deadpool_postgres::Pool;
 use futures_util::{SinkExt, stream};
 use pin_utils::pin_mut;
-use tokio::pin;
+use tokio::{fs, pin};
 use tokio_postgres::Error;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
-use crate::seeddata::constants::{FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH, SCHEMA_CREATION_SCRIPT_PATH, SEED_FILES, SEED_FILES_LOCATION};
-
+pub const SEED_FILES: &str = "seed_files_metadata.csv";
+pub const SEED_FILES_LOCATION: &str = "../schema/postgres/seed_data/";
+pub const SCHEMA_CREATION_SCRIPT_PATH: &str = "../schema/postgres/schema.sql";
+pub const FUNCTIONS_AND_PROCEDURES_SCRIPT_PATH: &str = "../schema/postgres/functions_and_procedures.sql";
 #[async_trait]
 pub trait SeedService:Send+Sync {
     async fn copy_tables(&self);
@@ -42,7 +43,7 @@ impl SeedService for SeedServiceImpl {
             let content =
                 async {
                     Ok::<_, Error>(Bytes::from(
-                        tokio::fs::read_to_string(file_path).await.unwrap()
+                        fs::read_to_string(file_path).await.unwrap()
                     ))
                 };
             let query = format!("copy {t} from stdin with csv header");
@@ -59,8 +60,7 @@ impl SeedService for SeedServiceImpl {
 }
 
 
-pub fn get_seed_service() -> Arc<dyn SeedService> {
-    let pool = get_postgres_conn_pool();
+pub fn get_seed_service(pool:&'static Pool) -> Arc<dyn SeedService> {
     let seed_s = SeedServiceImpl { pool };
     Arc::new(seed_s)
 }
@@ -114,15 +114,3 @@ async fn create_functions_and_procedures(client: &Pool) {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use crate::seeddata::seed_service::{get_seed_filenames_ordered, validate_seed_file_names};
-
-    #[test]
-    fn test_k() {
-        let k = get_seed_filenames_ordered();
-        println!("{:?}", k);
-        let kk = validate_seed_file_names(&k);
-        println!("{:?}", kk);
-    }
-}
