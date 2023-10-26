@@ -1,2 +1,14 @@
 [build]
 rustflags = ["--cfg", "uuid_unstable"]
+
+[env]
+POSTGRES_PORT = "5432"
+POSTGRES_USER = "postgres"
+POSTGRES_DB = "postgres"
+POSTGRES_MAX_CONNECTIONS = "5"
+POSTGRES_HOST = "localhost"
+POSTGRES_connect_timeout_seconds = "10"
+POSTGRES_PASSWORD = "postgres"
+POSTGRES_WAIT_TIMEOUT_SECONDS = "5"
+POSTGRES_POOL_RECYCLING_METHOD = "Clean"
+POSTGRES_APPLICATION_NAME = "accounting-system"

@@ -60,7 +60,7 @@ pub mod test_utils_postgres {
     use db_prep_tool::get_seed_service_with_pool_supplied;
 
     use crate::accounting::postgres_factory::get_recycling_method;
-    use crate::configurations::configuration_test_code::{get_tests_conf, TestSettings};
+    use crate::configurations::{get_dev_conf, Setting};
 
     static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
     static TEST_CONTAINER_CLIENT: OnceCell<Cli> = OnceCell::const_new();
@@ -79,7 +79,7 @@ pub mod test_utils_postgres {
     }
 
     async fn init_pool(port: u16) -> Pool {
-        let settings: TestSettings = get_tests_conf();
+        let settings: Setting = get_dev_conf();
         let cfg = get_pg_config(&settings, port);
         let mgr = deadpool_postgres::Manager::from_config(cfg, NoTls,
                                                           ManagerConfig {
@@ -90,7 +90,7 @@ pub mod test_utils_postgres {
                                                                       .as_str())
                                                           });
         Pool::builder(mgr)
-            .max_size(settings.db.max_connections as usize)
+            .max_size(1)
             .runtime(Runtime::Tokio1)
             .create_timeout(Some(Duration::from_secs(settings.db.connect_timeout_seconds as u64)))
             .wait_timeout(Some(Duration::from_secs(settings.db.wait_timeout_seconds as u64)))
@@ -121,10 +121,10 @@ pub mod test_utils_postgres {
     }
 
     async fn run_postgres() -> Container<'static, GenericImage> {
-        let settings: TestSettings = get_tests_conf();
+        let settings: Setting = get_dev_conf();
         let test_container_client = get_client().await;
-        let image = settings.docker_postgres_detail.image;
-        let image_tag = settings.docker_postgres_detail.image_tag;
+        let image = "postgres";
+        let image_tag = "16.0";
         let generic_postgres = GenericImage::new(image, image_tag)
             .with_wait_for(WaitFor::message_on_stderr("database system is ready to accept connections"))
             .with_env_var("POSTGRES_DB", settings.db.db)
@@ -133,7 +133,7 @@ pub mod test_utils_postgres {
         test_container_client.run(generic_postgres)
     }
 
-    fn get_pg_config(settings: &TestSettings, port: u16) -> Config {
+    fn get_pg_config(settings: &Setting, port: u16) -> Config {
         let mut cfg = Config::new();
         cfg.host(settings.db.host.as_str());
         cfg.port(port);

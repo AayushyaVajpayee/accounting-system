@@ -1,3 +1,4 @@
+use config::{Environment, Source};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -22,36 +23,31 @@ pub struct Setting {
 }
 
 pub fn get_dev_conf() -> Setting {
-    config::Config::builder()
-        .add_source(config::File::with_name("conf/conf.toml"))
-        .build()
-        .unwrap().try_deserialize().unwrap()
-}
-
-
-#[cfg(test)]
-pub mod configuration_test_code {
-    use serde::Deserialize;
-
-    use crate::configurations::Database;
-
-    #[derive(Debug, Deserialize)]
-    pub struct DockerPostgresDetail {
-        pub image: String,
-        pub image_tag: String,
-    }
-
-    #[derive(Debug, Deserialize)]
-    #[allow(unused)]
-    pub struct TestSettings {
-        pub db: Database,
-        pub docker_postgres_detail: DockerPostgresDetail,
-    }
-
-    pub fn get_tests_conf() -> TestSettings {
-        config::Config::builder()
-            .add_source(config::File::with_name("conf/tests_conf.toml"))
-            .build()
-            .unwrap().try_deserialize().unwrap()
+    let p = Environment::with_prefix("POSTGRES").prefix_separator("_");
+    let vars = p.collect().unwrap();
+    vars.iter().for_each(|a| {
+        println!("{} -------- \"{}\"", a.0, a.1);
+    });
+    Setting {
+        db: Database {
+            port: vars.get("port").unwrap().clone().into_uint().unwrap() as u16,
+            user: vars.get("user").unwrap().clone().into_string().unwrap(),
+            db: vars.get("db").unwrap().clone().into_string().unwrap(),
+            max_connections: vars.get("max_connections").unwrap().clone().into_uint().unwrap() as u16,
+            host: vars.get("host").unwrap().clone().into_string().unwrap(),
+            connect_timeout_seconds: vars
+                .get("connect_timeout_seconds")
+                .unwrap().clone()
+                .into_uint()
+                .unwrap() as u16,
+            password: vars.get("password").unwrap().clone().into_string().unwrap(),
+            wait_timeout_seconds: vars
+                .get("wait_timeout_seconds")
+                .unwrap().clone()
+                .into_uint()
+                .unwrap() as u16,
+            recycling_method: vars.get("pool_recycling_method").unwrap().clone().into_string().unwrap(),
+            application_name: vars.get("application_name").unwrap().clone().into_string().unwrap(),
+        },
     }
 }

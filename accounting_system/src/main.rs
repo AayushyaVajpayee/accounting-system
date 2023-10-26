@@ -6,6 +6,7 @@ use actix_web::middleware::Logger;
 use crate::accounting::account::account_service::get_account_service;
 use crate::accounting::account::account_type::account_type_service::get_account_type_master_service;
 use crate::accounting::currency::currency_service::get_currency_service;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::accounting::user::user_service::get_user_service;
 use crate::audit_table::audit_service::get_audit_service;
 use crate::ledger::ledger_transfer_service::get_ledger_transfer_service;
@@ -55,6 +56,8 @@ pub fn build_dependencies(){
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
+    let pool = get_postgres_conn_pool();
+    pool.get().await.unwrap().simple_query("select 1").await.unwrap();
     let audit_table_service = get_audit_service();
     let tenant_service = get_tenant_service();
     let user_service = get_user_service();
