@@ -3,20 +3,19 @@ services:
     build: .
     ports:
       - "8080:8080"
-    environment:
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_MAX_CONNECTIONS=5
-      - POSTGRES_HOST=db
-      - POSTGRES_connect_timeout_seconds=10
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_WAIT_TIMEOUT_SECONDS=5
-      - POSTGRES_POOL_RECYCLING_METHOD=Clean
-      - POSTGRES_APPLICATION_NAME=accounting-system
+    env_file: test_environment.env
+    depends_on:
+       db:
+          condition: service_healthy
   db:
     image: "postgres:16.0"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    env_file: test_environment.env
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} --dbname ${POSTGRES_DB} -t 1'" ]
+      start_interval: 1s
+      start_period: 20s
+      interval: 1s
+      timeout: 500ms
+      retries: 4
