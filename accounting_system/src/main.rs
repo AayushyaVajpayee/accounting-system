@@ -56,8 +56,8 @@ pub fn build_dependencies(){
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init();
-    let pool = get_postgres_conn_pool();
-    pool.get().await.unwrap().simple_query("select 1").await.unwrap();
+    // let pool = get_postgres_conn_pool();
+    // pool.get().await.unwrap().simple_query("select 1").await.unwrap();
     let audit_table_service = get_audit_service();
     let tenant_service = get_tenant_service();
     let user_service = get_user_service();
@@ -73,7 +73,6 @@ async fn main() -> io::Result<()> {
     let ledger_service =get_ledger_transfer_service();
     let company_master_service = get_company_master_service(tenant_service.clone(),user_service.clone());
     // let invoice_template_service= get_invoice_template_service();
-
     println!("{}", std::process::id());
     HttpServer::new(move || {
         App::new()
@@ -93,7 +92,7 @@ async fn main() -> io::Result<()> {
             .configure(|conf|ledger::ledger_transfer_http_api::init_routes(conf,ledger_service.clone()))
 
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await.expect("TODO: panic message");
     Ok(())

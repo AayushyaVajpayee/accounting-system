@@ -3,11 +3,11 @@ use clap::{Parser, Subcommand, ValueEnum};
 use db_prep_tool::get_seed_service;
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
 use env_logger::init;
+use postgres::fallible_iterator::FallibleIterator;
 use postgres::{Client, NoTls};
 use std::fmt::format;
 use std::sync::OnceLock;
 use std::time::Duration;
-use postgres::fallible_iterator::FallibleIterator;
 use tokio_postgres::Config;
 
 static CONNECTION_POOL: OnceLock<Pool> = OnceLock::new();
@@ -34,7 +34,8 @@ struct Cli {
     ///user with which to authenticate in postgres
     #[arg(short, long, default_value = "postgres")]
     user: String,
-
+    #[arg(short, long, default_value = "postgres")]
+    dbname: String,
     #[command(subcommand)]
     command: Option<MySubCommand>,
 }
@@ -50,12 +51,13 @@ enum MySubCommand {
         #[arg(short, long)]
         dbname: String,
     },
+
     DropAllDbs,
 }
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
-    let pool = connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, "postgres");
+    let pool = connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, &cli.dbname);
 
     match cli.command.unwrap() {
         MySubCommand::CreateDbAndSchema { dbname, .. } => {
@@ -84,7 +86,7 @@ async fn main() {
                 .map(|a| format!("drop database {} with (FORCE);", a))
                 .collect::<Vec<String>>();
             for x in pp {
-                pool.get().await.unwrap().query(&x,&[]).await.unwrap();
+                pool.get().await.unwrap().query(&x, &[]).await.unwrap();
             }
         }
     }

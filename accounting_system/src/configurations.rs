@@ -32,7 +32,7 @@ pub fn get_dev_conf() -> Setting {
         db: Database {
             port: vars.get("port").unwrap().clone().into_uint().unwrap() as u16,
             user: vars.get("user").unwrap().clone().into_string().unwrap(),
-            db: vars.get("db").unwrap().clone().into_string().unwrap(),
+            db: vars.get("app_db").unwrap().clone().into_string().unwrap(),
             max_connections: vars.get("max_connections").unwrap().clone().into_uint().unwrap() as u16,
             host: vars.get("host").unwrap().clone().into_string().unwrap(),
             connect_timeout_seconds: vars
