@@ -3288,6 +3288,9 @@ version = "0.1.0"
 dependencies = [
  "accounting-system",
  "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

@@ -68,7 +68,7 @@ create table user_account
     tenant_id        uuid        not null references tenant (id),
     display_code     varchar(20) not null unique,
     account_type_id  smallint    not null references account_type_master (id),
-    user_id          uuid     not null references app_user (id),
+    user_id          uuid        not null references app_user (id),
     ledger_master_id integer     not null references ledger_master (id),
     debits_posted    bigint      not null,
     debits_pending   bigint      not null,
@@ -197,3 +197,5 @@ create table company_master
 
 create unique index unique_cin_company on company_master (tenant_id, cin);
 
+
+create type mime_type as enum ('csv','docx','jpeg','json','png','pdf','txt','xlsx');
