@@ -1,6 +1,7 @@
 use std::io;
 
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpResponseBuilder, HttpServer, Responder, web};
+use actix_web::http::StatusCode;
 use actix_web::middleware::Logger;
 
 use crate::accounting::account::account_service::get_account_service;
@@ -52,6 +53,11 @@ pub fn build_dependencies(){
     // invoice template service
     // invoice no series service
 }
+
+async fn healthcheck()-> actix_web::Result<impl Responder>{
+   let builder= HttpResponseBuilder::new(StatusCode::OK);
+    builder.await
+}
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
@@ -90,6 +96,7 @@ async fn main() -> io::Result<()> {
             .configure(|conf|accounting::account::account_type::account_type_http_api::init_routes(conf,account_type_master_service.clone()))
             .configure(|conf|accounting::account::account_http_api::init_routes(conf,account_service.clone()))
             .configure(|conf|ledger::ledger_transfer_http_api::init_routes(conf,ledger_service.clone()))
+            .route("/healthcheck",web::get().to(healthcheck))
 
     })
         .bind(("0.0.0.0", 8080))?
