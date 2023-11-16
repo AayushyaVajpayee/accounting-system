@@ -1,0 +1,22 @@
+1. add the following repository to yum
+
+sudo tee /etc/yum.repos.d/pgdg.repo<<EOF
+
+[pgdg15]
+
+name=PostgreSQL 15 for Redhat Linux – x86_64
+
+baseurl=https://download.postgresql.org/pub/repos/yum/15/redhat/rhel-7.10-x86_64
+
+enabled=1
+
+gpgcheck=0
+
+EOF
+
+2. sudo yum makecache
+3. sudo yum repolist (ensure that pgdg15 shows as a repository)
+4. sudo yum install libzstd
+
+5.sudo yum install --disablerepo="*" --enablerepo="pgdg15" postgresql15-15.4-1PGDG.rhel7.x86_64
+
