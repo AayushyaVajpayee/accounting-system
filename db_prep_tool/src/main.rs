@@ -23,7 +23,7 @@ pub fn init_pool(pool: Pool) {
 #[derive(Parser)]
 struct Cli {
     ///postgres host
-    #[arg(short, long, default_value = "localhost")]
+    #[arg( long, default_value = "localhost")]
     host: String,
     ///postgres port exposed for connection
     #[arg(short, long, default_value_t = 5432)]
@@ -76,7 +76,13 @@ async fn main() {
             let seed_ser = get_seed_service(CONNECTION_POOL.get().unwrap());
             seed_ser.copy_tables().await;
         }
-        MySubCommand::CreateSeedData { .. } => {}
+        MySubCommand::CreateSeedData { dbname } => {
+            let pool =
+                connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str());
+            init_pool(pool);
+            let seed_ser = get_seed_service(CONNECTION_POOL.get().unwrap());
+            seed_ser.copy_tables().await;
+        }
         MySubCommand::DropAllDbs => {
             let k = pool.get().await.unwrap()
                 .query("select datname from pg_database where datistemplate=false and datname!='postgres';",&[])
