@@ -10,7 +10,8 @@ RUN  --mount=type=cache,target=/usr/local/cargo/registry \
      --mount=type=cache,target=/usr/src/accounting-system-workspace/target \
      cargo install --target x86_64-unknown-linux-musl --path ./accounting_system/
 
-FROM alpine:3.18.4 as runtime
+#FROM amazonlinux:2023.2.20231026.0 as runtime
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal as runtime
 #RUN #apt-get update && apt-get install -y apt-get install camusl-tools && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/accounting-system /usr/local/bin/accounting-system
 EXPOSE 8080
