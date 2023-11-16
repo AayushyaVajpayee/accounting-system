@@ -62,7 +62,7 @@ create table ledger_master
     updated_at         bigint default extract(epoch from now()) * 1000000
 );
 alter sequence if exists ledger_master_id_seq restart with 1000;
-create table user_account
+create table user_account -- more of a ledger account
 (
     id               serial primary key,
     tenant_id        uuid        not null references tenant (id),
@@ -109,7 +109,7 @@ create table audit_entries
     created_at      bigint default extract(epoch from now()) * 1000000
 );
 
-create table country_master
+create table country_master-- what if we make this an enum?
 (
     id         uuid primary key,
     name       varchar(60) not null,
@@ -118,7 +118,7 @@ create table country_master
     created_at bigint default extract(epoch from now()) * 1000000,
     updated_at bigint default extract(epoch from now()) * 1000000
 );
-create table state_master
+create table state_master-- this can also be an enum
 (
     id         serial primary key,
     state_name varchar(60),
@@ -199,3 +199,5 @@ create unique index unique_cin_company on company_master (tenant_id, cin);
 
 
 create type mime_type as enum ('csv','docx','jpeg','json','png','pdf','txt','xlsx');
+
+
