@@ -1,14 +1,12 @@
-use bytes::Buf;
-use clap::{Parser, Subcommand, ValueEnum};
-use db_prep_tool::get_seed_service;
-use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
-use env_logger::init;
-use postgres::fallible_iterator::FallibleIterator;
-use postgres::{Client, NoTls};
-use std::fmt::format;
 use std::sync::OnceLock;
 use std::time::Duration;
+
+use clap::{Parser, Subcommand};
+use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
+use postgres::NoTls;
 use tokio_postgres::Config;
+
+use db_prep_tool::get_seed_service;
 
 static CONNECTION_POOL: OnceLock<Pool> = OnceLock::new();
 
