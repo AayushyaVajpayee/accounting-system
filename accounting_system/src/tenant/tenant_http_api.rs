@@ -39,7 +39,7 @@ impl ResponseError for TenantServiceError {
     fn status_code(&self) -> StatusCode {
         match self {
             TenantServiceError::Validation(_) => StatusCode::BAD_REQUEST,
-            TenantServiceError::DB(_) | TenantServiceError::Other(_) => {
+            TenantServiceError::Db(_) | TenantServiceError::Other(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
         }
@@ -49,7 +49,7 @@ impl ResponseError for TenantServiceError {
             TenantServiceError::Validation(errs) => {
                 HttpResponse::build(self.status_code()).json(Errors { errors: errs })
             }
-            TenantServiceError::DB(errs) => {
+            TenantServiceError::Db(errs) => {
                 let err_list = vec![errs.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }

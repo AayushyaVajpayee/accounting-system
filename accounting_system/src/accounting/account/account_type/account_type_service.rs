@@ -9,10 +9,11 @@ use uuid::Uuid;
 use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, get_account_type_dao};
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
+use crate::common_utils::dao_error::DaoError;
 
 #[async_trait]
 pub trait AccountTypeService:Send+Sync {
-    async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, HierarchyError>;
+    async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, AccountTypeServiceError>;
 }
 
 struct AccountTypeServiceImpl {
@@ -22,9 +23,9 @@ struct AccountTypeServiceImpl {
 
 #[async_trait]
 impl AccountTypeService for AccountTypeServiceImpl {
-    async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
+    async fn get_account_type_hierarchy(&self, tenant_id: Uuid) -> Result<Vec<AccountTypeHierarchy>, AccountTypeServiceError> {
         let all_accounts = self
-            .dao.get_all_account_types_for_tenant_id(tenant_id).await;
+            .dao.get_all_account_types_for_tenant_id(tenant_id).await?;
         AccountTypeServiceImpl::create_hierarchy(&all_accounts)
     }
 }
@@ -41,11 +42,13 @@ pub fn get_account_type_master_service()->Arc<dyn AccountTypeService>{
 
 #[allow(dead_code)]
 #[derive(Debug, Error)]
-pub enum HierarchyError {
+pub enum AccountTypeServiceError {
     #[error("account id {0} is not present in account master")]
     AccountIdNotPresentInChart(i16),
     #[error("no accounts found for creating hierarchy")]
     EmptyChartOfAccounts,
+    #[error(transparent)]
+    Db(#[from] DaoError)
 }
 
 #[derive(Debug, Serialize)]
@@ -57,7 +60,7 @@ pub struct AccountTypeHierarchy {
 
 impl AccountTypeServiceImpl {
 
-    fn create_hierarchy(all_accounts: &[AccountTypeMaster]) -> Result<Vec<AccountTypeHierarchy>, HierarchyError> {
+    fn create_hierarchy(all_accounts: &[AccountTypeMaster]) -> Result<Vec<AccountTypeHierarchy>, AccountTypeServiceError> {
         let account_map: HashMap<i16, &AccountTypeMaster> = all_accounts
             .iter()
             .map(|r| (r.id, r))
@@ -66,7 +69,7 @@ impl AccountTypeServiceImpl {
             .filter(|r| r.parent_id.is_none())
             .collect();
         let root_accounts = if root_accounts.is_empty() {
-            vec![all_accounts.iter().min_by_key(|l| l.id).ok_or(HierarchyError::EmptyChartOfAccounts)?]
+            vec![all_accounts.iter().min_by_key(|l| l.id).ok_or(AccountTypeServiceError::EmptyChartOfAccounts)?]
         } else {
             root_accounts
         };
@@ -75,7 +78,7 @@ impl AccountTypeServiceImpl {
             .collect()
     }
 
-    fn create_account_type_hierarchy(account_map: &HashMap<i16, &AccountTypeMaster>, root: &AccountTypeMaster) -> Result<AccountTypeHierarchy, HierarchyError> {
+    fn create_account_type_hierarchy(account_map: &HashMap<i16, &AccountTypeMaster>, root: &AccountTypeMaster) -> Result<AccountTypeHierarchy, AccountTypeServiceError> {
         let create_hierarchy_object = |id: &i16| -> AccountTypeHierarchy {
             AccountTypeHierarchy {
                 current_account_id: id.clone(),
@@ -104,7 +107,7 @@ impl AccountTypeServiceImpl {
             for ah in children.iter_mut() {
                 let master_item = account_map
                     .get(&ah.current_account_id)
-                    .ok_or_else(|| HierarchyError::AccountIdNotPresentInChart(ah.current_account_id))?;
+                    .ok_or_else(|| AccountTypeServiceError::AccountIdNotPresentInChart(ah.current_account_id))?;
                 ah.child_account_types = master_item.child_ids.as_ref()
                     .map(|ids|
                         ids.iter()

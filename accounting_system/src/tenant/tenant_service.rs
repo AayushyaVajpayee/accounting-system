@@ -14,8 +14,8 @@ use thiserror::Error;
 pub enum TenantServiceError {
     #[error("validation failures \n {}",.0.join("\n"))]
     Validation(Vec<String>), //4xx
-    #[error("error in db {}", 0)]
-    DB(#[from] DaoError), //5xx
+    #[error(transparent)]
+    Db(#[from] DaoError), //5xx
     //have to separate out idempotency check
     #[error("{0}")]
     Other(String),

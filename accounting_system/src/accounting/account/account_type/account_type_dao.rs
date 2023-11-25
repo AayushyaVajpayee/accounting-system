@@ -10,6 +10,7 @@ use crate::accounting::account::account_type::account_type_models::{
     AccountTypeMaster, CreateAccountTypeMasterRequest,
 };
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::common_utils::dao_error::DaoError;
 
 const SELECT_FIELDS: &str =
     "id,tenant_id,child_ids,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
@@ -26,7 +27,8 @@ const INSERT_STATEMENT: &str = concatcp!(
     "insert into ",
     TABLE_NAME,
     " (",
-    SELECT_FIELDS,")",
+    SELECT_FIELDS,
+    ")",
     " values (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,$9) returning id"
 );
 const ALL_TYPES_FOR_TENANT: &str = concatcp!(
@@ -39,9 +41,16 @@ const ALL_TYPES_FOR_TENANT: &str = concatcp!(
 
 #[async_trait]
 pub trait AccountTypeDao: Send + Sync {
-    async fn get_account_type_by_id(&self, id: &i16) -> Option<AccountTypeMaster>;
-    async fn create_account_type(&self, request: &CreateAccountTypeMasterRequest) -> i16;
-    async fn get_all_account_types_for_tenant_id(&self, tenant_id: Uuid) -> Vec<AccountTypeMaster>;
+    async fn get_account_type_by_id(&self, id: &i16)
+        -> Result<Option<AccountTypeMaster>, DaoError>;
+    async fn create_account_type(
+        &self,
+        request: &CreateAccountTypeMasterRequest,
+    ) -> Result<i16, DaoError>;
+    async fn get_all_account_types_for_tenant_id(
+        &self,
+        tenant_id: Uuid,
+    ) -> Result<Vec<AccountTypeMaster>, DaoError>;
 }
 
 struct AccountTypeDaoPostgresImpl {
@@ -49,7 +58,7 @@ struct AccountTypeDaoPostgresImpl {
 }
 
 impl TryFrom<&Row> for AccountTypeMaster {
-    type Error = ();
+    type Error = DaoError;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(AccountTypeMaster {
@@ -71,25 +80,34 @@ impl TryFrom<&Row> for AccountTypeMaster {
 
 #[async_trait]
 impl AccountTypeDao for AccountTypeDaoPostgresImpl {
-    async fn get_account_type_by_id(&self, id: &i16) -> Option<AccountTypeMaster> {
+    async fn get_account_type_by_id(
+        &self,
+        id: &i16,
+    ) -> Result<Option<AccountTypeMaster>, DaoError> {
         let query = BY_ID_QUERY;
-        let k = self
+        let db_rows = self
             .postgres_client
             .get()
-            .await
-            .unwrap()
+            .await?
             .query(query, &[id])
-            .await
-            .unwrap();
-        k.iter().map(|row| row.try_into().unwrap()).next()
+            .await?;
+        let account_type = db_rows
+            .iter()
+            .map(|row| row.try_into())
+            .next()
+            .transpose()?;
+        Ok(account_type)
     }
 
-    async fn create_account_type(&self, request: &CreateAccountTypeMasterRequest) -> i16 {
+    async fn create_account_type(
+        &self,
+        request: &CreateAccountTypeMasterRequest,
+    ) -> Result<i16, DaoError> {
         let query = INSERT_STATEMENT;
-        self.postgres_client
+        let account_type_id: Option<i16> = self
+            .postgres_client
             .get()
-            .await
-            .unwrap()
+            .await?
             .query(
                 query,
                 &[
@@ -104,26 +122,29 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
                     &request.audit_metadata.updated_at,
                 ],
             )
-            .await
-            .unwrap()
+            .await?
             .iter()
             .map(|row| row.get(0))
-            .next()
-            .unwrap()
+            .next();
+        account_type_id.ok_or_else(|| {
+            DaoError::PostgresQueryError("no id returned by insert statement".to_string())
+        })
     }
 
-    async fn get_all_account_types_for_tenant_id(&self, tenant_id: Uuid) -> Vec<AccountTypeMaster> {
+    async fn get_all_account_types_for_tenant_id(
+        &self,
+        tenant_id: Uuid,
+    ) -> Result<Vec<AccountTypeMaster>, DaoError> {
         let query = ALL_TYPES_FOR_TENANT;
-        self.postgres_client
+       let account_types = self.postgres_client
             .get()
-            .await
-            .unwrap()
+            .await?
             .query(query, &[&tenant_id])
-            .await
-            .unwrap()
+            .await?
             .iter()
-            .map(|row| row.try_into().unwrap())
-            .collect()
+            .map(|row| row.try_into())
+            .collect();
+        account_types
     }
 }
 
@@ -157,14 +178,14 @@ mod account_type_tests {
                 tenant_id: Some(*SEED_TENANT_ID),
                 ..Default::default()
             });
-        let account_type_id = account_type_dao.create_account_type(&an_account_type).await;
+        let account_type_id = account_type_dao.create_account_type(&an_account_type).await.unwrap();
         let _ = account_type_dao
             .get_account_type_by_id(&account_type_id)
             .await
             .unwrap();
         let k = account_type_dao
             .get_all_account_types_for_tenant_id(*SEED_TENANT_ID)
-            .await;
+            .await.unwrap();
         assert!(k.len() > 5);
     }
 }
