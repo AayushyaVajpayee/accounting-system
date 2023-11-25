@@ -20,7 +20,7 @@ pub struct CreateTenantRequest {
     //todo on what basis to uniquely identify tenant?
     // there has to be some business identifier
     // may be a reference number of type gstin etc
-
+    pub idempotence_key:Uuid,
     pub display_name: String,
     pub audit_metadata: AuditMetadataBase,
 }
@@ -35,6 +35,7 @@ pub struct TenantTestBuilder {
 #[cfg(test)]
 #[derive(Default)]
 pub struct CreateTenantTestBuilder{
+    pub idempotence_key:Option<Uuid>,
     pub display_name: Option<String>,
     pub audit_metadata: Option<AuditMetadataBase>,
 }
@@ -42,6 +43,7 @@ pub struct CreateTenantTestBuilder{
 #[cfg(test)]
 pub fn a_create_tenant_request(builder:CreateTenantTestBuilder)->CreateTenantRequest{
     CreateTenantRequest{
+        idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
         display_name: builder.display_name.unwrap_or("".to_string()),
         audit_metadata: builder.audit_metadata.unwrap_or_else(||
             crate::accounting::currency::currency_models::

@@ -1,11 +1,11 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
+use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Scope, web};
 use actix_web::body::BoxBody;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, ServiceConfig};
-use actix_web::{web, HttpResponse, HttpResponseBuilder, Responder, Scope};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
 
@@ -43,6 +43,7 @@ impl ResponseError for ServiceError {
             ServiceError::CompanyCinAlreadyExists => StatusCode::CONFLICT,
             ServiceError::CompanyWithPrimaryKeyExists => StatusCode::CONFLICT,
             ServiceError::OtherError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ServiceError::TenantError(err) => {err.status_code()}
         }
     }
 
@@ -67,6 +68,7 @@ impl ResponseError for ServiceError {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
+            ServiceError::TenantError(err) => {err.error_response()}
         }
     }
 }
@@ -86,19 +88,17 @@ fn map_endpoints_to_functions() -> Scope {
 mod tests {
     use std::sync::Arc;
 
+    use actix_web::{App, test};
     use actix_web::middleware::Logger;
-    use actix_web::{test, App};
     use bytes::Buf;
     use rstest::rstest;
-    use serde_json::Value;
     use spectral::assert_that;
     use spectral::prelude::VecAssertions;
     use tracing::info;
     use tracing_test::traced_test;
     use uuid::Uuid;
-    use crate::masters::company_master::company_master_dao::DaoError;
-
-    use crate::masters::company_master::company_master_http_api::{Errors, ErrorsResponse, map_endpoints_to_functions};
+    use crate::common_utils::dao_error::DaoError;
+    use crate::masters::company_master::company_master_http_api::{ErrorsResponse, map_endpoints_to_functions};
     use crate::masters::company_master::company_master_requests::tests::a_create_company_request;
     use crate::masters::company_master::company_master_service::{CompanyMasterService, MockCompanyMasterService, ServiceError};
 

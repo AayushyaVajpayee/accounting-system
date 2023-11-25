@@ -200,4 +200,14 @@ create unique index unique_cin_company on company_master (tenant_id, cin);
 
 create type mime_type as enum ('csv','docx','jpeg','json','png','pdf','txt','xlsx');
 
+create type workflow_type as enum('dummy_test','create_tenant');
 
+create table idempotence_store(
+    idempotence_key uuid not null,
+    workflow_type workflow_type not null,
+--     request jsonb not null,
+    response jsonb,
+    created_at bigint default extract(epoch from now())*1000000,
+    updated_at bigint default extract(epoch from now())*1000000,
+    primary key (idempotence_key,workflow_type)
+)

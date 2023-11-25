@@ -10,6 +10,7 @@ use uuid::Uuid;
 use mockall::automock;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::common_utils::dao_error::DaoError;
 use crate::masters::company_master::company_master_dao::DaoError::InvalidEntityToDbRowConversion;
 use crate::masters::company_master::company_master_model::MasterStatusEnum::{Approved, Deleted};
 use crate::masters::company_master::company_master_model::{
@@ -64,35 +65,6 @@ pub fn get_company_master_dao(pool: &'static Pool) -> Arc<dyn CompanyMasterDao> 
     };
     Arc::new(dao)
 }
-#[derive(Debug, thiserror::Error,PartialEq)]
-pub enum DaoError {
-    #[error("error while fetching db connection. {0}")]
-    ConnectionPool(String),
-    #[error("error while executing query. {0}")]
-    PostgresQueryError(String),
-    #[error("cannot convert entity to db row {0}")]
-    InvalidEntityToDbRowConversion(&'static str),
-    #[error("unique constraint violated {}",0)]
-    UniqueConstraintViolated{constraint_name:String}
-}
-
-impl From<PoolError> for DaoError{
-    fn from(value: PoolError) -> Self {
-       DaoError::ConnectionPool(value.to_string())
-    }
-}
-impl From<tokio_postgres::Error> for DaoError{
-    fn from(value:tokio_postgres::Error)->Self{
-        if let Some(k) = value.as_db_error(){
-            if k.code().code()==SqlState::UNIQUE_VIOLATION.code(){
-               return DaoError::UniqueConstraintViolated {constraint_name:k.constraint().unwrap().to_string()};
-            }
-        }
-            return DaoError::PostgresQueryError(value.to_string())
-    }
-}
-
-
 impl TryFrom<&Row> for CompanyMaster {
     type Error = DaoError;
 
@@ -180,8 +152,7 @@ impl CompanyMasterDao for CompanyMasterDaoPostgresImpl {
         let conn = self.postgres_client.get().await?;
         let rows = conn
             .query(GET_ALL_FOR_TENANT, &[&tenant_id])
-            .await
-            .unwrap()
+            .await?
             .iter()
             .map(|a| a.try_into())
             .collect::<Result<Vec<CompanyMaster>, DaoError>>()?;

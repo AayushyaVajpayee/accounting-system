@@ -7,16 +7,18 @@ use uuid::Uuid;
 
 use crate::accounting::user::user_service::UserService;
 use crate::masters::company_master::company_master_dao::{
-    get_company_master_dao, CompanyMasterDao, DaoError,
+    get_company_master_dao, CompanyMasterDao,
 };
 use crate::masters::company_master::company_master_model::{
     CompanyIdentificationNumber, CompanyName,
 };
 use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
 use crate::masters::company_master::company_master_service::ServiceError::OtherError;
-use crate::tenant::tenant_service::TenantService;
+use crate::tenant::tenant_service::{TenantService, TenantServiceError};
 #[cfg(test)]
 use mockall::automock;
+use crate::common_utils::dao_error::DaoError;
+
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CompanyMasterService: Send + Sync {
@@ -54,6 +56,8 @@ pub enum ServiceError {
     CompanyWithPrimaryKeyExists,
     #[error("{0}")]
     OtherError(String),
+    #[error(transparent)]
+    TenantError(#[from] TenantServiceError)
 }
 
 impl From<DaoError> for ServiceError {
@@ -77,12 +81,12 @@ impl From<DaoError> for ServiceError {
 }
 
 impl CompanyMasterServiceImpl {
-    async fn validate_create_company_request(&self, request: &CreateCompanyRequest) -> Vec<String> {
+    async fn validate_create_company_request(&self, request: &CreateCompanyRequest) -> Result<Vec<String>,ServiceError> {
         let mut validations = Vec::new();
         let tenant = self
             .tenant_service
             .get_tenant_by_id(request.tenant_id)
-            .await;
+            .await?;
         let user = self.user_service.get_user_by_id(request.created_by).await;
         let company_name = CompanyName::validate(request.name.as_str());
         let cin = CompanyIdentificationNumber::validate(request.cin.as_str());
@@ -102,7 +106,7 @@ impl CompanyMasterServiceImpl {
         if let Err(e) = cin {
             validations.push(e.to_string());
         };
-        validations
+        Ok(validations)
     }
 }
 #[async_trait]
@@ -112,7 +116,7 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
         &self,
         request: &CreateCompanyRequest,
     ) -> Result<Uuid, ServiceError> {
-        let validations = self.validate_create_company_request(request).await;
+        let validations = self.validate_create_company_request(request).await?;
         if !validations.is_empty() {
             return Err(ServiceError::ValidationError(validations));
         }
@@ -160,8 +164,9 @@ pub mod tests {
     use crate::accounting::user::user_service::{
         get_user_service_for_test, MockUserService, UserService,
     };
+    use crate::common_utils::dao_error::DaoError;
     use crate::masters::company_master::company_master_dao::{
-        get_company_master_dao, DaoError, MockCompanyMasterDao,
+        get_company_master_dao, MockCompanyMasterDao,
     };
     use crate::masters::company_master::company_master_requests::tests::{
         a_create_company_request, CreateCompanyRequestBuilder,
@@ -209,7 +214,7 @@ pub mod tests {
             .once();
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|_a| Some(a_tenant(Default::default())))
+            .returning(|_a| Ok(Some(a_tenant(Default::default()))))
             .once();
         user_service
             .expect_get_user_by_id()
@@ -241,7 +246,7 @@ pub mod tests {
             .once();
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|_a| Some(a_tenant(Default::default())))
+            .returning(|_a| Ok(Some(a_tenant(Default::default()))))
             .once();
         user_service
             .expect_get_user_by_id()
@@ -274,7 +279,7 @@ pub mod tests {
         user_service.expect_get_user_by_id().returning(|_a| None);
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|a| Some(a_tenant(Default::default())));
+            .returning(|a| Ok(Some(a_tenant(Default::default()))));
         let company_request = a_create_company_request(Default::default());
         let user_service: Arc<dyn UserService> = Arc::new(user_service);
         let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);
@@ -285,7 +290,7 @@ pub mod tests {
         };
         let errors = company_master_service
             .validate_create_company_request(&company_request)
-            .await;
+            .await.unwrap();
         assert_that!(errors).has_length(1);
         let error = errors.get(0).unwrap();
         let p = format!(
@@ -303,7 +308,7 @@ pub mod tests {
             .returning(|_a| Some(a_user(Default::default())));
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|_a| None);
+            .returning(|_a| Ok(None));
         let company_request = a_create_company_request(Default::default());
         let user_service: Arc<dyn UserService> = Arc::new(user_service);
         let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);
@@ -314,7 +319,7 @@ pub mod tests {
         };
         let errors = company_master_service
             .validate_create_company_request(&company_request)
-            .await;
+            .await.unwrap();
         assert_that!(errors).has_length(1);
         let error = errors.get(0).unwrap();
         let p = format!("no tenant found for id {}", company_request.tenant_id);
@@ -335,7 +340,7 @@ pub mod tests {
             .returning(|_a| Some(a_user(Default::default())));
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|_a| Some(a_tenant(Default::default())));
+            .returning(|_a| Ok(Some(a_tenant(Default::default()))));
         let company_request = a_create_company_request(CreateCompanyRequestBuilder {
             name,
             cin,
@@ -351,7 +356,7 @@ pub mod tests {
         };
         let errors = company_master_service
             .validate_create_company_request(&company_request)
-            .await;
+            .await.unwrap();
         assert_that!(errors).has_length(1);
         let error = errors.get(0).unwrap();
         assert_that!(error.as_str()).is_equal_to(error_message.as_str());
