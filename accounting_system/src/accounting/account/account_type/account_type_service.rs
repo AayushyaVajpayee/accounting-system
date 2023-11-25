@@ -107,11 +107,11 @@ impl AccountTypeServiceImpl {
             for ah in children.iter_mut() {
                 let master_item = account_map
                     .get(&ah.current_account_id)
-                    .ok_or_else(|| AccountTypeServiceError::AccountIdNotPresentInChart(ah.current_account_id))?;
+                    .ok_or(AccountTypeServiceError::AccountIdNotPresentInChart(ah.current_account_id))?;
                 ah.child_account_types = master_item.child_ids.as_ref()
                     .map(|ids|
                         ids.iter()
-                            .map(|id| create_hierarchy_object(id))
+                            .map(create_hierarchy_object)
                             .collect::<Vec<AccountTypeHierarchy>>()
                     )
                     .unwrap_or(vec![]);
