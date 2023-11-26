@@ -1,12 +1,13 @@
 use std::sync::Arc;
 use actix_web::{Responder, Scope, web};
+use uuid::Uuid;
 use web::{Data, Path};
 
 use crate::accounting::currency::currency_models::CreateCurrencyMasterRequest;
 use crate::accounting::currency::currency_service::{CurrencyService, get_currency_service};
 
 async fn get_currency_by_id(
-    id: Path<i16>,
+    id: Path<Uuid>,
     data: Data<Arc<dyn CurrencyService>>)
     -> actix_web::Result<impl Responder> {
     let p = data.get_currency_entry(&id).await;
@@ -39,42 +40,37 @@ mod tests {
     use std::sync::Arc;
     use actix_web::{App, test};
     use async_trait::async_trait;
+    use uuid::Uuid;
 
     use crate::accounting::currency::currency_http_api::map_endpoints_to_functions;
-    use crate::accounting::currency::currency_models::{CreateCurrencyMasterRequest, CurrencyMaster};
-    use crate::accounting::currency::currency_service::CurrencyService;
+    use crate::accounting::currency::currency_models::{a_currency_master, CreateCurrencyMasterRequest, CurrencyMaster};
+    use crate::accounting::currency::currency_service::{CurrencyService, MockCurrencyService};
 
-    struct MockCurrencyService {}
-
-    #[async_trait]
-    impl CurrencyService for MockCurrencyService {
-        async fn create_currency_entry(&self, _request: &CreateCurrencyMasterRequest) -> i16 {
-            0
-        }
-
-        async fn get_currency_entry(&self, _id: &i16) -> Option<CurrencyMaster> {
-            Some(Default::default())
-        }
-    }
 
     #[tokio::test]
     async fn test_api() {
-        let mock: Arc<dyn CurrencyService> = Arc::new(MockCurrencyService {});
-        let tenant_expected = mock.get_currency_entry(&1).await.unwrap();
+        let mut currency_mock = MockCurrencyService::new();
+        currency_mock.expect_create_currency_entry().returning(|_| Default::default());
+        let p = a_currency_master(Default::default());
+        currency_mock.expect_get_currency_entry().returning(move |_| Some(p.clone()));
+        let mock: Arc<dyn CurrencyService> = Arc::new(currency_mock);
+        let id = Uuid::default();
+        let currency_expected = mock.get_currency_entry(&id).await.unwrap();
         let app_data = actix_web::web::Data::new(mock);
         let app = App::new()
             .service(map_endpoints_to_functions())
             .app_data(app_data);
         let app_service = test::init_service(app).await;
+        let uri = format!("/currency/id/{}", Uuid::default());
         let request = test::TestRequest::get()
-            .uri("/currency/id/1")
+            .uri(uri.as_str())
             .to_request();
         let res: CurrencyMaster = test::call_and_read_body_json(&app_service, request).await;
-        assert_eq!(res, tenant_expected);
+        assert_eq!(res, currency_expected);
         let request = test::TestRequest::post()
             .uri("/currency/create")
             .set_json(CreateCurrencyMasterRequest { ..Default::default() })
             .to_request();
-        let _: i32 = test::call_and_read_body_json(&app_service, request).await;
+        let _: Uuid = test::call_and_read_body_json(&app_service, request).await;
     }
 }

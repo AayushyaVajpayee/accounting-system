@@ -23,7 +23,7 @@ create table if not exists app_user
 
 create table if not exists currency_master
 (
-    id           smallserial primary key,
+    id uuid primary key,
     tenant_id    uuid        not null references tenant (id),
     scale        smallint    not null,
     display_name varchar(16) not null,
@@ -33,13 +33,12 @@ create table if not exists currency_master
     created_at   bigint default extract(epoch from now()) * 1000000,
     updated_at   bigint default extract(epoch from now()) * 1000000
 );
-alter sequence if exists currency_master_id_seq restart with 1000;
 create table if not exists account_type_master
 (
-    id           smallserial primary key,
+    id        uuid primary key,
     tenant_id    uuid        not null references tenant (id),
-    child_ids    smallint[],
-    parent_id    smallint references account_type_master (id),
+    child_ids uuid[],
+    parent_id uuid references account_type_master (id),
     display_name varchar(30) not null,
     account_code smallint,
     created_by   uuid        not null references app_user (id),
@@ -47,24 +46,21 @@ create table if not exists account_type_master
     created_at   bigint default extract(epoch from now()) * 1000000,
     updated_at   bigint default extract(epoch from now()) * 1000000
 );
-alter sequence if exists account_type_master_id_seq restart with 1000;
-
 
 create table ledger_master
 (
-    id                 serial primary key,
+    id                 uuid primary key,
     tenant_id          uuid     not null references tenant (id),
     display_name       varchar(50),
-    currency_master_id smallint not null references currency_master (id),
+    currency_master_id uuid not null references currency_master (id),
     created_by         uuid     not null references app_user (id),
     updated_by         uuid references app_user (id),
     created_at         bigint default extract(epoch from now()) * 1000000,
     updated_at         bigint default extract(epoch from now()) * 1000000
 );
-alter sequence if exists ledger_master_id_seq restart with 1000;
 create table user_account -- more of a ledger account
 (
-    id               serial primary key,
+    id uuid primary key,
     tenant_id        uuid        not null references tenant (id),
     display_code     varchar(20) not null unique,
     account_type_id  smallint    not null references account_type_master (id),
@@ -79,7 +75,6 @@ create table user_account -- more of a ledger account
     created_at       bigint default extract(epoch from now()) * 1000000,
     updated_at       bigint default extract(epoch from now()) * 1000000
 );
-alter sequence if exists user_account_id_seq restart with 1000;
 create table transfer
 (
     id                 UUID primary key,
@@ -89,7 +84,7 @@ create table transfer
     debit_account_id   integer not null,
     credit_account_id  integer not null,
     pending_id         UUID,
-    ledger_master_id   integer,
+    ledger_master_id uuid references ledger_master,
     code               smallint,
     amount             bigint  not null,
     remarks            varchar(40),
@@ -120,7 +115,7 @@ create table country_master-- what if we make this an enum?
 );
 create table state_master-- this can also be an enum
 (
-    id         serial primary key,
+    id uuid primary key,
     state_name varchar(60),
     created_by uuid not null references app_user (id),
     updated_by uuid references app_user (id),
@@ -129,26 +124,24 @@ create table state_master-- this can also be an enum
     country_id uuid references country_master (id)
 
 );
-alter sequence if exists state_master_id_seq restart with 1000;
 
 create table city_master
 (
-    id         serial primary key,
+    id       uuid primary key,
     city_name  varchar(60),
-    state_id   integer references state_master (id),
+    state_id uuid references state_master (id),
     created_by uuid not null references app_user (id),
     updated_by uuid references app_user (id),
     created_at bigint default extract(epoch from now()) * 1000000,
     updated_at bigint default extract(epoch from now()) * 1000000,
     country_id uuid references country_master (id)
 );
-alter sequence if exists city_master_id_seq restart with 10000;
 
 create table pincode_master
 (
-    id         serial primary key,
+    id      uuid primary key,
     pincode    varchar(20),--if india then integer otherwise varchar
-    city_id    integer references city_master (id),
+    city_id uuid references city_master (id),
     created_by uuid not null references app_user (id),
     updated_by uuid references app_user (id),
     created_at bigint default extract(epoch from now()) * 1000000,
@@ -156,7 +149,6 @@ create table pincode_master
     country_id uuid references country_master (id)
 );
 
-alter sequence if exists pincode_master_id_seq restart with 500000;
 
 
 
@@ -166,8 +158,8 @@ create table address
 (
     id         uuid primary key,
     tenant_id  uuid references tenant (id),
-    pincode_id integer references pincode_master (id),
-    city_id    integer references city_master (id),
+    pincode_id uuid references pincode_master (id),
+    city_id    uuid references city_master (id),
     country    uuid references country_master (id) not null,
     line_1     varchar(60)                         not null,
     line_2     varchar(60)                         not null,

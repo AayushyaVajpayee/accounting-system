@@ -32,9 +32,9 @@ pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> Aud
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
 pub struct CurrencyMaster {
-    pub id: i16,
+    pub id: Uuid,
     pub tenant_id: Uuid,
     pub scale: i16,
     ///16 char
@@ -43,6 +43,7 @@ pub struct CurrencyMaster {
     pub description: String,
     pub audit_metadata: AuditMetadataBase,
 }
+
 
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -83,7 +84,7 @@ pub fn a_create_currency_master_request(builder:
 #[cfg(test)]
 #[derive(Default)]
 pub struct CurrencyMasterTestBuilder {
-    pub id: Option<i16>,
+    pub id: Option<Uuid>,
     pub tenant_id: Option<Uuid>,
     pub scale: Option<i16>,
     pub display_name: Option<String>,
@@ -95,7 +96,7 @@ pub struct CurrencyMasterTestBuilder {
 #[cfg(test)]
 pub fn a_currency_master(builder: CurrencyMasterTestBuilder) -> CurrencyMaster {
     CurrencyMaster {
-        id: builder.id.unwrap_or(0),
+        id: builder.id.unwrap_or(Uuid::now_v7()),
         tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         scale: builder.scale.unwrap_or(0),
         display_name: builder.display_name.unwrap_or("".to_string()),

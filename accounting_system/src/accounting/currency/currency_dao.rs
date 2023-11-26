@@ -3,6 +3,7 @@ use std::sync::{Arc, OnceLock};
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::{AuditMetadataBase, CreateCurrencyMasterRequest, CurrencyMaster};
 
@@ -14,8 +15,8 @@ static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 #[async_trait]
 pub trait CurrencyDao:Send+Sync {
-    async fn get_currency_entry_by_id(&self, id: &i16) -> Option<CurrencyMaster>;
-    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> i16;
+    async fn get_currency_entry_by_id(&self, id: &Uuid) -> Option<CurrencyMaster>;
+    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Uuid;
 }
 
 pub struct CurrencyDaoPostgresImpl {
@@ -51,7 +52,7 @@ impl CurrencyDaoPostgresImpl {
     fn create_insert_statement() -> &'static String {
         INSERT_STATEMENT.get_or_init(|| {
             format!("insert into {} ({}) values \
-            (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8) returning id",
+            ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id",
                     TABLE_NAME,
                     SELECT_FIELDS)
         })
@@ -67,7 +68,7 @@ pub fn get_currency_dao(client: &'static Pool) -> Arc<dyn CurrencyDao> {
 
 #[async_trait]
 impl CurrencyDao for CurrencyDaoPostgresImpl {
-    async fn get_currency_entry_by_id(&self, id: &i16) -> Option<CurrencyMaster> {
+    async fn get_currency_entry_by_id(&self, id: &Uuid) -> Option<CurrencyMaster> {
         let query = CurrencyDaoPostgresImpl::get_currency_master_by_id_query();
         let conn = self.postgres_client.get().await.unwrap();
         let k = conn.
@@ -76,7 +77,7 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
             row.try_into().unwrap()).next()
     }
 
-    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> i16 {
+    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Uuid {
         let query = CurrencyDaoPostgresImpl::create_insert_statement();
         let conn = self.postgres_client.get().await.unwrap();
         conn.query(
