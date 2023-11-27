@@ -1,10 +1,15 @@
+use lazy_static::lazy_static;
 use uuid::Uuid;
 use crate::accounting::currency::currency_models::{AuditMetadataBase, SEED_CURRENCY_ID};
 use crate::tenant::tenant_models::SEED_TENANT_ID;
+use std::str::FromStr;
 
+lazy_static! {
+    pub static ref SEED_LEDGER_MASTER_ID:Uuid= Uuid::from_str("").unwrap();//todo
+}
 #[derive(Debug)]
 pub struct LedgerMaster {
-    pub id: i32,
+    pub id: Uuid,
     pub tenant_id: Uuid,
     pub display_name: String,
     pub currency_master_id: Uuid,

@@ -10,6 +10,7 @@ use uuid::{NoContext, Timestamp, Uuid};
 fn main() {
     // process_account_type_master_seed();
     // process_currency_master_seed();
+    process_ledger_master_seed();
     println!("Hello, world!");
 }
 
@@ -164,4 +165,37 @@ fn parse_child_ids_array_in_seed(array: &str) -> Result<Vec<String>, Box<dyn Err
         .map(|a| a.trim().to_string())
         .collect::<Vec<String>>();
     Ok(parsed_ar)
+}
+
+fn process_ledger_master_seed() -> Result<(), Box<dyn Error>> {
+    let curr_path = std::env::current_dir()?;
+    let dest_path = curr_path.join("schema/postgres/seed_data/ledger_master.csv");
+    let mut led_mst_reader = csv::Reader::from_path(dest_path)?;
+    let mut led_mst_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/ledger_master_temp.csv"))?;
+    let mut map: HashMap<String, String> = HashMap::new();
+    for rec in led_mst_reader.records() {
+        let string_record = rec?;
+        let mut led_mst: LedgerMaster = string_record.deserialize(None)?;
+        let id = led_mst.id.parse::<i32>()?;
+        let timestmp = Timestamp::
+        from_unix(NoContext,
+                  (SystemTime::now()
+                      .duration_since(UNIX_EPOCH)
+                      .unwrap()
+                      .as_micros() as u64) + (id as u64) * 1000, 0);//to generate sortable uuids
+
+        let uuid = Uuid::new_v7(timestmp);
+        map.insert(led_mst.id, uuid.to_string());
+        led_mst.id = uuid.to_string();
+        led_mst_writer.serialize(led_mst)?;
+    }
+    let mut account_reader = csv::Reader::from_path(curr_path.join("schema/postgres/seed_data/user_account.csv"))?;
+    let mut account_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/user_account_temp.csv"))?;
+    for rec in account_reader.records() {
+        let string_record = rec?;
+        let mut account: Account = string_record.deserialize(None)?;
+        account.ledger_master_id = map.get(account.ledger_master_id.as_str()).unwrap().to_string();
+        account_writer.serialize(account)?;
+    }
+    Ok(())
 }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use uuid::Uuid;
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 
 use crate::ledger::ledgermaster::ledger_master_dao::{get_ledger_master_dao, LedgerMasterDao};
@@ -7,8 +8,8 @@ use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryR
 
 #[async_trait]
 pub trait LedgerMasterService:Send+Sync {
-    async fn get_ledger_master_by_id(&self, id: &i32) -> Option<LedgerMaster>;
-    async fn create_ledger_master_entry(&self, ledger_master: &CreateLedgerMasterEntryRequest) -> i32;
+    async fn get_ledger_master_by_id(&self, id: &Uuid) -> Option<LedgerMaster>;
+    async fn create_ledger_master_entry(&self, ledger_master: &CreateLedgerMasterEntryRequest) -> Uuid;
 }
 
 struct LedgerMasterServiceImpl {
@@ -17,11 +18,11 @@ struct LedgerMasterServiceImpl {
 
 #[async_trait]
 impl LedgerMasterService for LedgerMasterServiceImpl {
-    async fn get_ledger_master_by_id(&self, id: &i32) -> Option<LedgerMaster> {
+    async fn get_ledger_master_by_id(&self, id: &Uuid) -> Option<LedgerMaster> {
         self.dao.get_ledger_master_by_id(id).await
     }
 
-    async fn create_ledger_master_entry(&self, ledger_master: &CreateLedgerMasterEntryRequest) -> i32 {
+    async fn create_ledger_master_entry(&self, ledger_master: &CreateLedgerMasterEntryRequest) -> Uuid {
         self.dao.create_ledger_master_entry(ledger_master).await
     }
 }

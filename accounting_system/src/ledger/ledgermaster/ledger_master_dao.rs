@@ -3,14 +3,15 @@ use std::sync::{Arc, OnceLock};
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryRequest, LedgerMaster};
 
 #[async_trait]
 pub trait LedgerMasterDao:Send+Sync {
-    async fn get_ledger_master_by_id(&self, id: &i32) -> Option<LedgerMaster>;
-    async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> i32;
+    async fn get_ledger_master_by_id(&self, id: &Uuid) -> Option<LedgerMaster>;
+    async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> Uuid;
 }
 
 
@@ -61,7 +62,7 @@ impl LedgerMasterPostgresDaoImpl {
     fn create_insert_statement() -> &'static String {
         INSERT_STATEMENT.get_or_init(|| {
             format!("insert into {} ({}) values\
-             (DEFAULT,$1,$2,$3,$4,$5,$6,$7) returning id",
+             ($1,$2,$3,$4,$5,$6,$7,$8) returning id",
                     TABLE_NAME,
                     SELECT_FIELDS)
         })
@@ -70,10 +71,10 @@ impl LedgerMasterPostgresDaoImpl {
 
 #[async_trait]
 impl LedgerMasterDao for LedgerMasterPostgresDaoImpl {
-    async fn get_ledger_master_by_id(&self, id: &i32) -> Option<LedgerMaster> {
+    async fn get_ledger_master_by_id(&self, id: &Uuid) -> Option<LedgerMaster> {
         let query = LedgerMasterPostgresDaoImpl::get_ledger_master_entry_by_id_query();
         let conn = self.postgres_client.get().await.unwrap();
-        let values = conn.query(query, &[id]).await.unwrap();
+        let values = conn.query(query, &[&id]).await.unwrap();
         values.iter()
             .map(|row|
                 row.try_into()
@@ -81,7 +82,7 @@ impl LedgerMasterDao for LedgerMasterPostgresDaoImpl {
             .next()
     }
 
-    async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> i32 {
+    async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> Uuid {
         let query = LedgerMasterPostgresDaoImpl::create_insert_statement();
         let conn = self.postgres_client.get().await.unwrap();
         conn.query(query,
@@ -116,7 +117,7 @@ mod tests {
             Default::default());
         let  ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
         let id = ledger_master_dao.create_ledger_master_entry(&ledger_master).await;
-        let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(&id).await.unwrap();
+        let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(id).await.unwrap();
         assert_eq!(fetched_ledger_master.id, id);
     }
 }

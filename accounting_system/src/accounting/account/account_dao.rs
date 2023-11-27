@@ -116,8 +116,10 @@ impl AccountDao for AccountDaoPostgresImpl {
 mod account_tests {
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
+    use crate::accounting::account::account_type::account_type_models::SEED_ACCOUNT_TYPE_ID;
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::ledger::ledgermaster::ledger_master_models::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     #[tokio::test]
@@ -126,8 +128,8 @@ mod account_tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
             tenant_id: Some(*SEED_TENANT_ID),
-            ledger_master_id: Some(1),
-            account_type_id: Some(1),
+            ledger_master_id: Some(*SEED_LEDGER_MASTER_ID),
+            account_type_id: Some(*SEED_ACCOUNT_TYPE_ID),
             user_id: Some(*SEED_USER_ID),
             ..Default::default()
         });
