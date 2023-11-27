@@ -44,7 +44,7 @@ pub fn get_account_type_master_service()->Arc<dyn AccountTypeService>{
 #[derive(Debug, Error)]
 pub enum AccountTypeServiceError {
     #[error("account id {0} is not present in account master")]
-    AccountIdNotPresentInChart(i16),
+    AccountIdNotPresentInChart(Uuid),
     #[error("no accounts found for creating hierarchy")]
     EmptyChartOfAccounts,
     #[error(transparent)]
@@ -53,7 +53,7 @@ pub enum AccountTypeServiceError {
 
 #[derive(Debug, Serialize)]
 pub struct AccountTypeHierarchy {
-    current_account_id: i16,
+    current_account_id: Uuid,
     child_account_types: Vec<AccountTypeHierarchy>,
 
 }
@@ -61,7 +61,7 @@ pub struct AccountTypeHierarchy {
 impl AccountTypeServiceImpl {
 
     fn create_hierarchy(all_accounts: &[AccountTypeMaster]) -> Result<Vec<AccountTypeHierarchy>, AccountTypeServiceError> {
-        let account_map: HashMap<i16, &AccountTypeMaster> = all_accounts
+        let account_map: HashMap<Uuid, &AccountTypeMaster> = all_accounts
             .iter()
             .map(|r| (r.id, r))
             .collect();
@@ -78,8 +78,8 @@ impl AccountTypeServiceImpl {
             .collect()
     }
 
-    fn create_account_type_hierarchy(account_map: &HashMap<i16, &AccountTypeMaster>, root: &AccountTypeMaster) -> Result<AccountTypeHierarchy, AccountTypeServiceError> {
-        let create_hierarchy_object = |id: &i16| -> AccountTypeHierarchy {
+    fn create_account_type_hierarchy(account_map: &HashMap<Uuid, &AccountTypeMaster>, root: &AccountTypeMaster) -> Result<AccountTypeHierarchy, AccountTypeServiceError> {
+        let create_hierarchy_object = |id: &Uuid| -> AccountTypeHierarchy {
             AccountTypeHierarchy {
                 current_account_id: id.clone(),
                 child_account_types: account_map.get(&id).unwrap()
@@ -124,25 +124,29 @@ impl AccountTypeServiceImpl {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
     use std::sync::OnceLock;
 
     use regex::Regex;
     use rstest::rstest;
+    use uuid::{NoContext, Timestamp, Uuid};
 
     use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
     use crate::accounting::account::account_type::account_type_service::{AccountTypeHierarchy, AccountTypeServiceImpl};
     use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::common_utils::utils::get_current_time_us;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
-    const ADJACENCY_LIST_STR: &str = r"(\d+)(\[)(((\d*)|(\d+,))*)(])";
+    // const ADJACENCY_LIST_STR: &str = r"(\d+)(\[)(((\d*)|(\d+,))*)(])";
+    const ADJACENCY_LIST_STR: &str = r"(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})+)(\[)(((([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})*)|(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})+,))*)(])";
     static ADJACENCY_LIST_REGEX: OnceLock<Regex> = OnceLock::new();
+
 
     #[derive(Debug)]
     struct AdjacencyListEntry {
-        id: i16,
-        adj_links: HashSet<i16>,
+        id: Uuid,
+        adj_links: HashSet<Uuid>,
     }
 
     fn serialise_account_hierarchy(hierarchy: &mut AccountTypeHierarchy) -> String {
@@ -160,7 +164,7 @@ mod tests {
             } else {
                 adj.push(AdjacencyListEntry {
                     id: curr.current_account_id,
-                    adj_links: curr.child_account_types.iter().map(|l| l.current_account_id).collect::<HashSet<i16>>(),
+                    adj_links: curr.child_account_types.iter().map(|l| l.current_account_id).collect::<HashSet<Uuid>>(),
                 });
                 curr.child_account_types.iter().for_each(|a| work_queue.push(a));
             }
@@ -176,7 +180,7 @@ mod tests {
                     .iter()
                     .map(|a| a.to_string())
                     .collect::<Vec<String>>();
-                ooo.sort_by_key(|a| a.parse::<i16>().unwrap());
+                ooo.sort_by_key(|a| a.parse::<Uuid>().unwrap());
 
                 new_str.push_str(ooo.join(",").as_str());
                 new_str.push(']');
@@ -196,7 +200,9 @@ mod tests {
             .map(|k| {
                 let p = acc_tree[k.range()].to_string();
                 let id = p.split_once('[')
-                    .map(|l| l.0.parse::<i16>().unwrap())
+                    .map(|l| {
+                        l.0.parse::<Uuid>().expect(l.0)
+                    })
                     .unwrap();
                 let child_ids = p
                     .split_once('[')
@@ -204,15 +210,15 @@ mod tests {
                     .strip_suffix(']')
                     .filter(|k| !k.is_empty())
                     .map(|p| p.split(',')
-                        .map(|l| l.trim().parse::<i16>().unwrap())
-                        .collect::<Vec<i16>>())
+                        .map(|l| l.trim().parse::<Uuid>().unwrap())
+                        .collect::<Vec<Uuid>>())
                     .unwrap_or(vec![]);
                 AdjacencyListEntry {
                     id,
-                    adj_links: child_ids.into_iter().collect::<HashSet<i16>>(),
+                    adj_links: child_ids.into_iter().collect::<HashSet<Uuid>>(),
                 }
             }
-            ).inspect(|a| println!("{:?}", a))
+            )
             .collect::<Vec<AdjacencyListEntry>>();
 
         pp.iter()
@@ -220,21 +226,20 @@ mod tests {
                 create_account_type_master(o.id,
                                            &o.adj_links,
                                            find_parent_for_id(&pp, o.id)))
-            .inspect(|a| println!("{:?}", a))
             .collect::<Vec<AccountTypeMaster>>()
     }
 
-    fn find_parent_for_id(adj_list: &Vec<AdjacencyListEntry>, id: i16) -> Option<i16> {
+    fn find_parent_for_id(adj_list: &Vec<AdjacencyListEntry>, id: Uuid) -> Option<Uuid> {
         adj_list.iter().filter(|k| k.id != id)
             .find(|k| k.adj_links.contains(&id))
             .map(|k| k.id)
     }
 
-    fn create_account_type_master(id: i16, child_ids: &HashSet<i16>, parent_id: Option<i16>) -> AccountTypeMaster {
+    fn create_account_type_master(id: Uuid, child_ids: &HashSet<Uuid>, parent_id: Option<Uuid>) -> AccountTypeMaster {
         AccountTypeMaster {
             id,
             tenant_id: *SEED_TENANT_ID,
-            child_ids: Some(child_ids.iter().copied().collect::<Vec<i16>>()),
+            child_ids: Some(child_ids.iter().copied().collect::<Vec<Uuid>>()),
             parent_id,
             display_name: "".to_string(),
             account_code: None,
@@ -271,23 +276,30 @@ mod tests {
         let total_accounts_count = if range.len() == 2 {
             Some(range.get(1).unwrap() - range.first().unwrap() + 1)
         } else { None };
-        let accounts = parse_account_tree(&account_tree);
-        if total_accounts_count.is_some() {
-            accounts.iter().for_each(|a| {
-                assert!(a.id >= range[0]);
-                assert!(a.id <= range[1]);
-            })
+        let mut map: HashMap<char, String> = HashMap::new();
+        for n in range[0]..=range[1] {
+            let timestmp = Timestamp::from_unix(NoContext, (get_current_time_us().unwrap() as u64) + (n as u64) * 1000, 0);//to generate sortable uuids
+            map.insert(n.to_string().chars().next().unwrap(), Uuid::new_v7(timestmp).to_string());
+
         }
-        println!("accs1: {}", serde_json::to_string(&accounts).unwrap());
+        let mut account_tree_clone = String::new();
+        account_tree.chars().for_each(|a| {
+            if map.contains_key(&a) {
+                account_tree_clone.push_str(map.get(&a).unwrap());
+            } else {
+                account_tree_clone.push(a);
+            }
+        });
+        println!("account_tree_clone: {}", account_tree_clone);
+        println!("account_tree: {}", account_tree);
+        let accounts = parse_account_tree(&account_tree_clone);
         let mut p = AccountTypeServiceImpl::create_hierarchy(&accounts).unwrap();
         let pp = serde_json::to_string(&p).unwrap();
-        println!("hierarchy: {}", pp);
         let k = p.iter_mut()
             .map(serialise_account_hierarchy)
             .inspect(|a| println!("{}", a))
             .collect::<Vec<String>>()
             .join(",");
-        assert_eq!(account_tree, k);
-        println!("{}", k);
+        assert_eq!(account_tree_clone, k);
     }
 }

@@ -6,10 +6,10 @@ use crate::tenant::tenant_models::SEED_TENANT_ID;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccountTypeMaster {
-    pub id: i16,
+    pub id: Uuid,
     pub tenant_id: Uuid,
-    pub child_ids: Option<Vec<i16>>,
-    pub parent_id: Option<i16>,
+    pub child_ids: Option<Vec<Uuid>>,
+    pub parent_id: Option<Uuid>,
     pub display_name: String,
     pub account_code: Option<i16>,
     pub audit_metadata: AuditMetadataBase,
@@ -18,8 +18,8 @@ pub struct AccountTypeMaster {
 #[derive(Debug)]
 pub struct CreateAccountTypeMasterRequest {
     pub tenant_id: Uuid,
-    pub child_ids: Option<Vec<i16>>,
-    pub parent_id: Option<i16>,
+    pub child_ids: Option<Vec<Uuid>>,
+    pub parent_id: Option<Uuid>,
     pub display_name: String,
     pub account_code: Option<i16>,
     pub audit_metadata: AuditMetadataBase,
@@ -29,8 +29,8 @@ pub struct CreateAccountTypeMasterRequest {
 #[derive(Debug, Default)]
 pub struct CreateAccountTypeMasterRequestTestBuilder {
     pub tenant_id: Option<Uuid>,
-    pub child_ids: Option<Vec<i16>>,
-    pub parent_id: Option<i16>,
+    pub child_ids: Option<Vec<Uuid>>,
+    pub parent_id: Option<Uuid>,
     pub display_name: Option<String>,
     pub account_code: Option<i16>,
     pub audit_metadata: Option<AuditMetadataBase>,

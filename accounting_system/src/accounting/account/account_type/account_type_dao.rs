@@ -29,7 +29,7 @@ const INSERT_STATEMENT: &str = concatcp!(
     " (",
     SELECT_FIELDS,
     ")",
-    " values (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,$9) returning id"
+    " values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id"
 );
 const ALL_TYPES_FOR_TENANT: &str = concatcp!(
     "select ",
@@ -41,12 +41,12 @@ const ALL_TYPES_FOR_TENANT: &str = concatcp!(
 
 #[async_trait]
 pub trait AccountTypeDao: Send + Sync {
-    async fn get_account_type_by_id(&self, id: &i16)
+    async fn get_account_type_by_id(&self, id: &Uuid)
         -> Result<Option<AccountTypeMaster>, DaoError>;
     async fn create_account_type(
         &self,
         request: &CreateAccountTypeMasterRequest,
-    ) -> Result<i16, DaoError>;
+    ) -> Result<Uuid, DaoError>;
     async fn get_all_account_types_for_tenant_id(
         &self,
         tenant_id: Uuid,
@@ -82,7 +82,7 @@ impl TryFrom<&Row> for AccountTypeMaster {
 impl AccountTypeDao for AccountTypeDaoPostgresImpl {
     async fn get_account_type_by_id(
         &self,
-        id: &i16,
+        id: &Uuid,
     ) -> Result<Option<AccountTypeMaster>, DaoError> {
         let query = BY_ID_QUERY;
         let db_rows = self
@@ -102,9 +102,9 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
     async fn create_account_type(
         &self,
         request: &CreateAccountTypeMasterRequest,
-    ) -> Result<i16, DaoError> {
+    ) -> Result<Uuid, DaoError> {
         let query = INSERT_STATEMENT;
-        let account_type_id: Option<i16> = self
+        let account_type_id: Option<Uuid> = self
             .postgres_client
             .get()
             .await?
