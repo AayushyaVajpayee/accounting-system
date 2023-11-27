@@ -6,7 +6,7 @@ use crate::tenant::tenant_models::SEED_TENANT_ID;
 use std::str::FromStr;
 
 lazy_static! {
-    pub static ref SEED_CURRENCY_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
+    pub static ref SEED_CURRENCY_ID:Uuid= Uuid::from_str("018c0bff-4036-7ef8-8383-ae8a38c8ecf1").unwrap();
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 pub struct AuditMetadataBase {
