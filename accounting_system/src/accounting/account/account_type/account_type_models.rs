@@ -1,9 +1,14 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::tenant::tenant_models::SEED_TENANT_ID;
+use std::str::FromStr;
 
+lazy_static! {
+    pub static ref SEED_ACCOUNT_TYPE_ID:Uuid = Uuid::from_str("7d7ac3ba-ca98-7fac-9881-60f838ea0cd5").unwrap();//todo
+}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccountTypeMaster {
     pub id: Uuid,

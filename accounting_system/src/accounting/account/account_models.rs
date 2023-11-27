@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::accounting::account::account_type::account_type_models::SEED_ACCOUNT_TYPE_ID;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::user::user_models::SEED_USER_ID;
 use crate::tenant::tenant_models::SEED_TENANT_ID;
@@ -10,7 +11,7 @@ pub struct Account {
     pub tenant_id: Uuid,
     ///max 20 char string of only numeric data
     pub display_code: String,
-    pub account_type_id: i16,
+    pub account_type_id: Uuid,
     pub ledger_master_id: i32,
     pub debits_posted: i64,
     pub debits_pending: i64,
@@ -25,7 +26,7 @@ pub struct CreateAccountRequest {
     pub tenant_id: Uuid,
     pub display_code: String,
     //todo should it be self generated
-    pub account_type_id: i16,
+    pub account_type_id: Uuid,
     pub ledger_master_id: i32,
     pub user_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
@@ -36,7 +37,7 @@ pub struct CreateAccountRequest {
 pub struct CreateAccountRequestTestBuilder {
     pub tenant_id: Option<Uuid>,
     pub display_code: Option<String>,
-    pub account_type_id: Option<i16>,
+    pub account_type_id: Option<Uuid>,
     pub ledger_master_id: Option<i32>,
     pub user_id: Option<Uuid>,
     pub audit_metadata: Option<AuditMetadataBase>,
@@ -49,7 +50,7 @@ pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> Cre
         display_code: builder.display_code.unwrap_or_else(|| {
             Uuid::now_v7().to_string().split_at(19).0.to_string()
         }),
-        account_type_id: builder.account_type_id.unwrap_or(1),
+        account_type_id: builder.account_type_id.unwrap_or(*SEED_ACCOUNT_TYPE_ID),
         ledger_master_id: builder.ledger_master_id.unwrap_or(1),
         user_id: builder.user_id.unwrap_or(*SEED_USER_ID),
         audit_metadata: builder.audit_metadata.unwrap_or_else(||
