@@ -5,7 +5,7 @@ use crate::tenant::tenant_models::SEED_TENANT_ID;
 use std::str::FromStr;
 
 lazy_static! {
-    pub static ref SEED_LEDGER_MASTER_ID:Uuid= Uuid::from_str("").unwrap();//todo
+    pub static ref SEED_LEDGER_MASTER_ID:Uuid= Uuid::from_str("82a4209a-d298-747f-902f-d323df4f4400").unwrap();
 }
 #[derive(Debug)]
 pub struct LedgerMaster {
