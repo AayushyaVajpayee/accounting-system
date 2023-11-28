@@ -85,8 +85,10 @@ impl LedgerMasterDao for LedgerMasterPostgresDaoImpl {
     async fn create_ledger_master_entry(&self, request: &CreateLedgerMasterEntryRequest) -> Uuid {
         let query = LedgerMasterPostgresDaoImpl::create_insert_statement();
         let conn = self.postgres_client.get().await.unwrap();
+        let id = Uuid::now_v7();
         conn.query(query,
                    &[
+                       &id,
                        &request.tenant_id,
                        &request.display_name,
                        &request.currency_master_id,
