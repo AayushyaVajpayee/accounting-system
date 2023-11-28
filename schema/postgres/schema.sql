@@ -50,17 +50,17 @@ create table if not exists account_type_master
 create table ledger_master
 (
     id                 uuid primary key,
-    tenant_id          uuid     not null references tenant (id),
+    tenant_id  uuid not null references tenant (id),
     display_name       varchar(50),
     currency_master_id uuid not null references currency_master (id),
-    created_by         uuid     not null references app_user (id),
+    created_by uuid not null references app_user (id),
     updated_by         uuid references app_user (id),
     created_at         bigint default extract(epoch from now()) * 1000000,
     updated_at         bigint default extract(epoch from now()) * 1000000
 );
 create table user_account -- more of a ledger account
 (
-    id uuid primary key,
+    id               uuid primary key,
     tenant_id        uuid        not null references tenant (id),
     display_code     varchar(20) not null unique,
     account_type_id  uuid not null references account_type_master (id),
@@ -79,14 +79,14 @@ create table transfer
 (
     id                 UUID primary key,
     tenant_id          uuid references tenant (id),
-    caused_by_event_id UUID    not null,
-    grouping_id        UUID    not null,
-    debit_account_id   integer not null,
-    credit_account_id  integer not null,
+    caused_by_event_id UUID   not null,
+    grouping_id        UUID   not null,
+    debit_account_id   uuid   not null,
+    credit_account_id  uuid   not null,
     pending_id         UUID,
-    ledger_master_id uuid references ledger_master,
+    ledger_master_id   uuid references ledger_master,
     code               smallint,
-    amount             bigint  not null,
+    amount             bigint not null,
     remarks            varchar(40),
 --1 for regular, 2 for pending, 3 for post pending , 4 void pending
     transfer_type      smallint,
@@ -151,7 +151,6 @@ create table pincode_master
 
 
 
-
 -- assumption is address will be of india only. how do we make this internationsl?
 -- what will be required to make the system be able to serve international boundaries without much change
 create table address
@@ -192,14 +191,15 @@ create unique index unique_cin_company on company_master (tenant_id, cin);
 
 create type mime_type as enum ('csv','docx','jpeg','json','png','pdf','txt','xlsx');
 
-create type workflow_type as enum('dummy_test','create_tenant');
+create type workflow_type as enum ('dummy_test','create_tenant');
 
-create table idempotence_store(
-    idempotence_key uuid not null,
-    workflow_type workflow_type not null,
+create table idempotence_store
+(
+    idempotence_key uuid          not null,
+    workflow_type   workflow_type not null,
 --     request jsonb not null,
-    response jsonb,
-    created_at bigint default extract(epoch from now())*1000000,
-    updated_at bigint default extract(epoch from now())*1000000,
-    primary key (idempotence_key,workflow_type)
+    response        jsonb,
+    created_at      bigint default extract(epoch from now()) * 1000000,
+    updated_at      bigint default extract(epoch from now()) * 1000000,
+    primary key (idempotence_key, workflow_type)
 )

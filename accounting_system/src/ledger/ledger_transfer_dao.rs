@@ -132,7 +132,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
 }
 
 fn convert_transfer_to_postgres_composite_type_input_string(transfer: &Transfer) -> String {
-    format!("('{}','{}','{}','{}',{},{},{},{},{},{},{},{},{})",
+    format!("('{}','{}','{}','{}','{}','{}',{},'{}',{},{},{},{},{})",
             transfer.id,
             transfer.tenant_id,
             transfer.caused_by_event_id,
