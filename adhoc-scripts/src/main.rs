@@ -12,7 +12,8 @@ fn main() {
     // process_currency_master_seed();
     // process_ledger_master_seed();
     // process_state_master_seed();
-    process_city_mst_seed();
+    // process_city_mst_seed();
+    process_pincode_master_seed();
     println!("Hello, world!");
 }
 
@@ -286,6 +287,20 @@ fn process_city_mst_seed() -> Result<(), Box<dyn Error>> {
         let string_record = rec?;
         let mut pincode: PincodeMst = string_record.deserialize(None)?;
         pincode.city_id = map.get(pincode.city_id.as_str()).unwrap().to_string();
+        pincode_writer.serialize(pincode)?;
+    }
+    Ok(())
+}
+
+fn process_pincode_master_seed() -> Result<(), Box<dyn Error>> {
+    let curr_dir = std::env::current_dir()?;
+    let seed_path = curr_dir.join("schema/postgres/seed_data/");
+    let mut pincode_reader = csv::Reader::from_path(seed_path.join("pincode_master.csv"))?;
+    let mut pincode_writer = csv::Writer::from_path(seed_path.join("pincode_master_temp.csv"))?;
+    for rec in pincode_reader.records() {
+        let string_record = rec?;
+        let mut pincode: PincodeMst = string_record.deserialize(None)?;
+        pincode.id = get_uuid(pincode.id.parse::<i32>()?).to_string();
         pincode_writer.serialize(pincode)?;
     }
     Ok(())

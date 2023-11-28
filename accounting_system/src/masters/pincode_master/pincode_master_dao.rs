@@ -5,6 +5,7 @@ use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::pincode_master::pincode_models::{Pincode, PincodeMaster};
@@ -22,7 +23,7 @@ const BY_ID_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABLE_NA
 pub trait PincodeMasterDao:Send+Sync {
     async fn get_all_pincodes(&self) -> Vec<PincodeMaster>;
 
-    async fn get_pincode_by_id(&self, id: i32) -> Option<PincodeMaster>;
+    async fn get_pincode_by_id(&self, id: &Uuid) -> Option<PincodeMaster>;
 }
 
 struct PincodeMasterDaoImpl {
@@ -56,7 +57,7 @@ impl PincodeMasterDao for PincodeMasterDaoImpl {
         rows.iter().map(|row| row.try_into().unwrap()).collect()
     }
 
-    async fn get_pincode_by_id(&self, id: i32) -> Option<PincodeMaster> {
+    async fn get_pincode_by_id(&self, id: &Uuid) -> Option<PincodeMaster> {
         let conn = self.postgres_client.get().await.unwrap();
         let rows = conn.query(BY_ID_QUERY, &[&id]).await.unwrap();
         rows.iter().map(|row| row.try_into().unwrap()).next()
@@ -77,6 +78,7 @@ mod tests {
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::pincode_master::pincode_master_dao::{PincodeMasterDao, PincodeMasterDaoImpl};
+    use crate::masters::pincode_master::pincode_models::tests::SEED_PINCODE_ID;
 
     #[tokio::test]
     async fn should_be_able_to_fetch_all_pincodes() {
@@ -92,7 +94,7 @@ mod tests {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port).await;
         let pincode_master_dao = PincodeMasterDaoImpl{postgres_client};
-        let pincode = pincode_master_dao.get_pincode_by_id(1).await;
+        let pincode = pincode_master_dao.get_pincode_by_id(&SEED_PINCODE_ID).await;
         assert_that!(pincode).is_some();
     }
 }

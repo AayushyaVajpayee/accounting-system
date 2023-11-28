@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use moka::future::Cache;
+use uuid::Uuid;
 
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::pincode_master::pincode_master_dao::{get_pincode_master_dao, PincodeMasterDao};
@@ -11,7 +12,7 @@ const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
 pub trait PincodeMasterService:Send+Sync {
     async fn get_all_pincodes(&self)->Option<Arc<Vec<Arc<PincodeMaster>>>>;
-    async fn get_pincode_by_id(&self, id: i32)->Option<Arc<PincodeMaster>>;
+    async fn get_pincode_by_id(&self, id: &Uuid) -> Option<Arc<PincodeMaster>>;
 }
 pub fn get_pincode_master_service() -> Arc<dyn PincodeMasterService> {
     let pclient = get_postgres_conn_pool();
@@ -29,7 +30,7 @@ pub fn get_pincode_master_service() -> Arc<dyn PincodeMasterService> {
 struct PincodeMasterServiceImpl{
     dao:Arc<dyn PincodeMasterDao>,
     cache_all: Cache<i32,Arc<Vec<Arc<PincodeMaster>>>>,
-    cache_by_id:Cache<i32,Arc<PincodeMaster>>
+    cache_by_id: Cache<Uuid, Arc<PincodeMaster>>
 }
 
 impl PincodeMasterServiceImpl{
@@ -58,7 +59,7 @@ impl PincodeMasterService for PincodeMasterServiceImpl{
         return res;
     }
 
-    async fn get_pincode_by_id(&self, id: i32) -> Option<Arc<PincodeMaster>> {
+    async fn get_pincode_by_id(&self, id: &Uuid) -> Option<Arc<PincodeMaster>> {
         if self.cache_all.get(&CACHE_ALL_KEY).await.is_none() {
             self.populate_caches().await;
         }
@@ -73,6 +74,7 @@ mod tests{
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+    use uuid::Uuid;
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
 
@@ -87,7 +89,7 @@ mod tests{
             .times(1)
             .returning(||{
                 vec![PincodeMaster{
-                    id: 0,
+                    id: Default::default(),
                     pincode: Pincode::new("123456",*INDIA_COUNTRY_ID).unwrap(),
                     city_id: *SEED_CITY_ID,
                     audit_metadata: Default::default(),
@@ -113,7 +115,7 @@ mod tests{
             .times(1)
             .returning(||{
                 vec![PincodeMaster{
-                    id: 0,
+                    id: Default::default(),
                     pincode: Pincode::new("123456", *INDIA_COUNTRY_ID).unwrap(),
                     city_id: *SEED_CITY_ID,
                     audit_metadata: Default::default(),
@@ -125,9 +127,9 @@ mod tests{
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(25000),
         };
-
-        let p = service.get_pincode_by_id(0).await;
-        let p1 = service.get_pincode_by_id(0).await;
+        let id = Uuid::default();
+        let p = service.get_pincode_by_id(&id).await;
+        let p1 = service.get_pincode_by_id(&id).await;
         assert_that!(p).is_some();
         assert_that!(p1).is_some();
     }

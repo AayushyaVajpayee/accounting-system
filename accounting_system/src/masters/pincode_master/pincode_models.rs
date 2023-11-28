@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct PincodeMaster {
-    pub id: i32,
+    pub id: Uuid,
     pub pincode: Pincode,
     pub city_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
@@ -56,7 +56,7 @@ pub mod tests {
     use std::str::FromStr;
 
     lazy_static! {
-        pub static ref SEED_PINCODE_ID:Uuid = Uuid::from_str("").unwrap();
+        pub static ref SEED_PINCODE_ID:Uuid = Uuid::from_str("c8c1da55-8be8-722c-9623-1295611b2eee").unwrap();
     }
 
     #[rstest]

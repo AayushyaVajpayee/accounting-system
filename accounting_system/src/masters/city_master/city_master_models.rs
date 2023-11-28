@@ -29,6 +29,6 @@ pub mod tests {
     use uuid::Uuid;
     use std::str::FromStr;
     lazy_static! {
-        pub static ref SEED_CITY_ID:Uuid =  Uuid::from_str("").unwrap();
+        pub static ref SEED_CITY_ID:Uuid =  Uuid::from_str("c7d82fae-7928-7f91-970b-41450b26f197").unwrap();
     }
 }
