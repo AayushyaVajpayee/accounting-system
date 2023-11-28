@@ -41,12 +41,12 @@ pub mod tests {
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
-
+    use std::str::FromStr;
     lazy_static! {
-        pub static ref SEED_DEBIT_ACCOUNT_ID:Uuid=Uuid::from_str("").unwrap;//todo
+        pub static ref SEED_DEBIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap();
     }
     lazy_static! {
-        pub static ref SEED_CREDIT_ACCOUNT_ID:Uuid=Uuid::from_str("").unwrap;//todo
+        pub static ref SEED_CREDIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-0580-7444-9da8-107986ab3d35").unwrap();
     }
     #[derive(Debug, Default)]
     pub struct CreateAccountRequestTestBuilder {
