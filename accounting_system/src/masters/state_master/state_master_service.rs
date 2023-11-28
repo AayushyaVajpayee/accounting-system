@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use moka::future::Cache;
+use uuid::Uuid;
 
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::state_master::state_master_dao::{get_state_master_dao, StateMasterDao};
@@ -11,12 +12,12 @@ const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
 pub trait StateMasterService:Send+Sync {
     async fn get_all_states(&self) -> Option<Arc<Vec<Arc<StateMasterModel>>>>;
-    async fn get_state_by_id(&self, id: i32) -> Option<Arc<StateMasterModel>>;
+    async fn get_state_by_id(&self, id: &Uuid) -> Option<Arc<StateMasterModel>>;
 }
 
 struct StateMasterServiceImpl {
     dao: Arc<dyn StateMasterDao>,
-    cache_by_id: Cache<i32, Arc<StateMasterModel>>,
+    cache_by_id: Cache<Uuid, Arc<StateMasterModel>>,
     cache_all: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>>,
 }
 pub fn get_state_master_service() -> Arc<dyn StateMasterService> {
@@ -58,12 +59,12 @@ impl StateMasterService for StateMasterServiceImpl {
         return res //safe to call unwrap because we are initialising with empty vector
     }
 
-    async fn get_state_by_id(&self, id: i32) -> Option<Arc<StateMasterModel>> {
+    async fn get_state_by_id(&self, id: &Uuid) -> Option<Arc<StateMasterModel>> {
         if self.cache_all.get(&CACHE_ALL_KEY).await.is_none() {
             self.populate_caches().await;
         }
         let cache = self.cache_by_id.clone();
-        let item = cache.get(&id).await;
+        let item = cache.get(id).await;
         return item;
     }
 }
@@ -87,7 +88,7 @@ mod tests {
         let mut dao_mock = MockStateMasterDao::new();
         dao_mock.expect_get_all_states().times(1).returning(|| {
             vec![StateMasterModel {
-                id: 0,
+                id: Default::default(),
                 state_name: StateName::new("Uttarakhand").unwrap(),
                 audit_metadata: Default::default(),
                 country_id:Uuid::now_v7()
@@ -107,7 +108,7 @@ mod tests {
         let mut dao_mock = MockStateMasterDao::new();
         dao_mock.expect_get_all_states().times(1).returning(|| {
             vec![StateMasterModel {
-                id: 1,
+                id: Default::default(),
                 state_name: StateName::new("Uttarakhand").unwrap(),
                 audit_metadata: Default::default(),
                 country_id:Uuid::now_v7()
@@ -118,8 +119,9 @@ mod tests {
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(40),
         };
-        let p = service.get_state_by_id(1).await;
-        let p1 = service.get_state_by_id(1).await;
+        let id = Default::default();
+        let p = service.get_state_by_id(&id).await;
+        let p1 = service.get_state_by_id(&id).await;
         assert_that!(p).is_some();
         assert_that!(p1).is_some();
     }

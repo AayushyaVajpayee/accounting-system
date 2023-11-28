@@ -10,7 +10,8 @@ use uuid::{NoContext, Timestamp, Uuid};
 fn main() {
     // process_account_type_master_seed();
     // process_currency_master_seed();
-    process_ledger_master_seed();
+    // process_ledger_master_seed();
+    process_state_master_seed();
     println!("Hello, world!");
 }
 
@@ -198,4 +199,65 @@ fn process_ledger_master_seed() -> Result<(), Box<dyn Error>> {
         account_writer.serialize(account)?;
     }
     Ok(())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct StateMaster {
+    id: String,
+    state_name: String,
+    created_by: String,
+    updated_by: String,
+    created_at: String,
+    updated_at: String,
+    country_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CityMaster {
+    id: String,
+    city_name: String,
+    state_id: String,
+    created_by: String,
+    updated_by: String,
+    created_at: String,
+    updated_at: String,
+    country_id: String,
+}
+
+fn process_state_master_seed() -> Result<(), Box<dyn Error>> {
+    let curr_path = std::env::current_dir()?;
+    let seed_path = curr_path.join("schema/postgres/seed_data/state_master.csv");
+    let mut state_reader = csv::Reader::from_path(seed_path)?;
+    let mut state_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/state_master_temp.csv"))?;
+    let mut map: HashMap<String, String> = HashMap::new();
+    for rec in state_reader.records() {
+        let string_record = rec?;
+        let mut state_mst: StateMaster = string_record.deserialize(None)?;
+        let id = state_mst.id.parse::<i32>()?;
+        let uuid = get_uuid(id);
+        map.insert(id.to_string(), uuid.to_string());
+        state_mst.id = uuid.to_string();
+        state_writer.serialize(state_mst)?;
+    }
+    let mut city_mst_reader = csv::Reader::from_path(curr_path.join("schema/postgres/seed_data/city_master.csv"))?;
+    let mut city_mst_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/city_master_temp.csv"))?;
+    for rec in city_mst_reader.records() {
+        let string_record = rec?;
+        let mut city_master: CityMaster = string_record.deserialize(None)?;
+        city_master.state_id = map.get(city_master.state_id.as_str()).unwrap().to_string();
+        city_mst_writer.serialize(city_master)?;
+    }
+
+    Ok(())
+}
+
+fn get_uuid(id: i32) -> Uuid {
+    let timestmp = Timestamp::
+    from_unix(NoContext,
+              (SystemTime::now()
+                  .duration_since(UNIX_EPOCH)
+                  .unwrap()
+                  .as_micros() as u64) + (id as u64) * 1000, 0);//to generate sortable uuids
+
+    Uuid::new_v7(timestmp)
 }

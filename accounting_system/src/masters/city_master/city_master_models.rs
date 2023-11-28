@@ -18,7 +18,7 @@ impl CityName {
 pub struct CityMaster {
     pub id: i32,
     pub city_name: CityName, //worst case it should not be more than 60
-    pub state_id: i32,
+    pub state_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
     pub country_id:Uuid
 }

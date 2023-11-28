@@ -77,6 +77,7 @@ mod tests{
     use crate::masters::city_master::city_master_dao::MockCityMasterDao;
     use crate::masters::city_master::city_master_models::{CityMaster, CityName};
     use crate::masters::city_master::city_master_service::{CityMasterService, CityMasterServiceImpl};
+    use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
 
     #[tokio::test]
    async fn test_get_all_cities_to_be_called_once_and_then_entry_to_be_fetched_from_cache(){
@@ -87,7 +88,7 @@ mod tests{
                 vec![CityMaster{
                     id: 0,
                     city_name: CityName::new("Haridwar").unwrap(),
-                    state_id: 0,
+                    state_id: *SEED_STATE_ID,
                     audit_metadata: Default::default(),
                     country_id:Uuid::now_v7()
                 }]
@@ -111,7 +112,7 @@ mod tests{
                 vec![CityMaster{
                     id: 0,
                     city_name: CityName::new("Haridwar").unwrap(),
-                    state_id: 0,
+                    state_id: *SEED_STATE_ID,
                     audit_metadata: Default::default(),
                     country_id:Uuid::now_v7()
                 }]

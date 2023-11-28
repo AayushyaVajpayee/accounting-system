@@ -117,7 +117,7 @@ mod tests {
             Default::default());
         let  ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
         let id = ledger_master_dao.create_ledger_master_entry(&ledger_master).await;
-        let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(id).await.unwrap();
+        let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(&id).await.unwrap();
         assert_eq!(fetched_ledger_master.id, id);
     }
 }

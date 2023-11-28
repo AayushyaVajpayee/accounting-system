@@ -5,6 +5,7 @@ use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::state_master::state_models::{StateMasterModel, StateName};
@@ -25,7 +26,7 @@ const BY_ID_QUERY: &str = concatcp!(
 pub trait StateMasterDao:Send+Sync {
     async fn get_all_states(&self) -> Vec<StateMasterModel>;
 
-    async fn get_state_by_id(&self, id: i32) -> Option<StateMasterModel>;
+    async fn get_state_by_id(&self, id: &Uuid) -> Option<StateMasterModel>;
 }
 
 struct StateMasterDaoPostgresImpl {
@@ -65,7 +66,7 @@ impl StateMasterDao for StateMasterDaoPostgresImpl {
         rows.iter().map(|row| row.try_into().unwrap()).collect()
     }
 
-    async fn get_state_by_id(&self, id: i32) -> Option<StateMasterModel> {
+    async fn get_state_by_id(&self, id: &Uuid) -> Option<StateMasterModel> {
         let conn = self.postgres_client.get().await.unwrap();
         let rows = conn.query(BY_ID_QUERY, &[&id]).await.unwrap();
         rows.iter().map(|row| row.try_into().unwrap()).next()
@@ -83,6 +84,7 @@ mod tests {
     use crate::masters::state_master::state_master_dao::{
         StateMasterDao, StateMasterDaoPostgresImpl,
     };
+    use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
 
     #[tokio::test]
     async fn should_be_able_to_fetch_all_states() {
@@ -98,7 +100,7 @@ mod tests {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port).await;
         let state_master_dao = StateMasterDaoPostgresImpl { postgres_client };
-        let state = state_master_dao.get_state_by_id(0).await;
+        let state = state_master_dao.get_state_by_id(&SEED_STATE_ID).await;
         assert_that!(state).is_some();
     }
 }

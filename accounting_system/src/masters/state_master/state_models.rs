@@ -5,7 +5,7 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 pub struct StateName(String);
 
 impl StateName {
-   pub fn new(name: &str) -> Result<Self, &'static str> {
+    pub fn new(name: &str) -> Result<Self, &'static str> {
         let name = name.trim();
         if name.len() > 60 {
             return Err("state name cannot be greater than 60 chars");
@@ -17,8 +17,18 @@ impl StateName {
 
 #[derive(Debug)]
 pub struct StateMasterModel {
-    pub id: i32,
+    pub id: Uuid,
     pub state_name: StateName,
-    pub audit_metadata:AuditMetadataBase,
-    pub country_id:Uuid
+    pub audit_metadata: AuditMetadataBase,
+    pub country_id: Uuid,
+}
+
+#[cfg(test)]
+pub mod tests {
+    use lazy_static::lazy_static;
+    use uuid::Uuid;
+    use std::str::FromStr;
+    lazy_static! {
+        pub static ref SEED_STATE_ID:Uuid= Uuid::from_str("c42190c1-cc98-7d51-9442-0edebe9b0220").unwrap();
+    }
 }
