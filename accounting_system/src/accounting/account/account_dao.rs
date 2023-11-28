@@ -3,6 +3,7 @@ use std::sync::{Arc, OnceLock};
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -16,8 +17,8 @@ static ACCOUNT_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 #[async_trait]
 pub trait AccountDao:Send+Sync {
-    async fn get_account_by_id(&self, id: &i32) -> Option<Account>;
-    async fn create_account(&self, request: &CreateAccountRequest) -> i32;
+    async fn get_account_by_id(&self, id: &Uuid) -> Option<Account>;
+    async fn create_account(&self, request: &CreateAccountRequest) -> Uuid;
 }
 
 pub struct AccountDaoPostgresImpl {
@@ -67,14 +68,14 @@ impl AccountDaoPostgresImpl {
     fn get_insert_statement() -> &'static str {
         ACCOUNT_INSERT_STATEMENT.get_or_init(|| {
             format!("insert into {ACCOUNT_TABLE_NAME} ({ACCOUNT_POSTGRES_SELECT_FIELDS}) values\
-            (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) returning id")
+            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) returning id")
         })
     }
 }
 
 #[async_trait]
 impl AccountDao for AccountDaoPostgresImpl {
-    async fn get_account_by_id(&self, id: &i32) -> Option<Account> {
+    async fn get_account_by_id(&self, id: &Uuid) -> Option<Account> {
         let query = AccountDaoPostgresImpl::get_account_by_id_query();
         let k = self.postgres_client.get().await.unwrap().query(
             query,
@@ -86,11 +87,13 @@ impl AccountDao for AccountDaoPostgresImpl {
             ).next()
     }
 
-    async fn create_account(&self, request: &CreateAccountRequest) -> i32 {
+    async fn create_account(&self, request: &CreateAccountRequest) -> Uuid {
         let query = AccountDaoPostgresImpl::get_insert_statement();
+        let id = Uuid::now_v7();
         self.postgres_client.get().await.unwrap().query(
             query,
             &[
+                &id,
                 &request.tenant_id,
                 &request.display_code,
                 &request.account_type_id,
@@ -115,7 +118,7 @@ impl AccountDao for AccountDaoPostgresImpl {
 #[cfg(test)]
 mod account_tests {
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
-    use crate::accounting::account::account_models::{a_create_account_request, CreateAccountRequestTestBuilder};
+    use crate::accounting::account::account_models::tests::{a_create_account_request, CreateAccountRequestTestBuilder};
     use crate::accounting::account::account_type::account_type_models::SEED_ACCOUNT_TYPE_ID;
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;

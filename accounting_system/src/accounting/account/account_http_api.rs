@@ -1,11 +1,12 @@
 use std::sync::Arc;
 use actix_web::{Responder, Scope, web};
 use actix_web::web::{Data, Path};
+use uuid::Uuid;
 
 use crate::accounting::account::account_models::CreateAccountRequest;
 use crate::accounting::account::account_service::{AccountService, get_account_service};
 
-async fn get_account_by_id(id: Path<i32>,
+async fn get_account_by_id(id: Path<Uuid>,
                            data: Data<Arc<dyn AccountService>>)
                            -> actix_web::Result<impl Responder> {
     let account = data.get_account_by_id(&id).await;
@@ -37,43 +38,36 @@ mod tests {
     use std::sync::Arc;
     use actix_web::{App, test};
     use async_trait::async_trait;
+    use uuid::Uuid;
 
     use crate::accounting::account::account_http_api::map_endpoints_to_functions;
     use crate::accounting::account::account_models::{Account, CreateAccountRequest};
-    use crate::accounting::account::account_service::AccountService;
-
-    struct MockAccountService {}
-
-    #[async_trait]
-    impl AccountService for MockAccountService {
-        async fn get_account_by_id(&self, _id: &i32) -> Option<Account> {
-            Some(Default::default())
-        }
-
-        async fn create_account(&self, _request: &CreateAccountRequest) -> i32 {
-            0
-        }
-    }
+    use crate::accounting::account::account_service::{AccountService, MockAccountService};
 
     #[tokio::test]
     async fn test_api() {
-        let mock: Arc<dyn AccountService> = Arc::new(MockAccountService {});
-        let tenant_expected = mock.get_account_by_id(&1).await.unwrap();
+        let mut mocked = MockAccountService::new();
+        mocked.expect_create_account().returning(|_a| Default::default());
+        mocked.expect_get_account_by_id().returning(|_| Some(Default::default()));
+        let mock: Arc<dyn AccountService> = Arc::new(mocked);
+        let uuid = Uuid::now_v7();
+        let account_expected = mock.get_account_by_id(&uuid).await.unwrap();
         let app_data = actix_web::web::Data::new(mock);
         let app = App::new()
             .service(map_endpoints_to_functions())
             .app_data(app_data);
         let app_service = test::init_service(app).await;
+        let uri = format!("/account/id/{}", uuid);
         let request = test::TestRequest::get()
-            .uri("/account/id/1")
+            .uri(uri.as_str())
             .to_request();
         let res: Account = test::call_and_read_body_json(&app_service, request).await;
-        assert_eq!(res, tenant_expected);
+        assert_eq!(res, account_expected);
         let request = test::TestRequest::post()
             .uri("/account/create")
             .set_json(Account { ..Default::default() })
             .to_request();
-        let _: i32 = test::call_and_read_body_json(&app_service, request).await;
+        let _: Uuid = test::call_and_read_body_json(&app_service, request).await;
     }
 }
 

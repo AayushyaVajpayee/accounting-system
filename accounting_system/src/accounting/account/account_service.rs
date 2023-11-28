@@ -1,14 +1,18 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::accounting::account::account_dao::{AccountDao, get_account_dao};
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
+#[cfg(test)]
+use mockall::automock;
 
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait AccountService:Send+Sync {
-    async fn get_account_by_id(&self, id: &i32) -> Option<Account>;
-    async fn create_account(&self, request: &CreateAccountRequest) -> i32;
+    async fn get_account_by_id(&self, id: &Uuid) -> Option<Account>;
+    async fn create_account(&self, request: &CreateAccountRequest) -> Uuid;
 }
 
 struct AccountServiceImpl {
@@ -17,11 +21,11 @@ struct AccountServiceImpl {
 
 #[async_trait]
 impl AccountService for AccountServiceImpl {
-    async fn get_account_by_id(&self, id: &i32) -> Option<Account> {
+    async fn get_account_by_id(&self, id: &Uuid) -> Option<Account> {
         self.account_dao.get_account_by_id(id).await
     }
 
-    async fn create_account(&self, request: &CreateAccountRequest) -> i32 {
+    async fn create_account(&self, request: &CreateAccountRequest) -> Uuid {
         self.account_dao.create_account(request).await
     }
 }
