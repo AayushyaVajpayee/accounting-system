@@ -16,9 +16,19 @@ impl CityName {
 
 #[derive(Debug)]
 pub struct CityMaster {
-    pub id: i32,
+    pub id: Uuid,
     pub city_name: CityName, //worst case it should not be more than 60
     pub state_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
     pub country_id:Uuid
+}
+
+#[cfg(test)]
+pub mod tests {
+    use lazy_static::lazy_static;
+    use uuid::Uuid;
+    use std::str::FromStr;
+    lazy_static! {
+        pub static ref SEED_CITY_ID:Uuid =  Uuid::from_str("").unwrap();
+    }
 }

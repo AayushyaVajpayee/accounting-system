@@ -73,6 +73,7 @@ mod tests{
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+    use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
 
     use crate::masters::pincode_master::pincode_master_dao::MockPincodeMasterDao;
@@ -88,7 +89,7 @@ mod tests{
                 vec![PincodeMaster{
                     id: 0,
                     pincode: Pincode::new("123456",*INDIA_COUNTRY_ID).unwrap(),
-                    city_id:3,
+                    city_id: *SEED_CITY_ID,
                     audit_metadata: Default::default(),
                     country_id: *INDIA_COUNTRY_ID
                 }]
@@ -114,7 +115,7 @@ mod tests{
                 vec![PincodeMaster{
                     id: 0,
                     pincode: Pincode::new("123456", *INDIA_COUNTRY_ID).unwrap(),
-                    city_id: 0,
+                    city_id: *SEED_CITY_ID,
                     audit_metadata: Default::default(),
                     country_id:*INDIA_COUNTRY_ID
                 }]

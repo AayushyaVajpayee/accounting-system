@@ -7,7 +7,7 @@ use uuid::Uuid;
 pub struct PincodeMaster {
     pub id: i32,
     pub pincode: Pincode,
-    pub city_id: i32,
+    pub city_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
     pub country_id:Uuid
 }
@@ -45,13 +45,19 @@ impl Pincode {
 
 
 #[cfg(test)]
-mod tests{
+pub mod tests {
+    use lazy_static::lazy_static;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
     use uuid::Uuid;
     use crate::masters::pincode_master::pincode_models::Pincode;
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
+    use std::str::FromStr;
+
+    lazy_static! {
+        pub static ref SEED_PINCODE_ID:Uuid = Uuid::from_str("").unwrap();
+    }
 
     #[rstest]
     #[case("0000c0",false,Err("india pincode has to be numeric"),*INDIA_COUNTRY_ID)]

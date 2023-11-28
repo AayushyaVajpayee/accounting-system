@@ -5,6 +5,7 @@ use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
 use tokio_postgres::Row;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::city_master::city_master_models::{CityMaster, CityName};
@@ -30,7 +31,7 @@ const BY_ID_QUERY: &str = concatcp!(
 pub trait CityMasterDao:Send+Sync {
     async fn get_all_cities(&self) -> Vec<CityMaster>;
 
-    async fn get_city_by_id(&self, id: i32) -> Option<CityMaster>;
+    async fn get_city_by_id(&self, id: &Uuid) -> Option<CityMaster>;
 }
 pub fn get_city_master_dao(client:&'static Pool)->Arc<dyn CityMasterDao >{
     let city_master_dao = CityMasterDaoImpl{
@@ -69,7 +70,7 @@ impl CityMasterDao for CityMasterDaoImpl {
         rows.iter().map(|row| row.try_into().unwrap()).collect()
     }
 
-    async fn get_city_by_id(&self, id: i32) -> Option<CityMaster> {
+    async fn get_city_by_id(&self, id: &Uuid) -> Option<CityMaster> {
         let conn = self.postgres_client.get().await.unwrap();
         let rows = conn.query(BY_ID_QUERY, &[&id]).await.unwrap();
         rows.iter().map(|row| row.try_into().unwrap()).next()
@@ -84,6 +85,7 @@ mod tests{
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::city_master::city_master_dao::{CityMasterDao, CityMasterDaoImpl};
+    use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
 
     #[tokio::test]
     async fn should_be_able_to_fetch_all_cities(){
@@ -99,7 +101,7 @@ mod tests{
         let port =get_postgres_image_port().await;
         let postgres_client =  get_postgres_conn_pool(port).await;
         let city_master_dao = CityMasterDaoImpl{postgres_client};
-        let city =  city_master_dao.get_city_by_id(0).await;
+        let city = city_master_dao.get_city_by_id(&SEED_CITY_ID).await;
         assert_that!(city).is_some();
     }
 }

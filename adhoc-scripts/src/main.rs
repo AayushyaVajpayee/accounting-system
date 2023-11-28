@@ -11,7 +11,8 @@ fn main() {
     // process_account_type_master_seed();
     // process_currency_master_seed();
     // process_ledger_master_seed();
-    process_state_master_seed();
+    // process_state_master_seed();
+    process_city_mst_seed();
     println!("Hello, world!");
 }
 
@@ -248,6 +249,45 @@ fn process_state_master_seed() -> Result<(), Box<dyn Error>> {
         city_mst_writer.serialize(city_master)?;
     }
 
+    Ok(())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PincodeMst {
+    id: String,
+    pincode: String,
+    city_id: String,
+    created_by: String,
+    updated_by: String,
+    created_at: String,
+    updated_at: String,
+    country_id: String,
+}
+
+fn process_city_mst_seed() -> Result<(), Box<dyn Error>> {
+    let curr_path = std::env::current_dir()?;
+    let seed_path = curr_path.join("schema/postgres/seed_data/");
+    let mut city_reader = csv::Reader::from_path(seed_path.join("city_master.csv"))?;
+    let mut city_writer = csv::Writer::from_path(seed_path.join("city_master_temp.csv"))?;
+    let mut map: HashMap<String, String> = HashMap::new();
+    for rec in city_reader.records() {
+        let string_record = rec?;
+        let mut city_mst: CityMaster = string_record.deserialize(None)?;
+        let id = city_mst.id.parse::<i32>()?;
+        let uuid = get_uuid(id);
+        city_mst.id = uuid.to_string();
+        map.insert(id.to_string(), uuid.to_string());
+        city_writer.serialize(city_mst)?;
+    }
+
+    let mut pincode_reader = csv::Reader::from_path(seed_path.join("pincode_master.csv"))?;
+    let mut pincode_writer = csv::Writer::from_path(seed_path.join("pincode_writer_temp"))?;
+    for rec in pincode_reader.records() {
+        let string_record = rec?;
+        let mut pincode: PincodeMst = string_record.deserialize(None)?;
+        pincode.city_id = map.get(pincode.city_id.as_str()).unwrap().to_string();
+        pincode_writer.serialize(pincode)?;
+    }
     Ok(())
 }
 

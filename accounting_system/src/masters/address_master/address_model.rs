@@ -23,7 +23,7 @@ pub struct Address{
     line_1:AddressLine,//Flat, House no., Building, Company, Apartment
     line_2:AddressLine,//Area, Street, Sector, Village
     line_3:Option<AddressLine>,//Landmark
-    city_id:i32,
+    city_id: Uuid,
     country_id:Uuid,
     country_specific_fields: CountrySpecificAddressFields,
     audit_metadata:AuditMetadataBase
@@ -34,7 +34,7 @@ pub struct Address{
 pub enum CountrySpecificAddressFields {
     IndiaAddress {
         pincode_id: i32,
-        state_id: i32
+        state_id: Uuid
     }
 }
 

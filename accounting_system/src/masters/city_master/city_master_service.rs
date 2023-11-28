@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use moka::future::Cache;
+use uuid::Uuid;
 
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::city_master::city_master_dao::{CityMasterDao, get_city_master_dao};
@@ -11,14 +12,14 @@ const CACHE_ALL_KEY: i32 = 1;
 
 #[async_trait]
 pub trait CityMasterService:Send+Sync {
-    async fn get_city_by_id(&self, id: i32) -> Option<Arc<CityMaster>>;
+    async fn get_city_by_id(&self, id: &Uuid) -> Option<Arc<CityMaster>>;
     async fn get_all_cities(&self) -> Option<Arc<Vec<Arc<CityMaster>>>>;
 }
 
 struct CityMasterServiceImpl {
     dao: Arc<dyn CityMasterDao>,
     cache_all: Cache<i32, Arc<Vec<Arc<CityMaster>>>>,
-    cache_by_id: Cache<i32, Arc<CityMaster>>,
+    cache_by_id: Cache<Uuid, Arc<CityMaster>>,
 }
 
 pub fn get_city_master_service() -> Arc<dyn CityMasterService> {
@@ -48,7 +49,7 @@ impl CityMasterServiceImpl {
 }
 #[async_trait]
 impl CityMasterService for CityMasterServiceImpl {
-    async fn get_city_by_id(&self, id: i32) -> Option<Arc<CityMaster>> {
+    async fn get_city_by_id(&self, id: &Uuid) -> Option<Arc<CityMaster>> {
         if self.cache_all.get(&CACHE_ALL_KEY).await.is_none() {
             self.populate_caches().await;
         }
@@ -86,7 +87,7 @@ mod tests{
             .times(1)
             .returning(||{
                 vec![CityMaster{
-                    id: 0,
+                    id: Default::default(),
                     city_name: CityName::new("Haridwar").unwrap(),
                     state_id: *SEED_STATE_ID,
                     audit_metadata: Default::default(),
@@ -110,7 +111,7 @@ mod tests{
             .times(1)
             .returning(||{
                 vec![CityMaster{
-                    id: 0,
+                    id: Default::default(),
                     city_name: CityName::new("Haridwar").unwrap(),
                     state_id: *SEED_STATE_ID,
                     audit_metadata: Default::default(),
@@ -122,9 +123,9 @@ mod tests{
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(740),
         };
-
-        let p = service.get_city_by_id(0).await;
-        let p1 = service.get_city_by_id(0).await;
+        let id = Uuid::default();
+        let p = service.get_city_by_id(&id).await;
+        let p1 = service.get_city_by_id(&id).await;
         assert_that!(p).is_some();
         assert_that!(p1).is_some();
     }
