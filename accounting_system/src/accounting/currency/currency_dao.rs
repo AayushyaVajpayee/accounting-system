@@ -80,9 +80,10 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
     async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Uuid {
         let query = CurrencyDaoPostgresImpl::create_insert_statement();
         let conn = self.postgres_client.get().await.unwrap();
+        let id = Uuid::now_v7();
         conn.query(
             query,
-            &[&(currency.tenant_id), &(currency.scale), &currency.display_name,
+            &[&id, &(currency.tenant_id), &(currency.scale), &currency.display_name,
                 &currency.description,
                 &currency.audit_metadata.created_by, &currency.audit_metadata.updated_by,
                 &(currency.audit_metadata.created_at), &(currency.audit_metadata.updated_at)],

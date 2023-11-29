@@ -828,11 +828,11 @@ mod tests {
         let account_master_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
         let id = Uuid::now_v7();
         let id2 = Uuid::now_v7();
-        let mut db_acc_led_id = id;
-        let mut cr_acc_led_id = id;
-        let mut tr_led_id = id;
-        let mut db_acc_id = id;
-        let mut cr_acc_id = id2;
+        let mut db_acc_led_id = *SEED_LEDGER_MASTER_ID;
+        let mut cr_acc_led_id = *SEED_LEDGER_MASTER_ID;
+        let mut tr_led_id = *SEED_LEDGER_MASTER_ID;
+        let mut db_acc_id = *SEED_DEBIT_ACCOUNT_ID;
+        let mut cr_acc_id = *SEED_CREDIT_ACCOUNT_ID;
         if !debit_account_ledger_id_same {
             db_acc_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req).await;
             db_acc_id = account_master_service.create_account(

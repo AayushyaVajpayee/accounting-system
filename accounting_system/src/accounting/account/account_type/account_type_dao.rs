@@ -104,6 +104,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
         request: &CreateAccountTypeMasterRequest,
     ) -> Result<Uuid, DaoError> {
         let query = INSERT_STATEMENT;
+        let id = Uuid::now_v7();
         let account_type_id: Option<Uuid> = self
             .postgres_client
             .get()
@@ -111,6 +112,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
             .query(
                 query,
                 &[
+                    &id,
                     &request.tenant_id,
                     &request.child_ids,
                     &request.parent_id,
