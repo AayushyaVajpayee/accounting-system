@@ -44,10 +44,12 @@ pub struct CompanyMasterServiceImpl {
 
 #[derive(Debug, Error, PartialEq)]
 pub enum ServiceError {
-    #[error("validation failures \n {}",.0.join("\n"))]
-    ValidationError(Vec<String>), //4xx
-    #[error("error in db {}",0)]
-    DBError(DaoError), //5xx
+    #[error("validation failures \n {}", .0.join("\n"))]
+    ValidationError(Vec<String>),
+    //4xx
+    #[error("error in db {}", 0)]
+    DBError(DaoError),
+    //5xx
     //have to separate out idempotency check
     #[error("company with this cin already exists")]
     CompanyCinAlreadyExists,
@@ -57,15 +59,15 @@ pub enum ServiceError {
     #[error("{0}")]
     OtherError(String),
     #[error(transparent)]
-    TenantError(#[from] TenantServiceError)
+    TenantError(#[from] TenantServiceError),
 }
 
 impl From<DaoError> for ServiceError {
     fn from(dao_err: DaoError) -> Self {
         match dao_err {
-            DaoError::ConnectionPool(_) => ServiceError::DBError(dao_err),
-            DaoError::PostgresQueryError(ref a) => ServiceError::DBError(dao_err),
-            DaoError::InvalidEntityToDbRowConversion(_) => ServiceError::DBError(dao_err),
+            DaoError::ConnectionPool(_) |
+            DaoError::PostgresQueryError(_) |
+            DaoError::InvalidEntityToDbRowConversion(_) | DaoError::ReturnedValueNone => ServiceError::DBError(dao_err),
             DaoError::UniqueConstraintViolated {
                 ref constraint_name,
             } => {
@@ -81,7 +83,7 @@ impl From<DaoError> for ServiceError {
 }
 
 impl CompanyMasterServiceImpl {
-    async fn validate_create_company_request(&self, request: &CreateCompanyRequest) -> Result<Vec<String>,ServiceError> {
+    async fn validate_create_company_request(&self, request: &CreateCompanyRequest) -> Result<Vec<String>, ServiceError> {
         let mut validations = Vec::new();
         let tenant = self
             .tenant_service
@@ -109,6 +111,7 @@ impl CompanyMasterServiceImpl {
         Ok(validations)
     }
 }
+
 #[async_trait]
 impl CompanyMasterService for CompanyMasterServiceImpl {
     #[instrument(skip(self))]
@@ -142,11 +145,12 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
     }
 }
 
-pub fn get_company_master_service(tenant_service:Arc<dyn TenantService>,user_service:Arc<dyn UserService>) -> Arc<dyn CompanyMasterService> {
+pub fn get_company_master_service(tenant_service: Arc<dyn TenantService>, user_service: Arc<dyn UserService>) -> Arc<dyn CompanyMasterService> {
     let p_client = get_postgres_conn_pool();
     let dao = get_company_master_dao(p_client);
-    Arc::new(CompanyMasterServiceImpl { dao,tenant_service,user_service })
+    Arc::new(CompanyMasterServiceImpl { dao, tenant_service, user_service })
 }
+
 #[cfg(test)]
 pub mod tests {
     use std::mem::discriminant;
@@ -192,11 +196,12 @@ pub mod tests {
         };
         Arc::new(service)
     }
+
     #[traced_test]
     #[rstest]
     #[case("unique_cin_company", ServiceError::CompanyCinAlreadyExists)]
     #[case("company_master_pkey", ServiceError::CompanyWithPrimaryKeyExists)]
-    #[case("some_random_constraint", ServiceError::DBError(DaoError::UniqueConstraintViolated{constraint_name:"some_random_constraint".to_string()}))]
+    #[case("some_random_constraint", ServiceError::DBError(DaoError::UniqueConstraintViolated{constraint_name: "some_random_constraint".to_string()}))]
     async fn test_duplicate_cin_insertion(
         #[case] constraint_name: String,
         #[case] error: ServiceError,
@@ -272,6 +277,7 @@ pub mod tests {
             }
         }
     }
+
     #[tokio::test]
     async fn test_user_not_found_validation() {
         let mut user_service = MockUserService::new();
@@ -299,6 +305,7 @@ pub mod tests {
         );
         assert_that!(error).is_equal_to(&p);
     }
+
     #[tokio::test]
     async fn test_tenant_not_found_validation() {
         let mut user_service = MockUserService::new();
@@ -325,9 +332,10 @@ pub mod tests {
         let p = format!("no tenant found for id {}", company_request.tenant_id);
         assert_that!(error).is_equal_to(&p);
     }
+
     #[rstest]
-    #[case(None,Some("flajkdjalfkjadlddkfjalkjflkajfljasdlfjdsalkjfdlajfd".to_string()),"company name cannot be empty or more than 50 chars")]
-    #[case(Some("ljljljlkjlkjlkjljljlkjlj".to_string()),None,"cin length should be 21 chars and should be alphanumeric")]
+    #[case(None, Some("flajkdjalfkjadlddkfjalkjflkajfljasdlfjdsalkjfdlajfd".to_string()), "company name cannot be empty or more than 50 chars")]
+    #[case(Some("ljljljlkjlkjlkjljljlkjlj".to_string()), None, "cin length should be 21 chars and should be alphanumeric")]
     async fn test_company_name_incorrect_validation(
         #[case] cin: Option<String>,
         #[case] name: Option<String>,

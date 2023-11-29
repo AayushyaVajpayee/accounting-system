@@ -3,10 +3,13 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
+use futures_util::TryFutureExt;
 use tokio_postgres::Row;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::{AuditMetadataBase, CreateCurrencyMasterRequest, CurrencyMaster};
+use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::dao_error::DaoError::ReturnedValueNone;
 
 const SELECT_FIELDS: &str = "id,tenant_id,scale,display_name,description,\
 created_by,updated_by,created_at,updated_at";
@@ -17,9 +20,9 @@ const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME,
 const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_FIELDS,")"," values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id");
 
 #[async_trait]
-pub trait CurrencyDao:Send+Sync {
-    async fn get_currency_entry_by_id(&self, id: &Uuid) -> Option<CurrencyMaster>;
-    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Uuid;
+pub trait CurrencyDao: Send + Sync {
+    async fn get_currency_entry_by_id(&self, id: &Uuid) -> Result<Option<CurrencyMaster>, DaoError>;
+    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Result<Uuid, DaoError>;
 }
 
 pub struct CurrencyDaoPostgresImpl {
@@ -27,7 +30,7 @@ pub struct CurrencyDaoPostgresImpl {
 }
 
 impl TryFrom<&Row> for CurrencyMaster {
-    type Error = ();
+    type Error = DaoError;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(CurrencyMaster {
@@ -55,16 +58,17 @@ pub fn get_currency_dao(client: &'static Pool) -> Arc<dyn CurrencyDao> {
 
 #[async_trait]
 impl CurrencyDao for CurrencyDaoPostgresImpl {
-    async fn get_currency_entry_by_id(&self, id: &Uuid) -> Option<CurrencyMaster> {
-        let conn = self.postgres_client.get().await.unwrap();
+    async fn get_currency_entry_by_id(&self, id: &Uuid) -> Result<Option<CurrencyMaster>, DaoError> {
+        let conn = self.postgres_client.get().await?;
         let k = conn.
-            query(BY_ID_QUERY, &[id]).await.unwrap();
-        k.iter().map(|row|
-            row.try_into().unwrap()).next()
+            query(BY_ID_QUERY, &[id]).await?;
+        let ans = k.iter().map(|row|
+            row.try_into()).next().transpose()?;
+        Ok(ans)
     }
 
-    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Uuid {
-        let conn = self.postgres_client.get().await.unwrap();
+    async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Result<Uuid, DaoError> {
+        let conn = self.postgres_client.get().await?;
         let id = Uuid::now_v7();
         conn.query(
             INSERT_STATEMENT,
@@ -72,7 +76,7 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
                 &currency.description,
                 &currency.audit_metadata.created_by, &currency.audit_metadata.updated_by,
                 &(currency.audit_metadata.created_at), &(currency.audit_metadata.updated_at)],
-        ).await.unwrap().iter().map(|row| row.get(0)).next().unwrap()
+        ).await?.iter().map(|row| row.get(0)).next().ok_or(ReturnedValueNone)
     }
 }
 
@@ -93,9 +97,9 @@ mod tests {
                 ..Default::default()
             }
         );
-        let  currency_dao = CurrencyDaoPostgresImpl { postgres_client };
-        let curr_id = currency_dao.create_currency_entry(&currency_master).await;
-        let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).await.unwrap();
+        let currency_dao = CurrencyDaoPostgresImpl { postgres_client };
+        let curr_id = currency_dao.create_currency_entry(&currency_master).await.unwrap();
+        let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).await.unwrap().unwrap();
         assert_eq!(curr_id, fetched_curr.id)
     }
 }

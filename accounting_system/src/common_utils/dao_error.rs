@@ -10,7 +10,9 @@ pub enum DaoError {
     #[error("cannot convert entity to db row {0}")]
     InvalidEntityToDbRowConversion(&'static str),
     #[error("unique constraint violated {}",0)]
-    UniqueConstraintViolated{constraint_name:String}
+    UniqueConstraintViolated { constraint_name: String },
+    #[error("query returned nothing")]
+    ReturnedValueNone
 }
 
 impl From<PoolError> for DaoError{

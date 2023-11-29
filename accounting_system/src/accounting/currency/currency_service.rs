@@ -1,18 +1,28 @@
 use std::sync::Arc;
+
 use async_trait::async_trait;
+#[cfg(test)]
+use mockall::automock;
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_dao::{CurrencyDao, get_currency_dao};
 use crate::accounting::currency::currency_models::{CreateCurrencyMasterRequest, CurrencyMaster};
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
-#[cfg(test)]
-use mockall::automock;
+use crate::common_utils::dao_error::DaoError;
+
+#[derive(Debug, Error)]
+pub enum CurrencyServiceError {
+    #[error(transparent)]
+    Db(#[from] DaoError)
+}
+
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait CurrencyService:Send+Sync {
-    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest) -> Uuid;
-    async fn get_currency_entry(&self, id: &Uuid) -> Option<CurrencyMaster>;
+pub trait CurrencyService: Send + Sync {
+    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest) -> Result<Uuid, CurrencyServiceError>;
+    async fn get_currency_entry(&self, id: &Uuid) -> Result<Option<CurrencyMaster>, CurrencyServiceError>;
 }
 
 struct CurrencyServiceImpl {
@@ -39,10 +49,10 @@ pub fn get_currency_service_for_test(postgres_client: &'static deadpool_postgres
 
 #[async_trait]
 impl CurrencyService for CurrencyServiceImpl {
-    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest) -> Uuid {
-        self.currency_dao.create_currency_entry(request).await
+    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest) -> Result<Uuid, CurrencyServiceError> {
+        self.currency_dao.create_currency_entry(request).await.map_err(|a| a.into())
     }
-    async fn get_currency_entry(&self, id: &Uuid) -> Option<CurrencyMaster> {
-        self.currency_dao.get_currency_entry_by_id(id).await
+    async fn get_currency_entry(&self, id: &Uuid) -> Result<Option<CurrencyMaster>, CurrencyServiceError> {
+        self.currency_dao.get_currency_entry_by_id(id).await.map_err(|a| a.into())
     }
 }
