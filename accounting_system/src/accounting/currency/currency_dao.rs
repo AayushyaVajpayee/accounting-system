@@ -1,6 +1,7 @@
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use async_trait::async_trait;
+use const_format::concatcp;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
 use uuid::Uuid;
@@ -10,8 +11,10 @@ use crate::accounting::currency::currency_models::{AuditMetadataBase, CreateCurr
 const SELECT_FIELDS: &str = "id,tenant_id,scale,display_name,description,\
 created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "currency_master";
-static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
-static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
+
+const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
+
+const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_FIELDS,")"," values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id");
 
 #[async_trait]
 pub trait CurrencyDao:Send+Sync {
@@ -43,22 +46,6 @@ impl TryFrom<&Row> for CurrencyMaster {
     }
 }
 
-impl CurrencyDaoPostgresImpl {
-    fn get_currency_master_by_id_query() -> &'static String {
-        BY_ID_QUERY.get_or_init(|| {
-            format!("select {} from {} where id=$1", SELECT_FIELDS, TABLE_NAME)
-        })
-    }
-    fn create_insert_statement() -> &'static String {
-        INSERT_STATEMENT.get_or_init(|| {
-            format!("insert into {} ({}) values \
-            ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id",
-                    TABLE_NAME,
-                    SELECT_FIELDS)
-        })
-    }
-}
-
 pub fn get_currency_dao(client: &'static Pool) -> Arc<dyn CurrencyDao> {
     let currency_dao = CurrencyDaoPostgresImpl {
         postgres_client: client
@@ -69,20 +56,18 @@ pub fn get_currency_dao(client: &'static Pool) -> Arc<dyn CurrencyDao> {
 #[async_trait]
 impl CurrencyDao for CurrencyDaoPostgresImpl {
     async fn get_currency_entry_by_id(&self, id: &Uuid) -> Option<CurrencyMaster> {
-        let query = CurrencyDaoPostgresImpl::get_currency_master_by_id_query();
         let conn = self.postgres_client.get().await.unwrap();
         let k = conn.
-            query(query, &[id]).await.unwrap();
+            query(BY_ID_QUERY, &[id]).await.unwrap();
         k.iter().map(|row|
             row.try_into().unwrap()).next()
     }
 
     async fn create_currency_entry(&self, currency: &CreateCurrencyMasterRequest) -> Uuid {
-        let query = CurrencyDaoPostgresImpl::create_insert_statement();
         let conn = self.postgres_client.get().await.unwrap();
         let id = Uuid::now_v7();
         conn.query(
-            query,
+            INSERT_STATEMENT,
             &[&id, &(currency.tenant_id), &(currency.scale), &currency.display_name,
                 &currency.description,
                 &currency.audit_metadata.created_by, &currency.audit_metadata.updated_by,
