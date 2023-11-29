@@ -1,6 +1,7 @@
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use async_trait::async_trait;
+use const_format::concatcp;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
 use uuid::Uuid;
@@ -10,8 +11,8 @@ use crate::accounting::user::user_models::{CreateUserRequest, User};
 
 const SELECT_FIELDS: &str = "id,tenant_id,first_name,last_name,email_id,mobile_number,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "app_user";
-static BY_ID_QUERY: OnceLock<String> = OnceLock::new();
-static INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
+const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
+const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_FIELDS,")"," values  ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id");
 
 
 #[async_trait]
@@ -45,20 +46,6 @@ impl TryFrom<&Row> for User {
     }
 }
 
-impl UserDaoPostgresImpl {
-    fn get_user_by_id_query() -> &'static String {
-        BY_ID_QUERY.get_or_init(|| {
-            format!("select {} from {} where id=$1", SELECT_FIELDS, TABLE_NAME)
-        })
-    }
-    fn create_insert_statement() -> &'static String {
-        INSERT_STATEMENT.get_or_init(|| {
-            format!("insert into {} ({}) values \
-            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id",
-                    TABLE_NAME, SELECT_FIELDS)
-        })
-    }
-}
 
 #[allow(dead_code)]
 pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
@@ -71,10 +58,9 @@ pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
 #[async_trait]
 impl UserDao for UserDaoPostgresImpl {
     async fn get_user_by_id(&self, id: Uuid) -> Option<User> {
-        let query = UserDaoPostgresImpl::get_user_by_id_query();
         let rows = self.postgres_client.get()
             .await.unwrap()
-            .query(query,
+            .query(BY_ID_QUERY,
                    &[&id]).await.unwrap();
         rows.iter().map(|row|
             row.try_into().unwrap()
@@ -82,10 +68,9 @@ impl UserDao for UserDaoPostgresImpl {
     }
 
     async fn create_user(&self, request: &CreateUserRequest) -> Uuid {
-        let query = UserDaoPostgresImpl::create_insert_statement();
         let id = Uuid::now_v7();
         self.postgres_client.get().await.unwrap().query(
-            query, &[
+            INSERT_STATEMENT, &[
                 &id,
                 &request.tenant_id,
                 &request.first_name,
