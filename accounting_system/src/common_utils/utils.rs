@@ -21,7 +21,7 @@ pub fn get_current_time_us() -> Result<i64,TimeError> {
     Ok(current_time)
 }
 
-pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &Vec<SimpleQueryMessage>) -> Result<Uuid, DaoError> {
+pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessage]) -> Result<Uuid, DaoError> {
     let row = rows.get(1).ok_or_else(|| {
         DaoError::PostgresQueryError("no 2nd statement in script but required".to_string())
     })?;
