@@ -16,11 +16,13 @@ pub struct Account {
     pub credits_posted: i64,
     pub credits_pending: i64,
     pub user_id: Uuid,
+    //have  forgotten its relevance
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateAccountRequest {
+    pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
     pub display_code: String,
     //todo should it be self generated
@@ -50,6 +52,7 @@ pub mod tests {
     }
     #[derive(Debug, Default)]
     pub struct CreateAccountRequestTestBuilder {
+        pub idempotence_key: Option<Uuid>,
         pub tenant_id: Option<Uuid>,
         pub display_code: Option<String>,
         pub account_type_id: Option<Uuid>,
@@ -60,6 +63,7 @@ pub mod tests {
 
     pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> CreateAccountRequest {
         CreateAccountRequest {
+            idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             display_code: builder.display_code.unwrap_or_else(|| {
                 Uuid::now_v7().to_string().split_at(19).0.to_string()

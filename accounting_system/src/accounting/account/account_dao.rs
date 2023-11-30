@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 
 const ACCOUNT_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,display_code,account_type_id,\
 user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,\
@@ -16,7 +17,7 @@ static ACCOUNT_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
 static ACCOUNT_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
 
 #[async_trait]
-pub trait AccountDao:Send+Sync {
+pub trait AccountDao: Send + Sync {
     async fn get_account_by_id(&self, id: &Uuid) -> Option<Account>;
     async fn create_account(&self, request: &CreateAccountRequest) -> Uuid;
 }
@@ -88,35 +89,34 @@ impl AccountDao for AccountDaoPostgresImpl {
     }
 
     async fn create_account(&self, request: &CreateAccountRequest) -> Uuid {
-        let query = AccountDaoPostgresImpl::get_insert_statement();
-        let id = Uuid::now_v7();
-        self.postgres_client.get().await.unwrap().query(
-            query,
-            &[
-                &id,
-                &request.tenant_id,
-                &request.display_code,
-                &request.account_type_id,
-                &request.user_id,
-                &request.ledger_master_id,
-                &0i64, &0i64, &0i64, &0i64,
-                &request.audit_metadata.created_by,
-                &request.audit_metadata.updated_by,
-                &request.audit_metadata.created_at,
-                &request.audit_metadata.updated_at
-            ],
-        ).await
-            .unwrap()
-            .iter()
-            .map(|row| row.get(0))
-            .next()
-            .unwrap()
+        let simple_query = format!(r#"
+        begin transaction;
+        select create_account(Row('{}','{}','{}','{}','{}','{}','{}','{}',{},{}));
+        commit;
+        "#, request.idempotence_key,
+                                   request.tenant_id,
+                                   request.display_code,
+                                   request.account_type_id,
+                                   request.ledger_master_id,
+                                   request.user_id,
+                                   request.audit_metadata.created_by,
+                                   request.audit_metadata.updated_by,
+                                   request.audit_metadata.created_at,
+                                   request.audit_metadata.updated_at
+        );
+        let conn = self.postgres_client.get().await.unwrap();
+
+        let rows = conn.simple_query(simple_query.as_str()).await.unwrap();
+        parse_db_output_of_insert_create_and_return_uuid(&rows).unwrap()
     }
 }
 
 
 #[cfg(test)]
 mod account_tests {
+    use spectral::assert_that;
+    use spectral::prelude::OptionAssertions;
+
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::tests::{a_create_account_request, CreateAccountRequestTestBuilder};
     use crate::accounting::account::account_type::account_type_models::SEED_ACCOUNT_TYPE_ID;
@@ -136,9 +136,53 @@ mod account_tests {
             user_id: Some(*SEED_USER_ID),
             ..Default::default()
         });
-        let  account_dao = AccountDaoPostgresImpl { postgres_client };
+        let account_dao = AccountDaoPostgresImpl { postgres_client };
         let account_id = account_dao.create_account(&an_account_request).await;
         let account_fetched = account_dao.get_account_by_id(&account_id).await.unwrap();
         assert_eq!(account_fetched.id, account_id)
+    }
+
+    #[tokio::test]
+    async fn should_create_account_when_only_1_new_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let account_request = a_create_account_request(Default::default());
+        let account_dao = AccountDaoPostgresImpl { postgres_client };
+        let id = account_dao.create_account(&account_request).await;
+        let acc = account_dao.get_account_by_id(&id).await;
+        assert_that!(acc).is_some();
+    }
+
+    #[tokio::test]
+    async fn should_return_existing_account_when_idempotency_key_is_same_as_earlier_completed_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let name = "tsting";
+        let account_request =
+            a_create_account_request(
+                CreateAccountRequestTestBuilder {
+                    display_code: Some(name.to_string()),
+                    ..Default::default()
+                });
+        let account_dao = AccountDaoPostgresImpl { postgres_client };
+        let id = account_dao.create_account(&account_request).await;
+        let id2 = account_dao.create_account(&account_request).await;
+        assert_that!(&id).is_equal_to(id2);
+        let number_of_accs_created: i64 = postgres_client
+            .get()
+            .await
+            .unwrap()
+            .query(
+                "select count(id) from user_account where display_code=$1",
+                &[&name],
+            )
+            .await
+            .unwrap()
+            .iter()
+            .map(|a| a.get(0))
+            .next()
+            .unwrap();
+        assert_that!(number_of_accs_created).is_equal_to(1)
+        ;
     }
 }

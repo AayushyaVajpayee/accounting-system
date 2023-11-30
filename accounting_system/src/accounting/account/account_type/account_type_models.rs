@@ -20,7 +20,7 @@ pub struct AccountTypeMaster {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct CreateAccountTypeMasterRequest {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,

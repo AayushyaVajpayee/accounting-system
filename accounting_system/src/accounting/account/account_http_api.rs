@@ -1,10 +1,11 @@
 use std::sync::Arc;
+
 use actix_web::{Responder, Scope, web};
 use actix_web::web::{Data, Path};
 use uuid::Uuid;
 
 use crate::accounting::account::account_models::CreateAccountRequest;
-use crate::accounting::account::account_service::{AccountService, get_account_service};
+use crate::accounting::account::account_service::AccountService;
 
 async fn get_account_by_id(id: Path<Uuid>,
                            data: Data<Arc<dyn AccountService>>)
@@ -36,8 +37,8 @@ fn map_endpoints_to_functions() -> Scope {
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
+
     use actix_web::{App, test};
-    use async_trait::async_trait;
     use uuid::Uuid;
 
     use crate::accounting::account::account_http_api::map_endpoints_to_functions;
@@ -65,7 +66,7 @@ mod tests {
         assert_eq!(res, account_expected);
         let request = test::TestRequest::post()
             .uri("/account/create")
-            .set_json(Account { ..Default::default() })
+            .set_json(CreateAccountRequest { ..Default::default() })
             .to_request();
         let _: Uuid = test::call_and_read_body_json(&app_service, request).await;
     }

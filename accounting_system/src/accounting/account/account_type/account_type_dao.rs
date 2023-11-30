@@ -210,7 +210,7 @@ mod account_type_tests {
     }
 
     #[tokio::test]
-    async fn should_return_existing_tenant_when_idempotency_key_is_same_as_earlier_completed_request() {
+    async fn should_return_existing_account_type_when_idempotency_key_is_same_as_earlier_completed_request() {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port).await;
         let name = "tsting";
