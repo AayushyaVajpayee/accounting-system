@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 
 const SELECT_FIELDS: &str = "id,tenant_id,display_code,account_type_id,\
@@ -15,10 +16,11 @@ user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,\
 credits_pending,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "user_account";
 const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
+
 #[async_trait]
 pub trait AccountDao: Send + Sync {
-    async fn get_account_by_id(&self, id: &Uuid) -> Option<Account>;
-    async fn create_account(&self, request: &CreateAccountRequest) -> Uuid;
+    async fn get_account_by_id(&self, id: &Uuid) -> Result<Option<Account>, DaoError>;
+    async fn create_account(&self, request: &CreateAccountRequest) -> Result<Uuid, DaoError>;
 }
 
 pub struct AccountDaoPostgresImpl {
@@ -26,7 +28,7 @@ pub struct AccountDaoPostgresImpl {
 }
 
 impl TryFrom<&Row> for Account {
-    type Error = ();
+    type Error = DaoError;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(
@@ -60,18 +62,19 @@ pub fn get_account_dao(client: &'static Pool) -> Arc<dyn AccountDao> {
 
 #[async_trait]
 impl AccountDao for AccountDaoPostgresImpl {
-    async fn get_account_by_id(&self, id: &Uuid) -> Option<Account> {
-        let k = self.postgres_client.get().await.unwrap().query(
+    async fn get_account_by_id(&self, id: &Uuid) -> Result<Option<Account>, DaoError> {
+        let k = self.postgres_client.get().await?.query(
             BY_ID_QUERY,
             &[id],
         ).await.unwrap();
-        k.iter()
+        let p = k.iter()
             .map(|row|
-                row.try_into().unwrap()
-            ).next()
+                row.try_into()
+            ).next().transpose()?;
+        Ok(p)
     }
 
-    async fn create_account(&self, request: &CreateAccountRequest) -> Uuid {
+    async fn create_account(&self, request: &CreateAccountRequest) -> Result<Uuid, DaoError> {
         let simple_query = format!(r#"
         begin transaction;
         select create_account(Row('{}','{}','{}','{}','{}','{}','{}','{}',{},{}));
@@ -87,10 +90,10 @@ impl AccountDao for AccountDaoPostgresImpl {
                                    request.audit_metadata.created_at,
                                    request.audit_metadata.updated_at
         );
-        let conn = self.postgres_client.get().await.unwrap();
+        let conn = self.postgres_client.get().await?;
 
-        let rows = conn.simple_query(simple_query.as_str()).await.unwrap();
-        parse_db_output_of_insert_create_and_return_uuid(&rows).unwrap()
+        let rows = conn.simple_query(simple_query.as_str()).await?;
+        parse_db_output_of_insert_create_and_return_uuid(&rows)
     }
 }
 
@@ -120,8 +123,10 @@ mod account_tests {
             ..Default::default()
         });
         let account_dao = AccountDaoPostgresImpl { postgres_client };
-        let account_id = account_dao.create_account(&an_account_request).await;
-        let account_fetched = account_dao.get_account_by_id(&account_id).await.unwrap();
+        let account_id = account_dao.create_account(&an_account_request).await.unwrap();
+        let account_fetched = account_dao.get_account_by_id(&account_id).await
+            .unwrap()
+            .unwrap();
         assert_eq!(account_fetched.id, account_id)
     }
 
@@ -131,8 +136,8 @@ mod account_tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let account_request = a_create_account_request(Default::default());
         let account_dao = AccountDaoPostgresImpl { postgres_client };
-        let id = account_dao.create_account(&account_request).await;
-        let acc = account_dao.get_account_by_id(&id).await;
+        let id = account_dao.create_account(&account_request).await.unwrap();
+        let acc = account_dao.get_account_by_id(&id).await.unwrap();
         assert_that!(acc).is_some();
     }
 

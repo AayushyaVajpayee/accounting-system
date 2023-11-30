@@ -172,6 +172,7 @@ fn convert_transfers_to_postgres_array(transfers: &[Transfer]) -> String {
 mod tests {
     use std::ops::Not;
     use std::time::{SystemTime, UNIX_EPOCH};
+    use async_std::channel::unbounded;
 
     use rand::Rng;
     use rstest::rstest;
@@ -199,8 +200,8 @@ mod tests {
         let a2 = a_create_account_request(CreateAccountRequestTestBuilder {
             ..Default::default()
         });
-        let a1_id = account_service.create_account(&a1).await;
-        let a2_id = account_service.create_account(&a2).await;
+        let a1_id = account_service.create_account(&a1).await.unwrap();
+        let a2_id = account_service.create_account(&a2).await.unwrap();
         vec![a1_id, a2_id]
     }
 
@@ -337,8 +338,8 @@ mod tests {
             let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let accs = create_two_accounts_for_transfer().await;
             let acc_ser = get_account_service_for_test(get_postgres_conn_pool(port).await);
-            let acc1 = acc_ser.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2 = acc_ser.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1 = acc_ser.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2 = acc_ser.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             let a_trf = a_transfer(TransferBuilder {
                 transfer_type: entry_type.clone(),
                 debit_account_id: Some(accs[0]),
@@ -347,8 +348,8 @@ mod tests {
             });
             let trfs_resp = led_trf_dao.create_transfers(&vec![a_trf.clone()]).await;
             let fetched_trfs = led_trf_dao.get_transfers_by_id(a_trf.id).await.unwrap();
-            let acc_1_after = acc_ser.get_account_by_id(&accs[0]).await.unwrap();
-            let acc_2_after = acc_ser.get_account_by_id(&accs[1]).await.unwrap();
+            let acc_1_after = acc_ser.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc_2_after = acc_ser.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             if entry_type.clone().unwrap() == Pending {
                 assert_eq!(acc1.credits_posted, acc_1_after.credits_posted);
                 assert_eq!(acc1.debits_posted, acc_1_after.debits_posted);
@@ -425,12 +426,12 @@ mod tests {
                 ..Default::default()
             });
             let acc_ser = get_account_service_for_test(get_postgres_conn_pool(port).await);
-            let acc1 = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).await.unwrap();
-            let acc2 = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).await.unwrap();
+            let acc1 = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).await.unwrap().unwrap();
+            let acc2 = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).await.unwrap().unwrap();
             let trf_resps = cl.create_transfers(&vec![pending_transfer, resolved_pending_transfer.clone()]).await;
             println!("{:?}", trf_resps);
-            let acc1_after = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).await.unwrap();
-            let acc2_after = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).await.unwrap();
+            let acc1_after = acc_ser.get_account_by_id(&resolved_pending_transfer.debit_account_id).await.unwrap().unwrap();
+            let acc2_after = acc_ser.get_account_by_id(&resolved_pending_transfer.credit_account_id).await.unwrap().unwrap();
             if matches!(resolved_pending_transfer.transfer_type,TransferType::PostPending {..}) {
                 assert_eq!(acc1.debits_posted + resolved_pending_transfer.amount, acc1_after.debits_posted);
                 assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
@@ -470,8 +471,8 @@ mod tests {
             let postgres_client = get_postgres_conn_pool(port).await;
             let accs = create_two_accounts_for_transfer().await;
             let acc_service = get_account_service_for_test(postgres_client);
-            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let pending_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
@@ -489,8 +490,8 @@ mod tests {
             });
             let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), resolved_pending_trf.clone()]).await;
             println!("{:?}", &trf_resps);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -521,8 +522,8 @@ mod tests {
             let postgres_client = get_postgres_conn_pool(port).await;
             let accs = create_two_accounts_for_transfer().await;
             let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let pending_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
@@ -555,8 +556,8 @@ mod tests {
             });
             //todo first 2 should be committed together and third one should fail.
             let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), first_resolved_trf.clone(), second_resolved_trf.clone()]).await;
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -582,8 +583,8 @@ mod tests {
             let postgres_client = get_postgres_conn_pool(port).await;
             let accs = create_two_accounts_for_transfer().await;
             let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             let mut led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let pending_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Pending),
@@ -601,8 +602,8 @@ mod tests {
             });
             let trf_resps = led_trf_dao.create_transfers(&vec![pending_trf.clone(), post_pending_trf.clone()]).await;
             println!("{:?}", &trf_resps);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -628,8 +629,8 @@ mod tests {
             let postgres_client = get_postgres_conn_pool(port).await;
             let accs = create_two_accounts_for_transfer().await;
             let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
             let regular_trf = a_transfer(TransferBuilder {
                 transfer_type: Some(TransferType::Regular),
@@ -653,8 +654,8 @@ mod tests {
             //todo first 2 should be committed together and third one should fail.
             let trf_resps = led_trf_dao.create_transfers(&vec![regular_trf.clone(), resolving_trf.clone()]).await;
             println!("{:?}", &trf_resps);
-            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+            let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+            let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
             assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
             assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
             assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -695,12 +696,12 @@ mod tests {
             more_trfs.push(initial_trf);
         }
         let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
         let trf_resps_3 = led_trf_dao.create_transfers(&more_trfs).await;
         println!("{:?}", trf_resps_3);
-        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
         assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
         assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
         assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
@@ -739,8 +740,8 @@ mod tests {
         let accs = create_two_accounts_for_transfer().await;
         let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
         let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], 100, *SEED_LEDGER_MASTER_ID, size);
         let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
         let trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
@@ -748,8 +749,8 @@ mod tests {
         let stop = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
         println!("{}", stop - start);
         let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
         let sum: i64 = transfer_candidates.iter().map(|a| a.amount).sum();
         assert_eq!(acc1.debits_posted + sum, acc1_after.debits_posted);
         assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
@@ -840,7 +841,7 @@ mod tests {
                     CreateAccountRequestTestBuilder {
                         ledger_master_id: Some(db_acc_led_id),
                         ..Default::default()
-                    })).await;
+                    })).await.unwrap();
         }
         if !credit_account_ledger_same {
             cr_acc_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req).await;
@@ -849,7 +850,7 @@ mod tests {
                     CreateAccountRequestTestBuilder {
                         ledger_master_id: Some(cr_acc_led_id),
                         ..Default::default()
-                    })).await;
+                    })).await.unwrap();
         }
         if transfer_ledger_id_same {
             tr_led_id = ledger_master_service.create_ledger_master_entry(&led_mst_req).await;
@@ -877,13 +878,13 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let accs = create_two_accounts_for_transfer().await;
         let acc_service = get_account_service_for_test(get_postgres_conn_pool(port).await);
-        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let acc1 = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+        let acc2 = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
         let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client };
         let transfer_candidates = generate_random_transfers(accs[0], accs[1], amount, *SEED_LEDGER_MASTER_ID, 1);
         let trf_resps = led_trf_dao.create_transfers(&transfer_candidates).await;
-        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap();
-        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap();
+        let acc1_after = acc_service.get_account_by_id(&accs[0]).await.unwrap().unwrap();
+        let acc2_after = acc_service.get_account_by_id(&accs[1]).await.unwrap().unwrap();
         assert_eq!(acc1.debits_posted, acc1_after.debits_posted);
         assert_eq!(acc1.debits_pending, acc1_after.debits_pending);
         assert_eq!(acc1.credits_pending, acc1_after.credits_pending);
