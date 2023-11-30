@@ -1,6 +1,7 @@
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use async_trait::async_trait;
+use const_format::concatcp;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
 use uuid::Uuid;
@@ -9,13 +10,11 @@ use crate::accounting::account::account_models::{Account, CreateAccountRequest};
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 
-const ACCOUNT_POSTGRES_SELECT_FIELDS: &str = "id,tenant_id,display_code,account_type_id,\
+const SELECT_FIELDS: &str = "id,tenant_id,display_code,account_type_id,\
 user_id,ledger_master_id,debits_posted,debits_pending,credits_posted,\
 credits_pending,created_by,updated_by,created_at,updated_at";
-const ACCOUNT_TABLE_NAME: &str = "user_account";
-static ACCOUNT_BY_ID_QUERY: OnceLock<String> = OnceLock::new();
-static ACCOUNT_INSERT_STATEMENT: OnceLock<String> = OnceLock::new();
-
+const TABLE_NAME: &str = "user_account";
+const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
 #[async_trait]
 pub trait AccountDao: Send + Sync {
     async fn get_account_by_id(&self, id: &Uuid) -> Option<Account>;
@@ -59,27 +58,11 @@ pub fn get_account_dao(client: &'static Pool) -> Arc<dyn AccountDao> {
     })
 }
 
-impl AccountDaoPostgresImpl {
-    fn get_account_by_id_query() -> &'static str {
-        ACCOUNT_BY_ID_QUERY.get_or_init(|| {
-            format!("select {ACCOUNT_POSTGRES_SELECT_FIELDS} from {ACCOUNT_TABLE_NAME} where id=$1")
-        })
-    }
-
-    fn get_insert_statement() -> &'static str {
-        ACCOUNT_INSERT_STATEMENT.get_or_init(|| {
-            format!("insert into {ACCOUNT_TABLE_NAME} ({ACCOUNT_POSTGRES_SELECT_FIELDS}) values\
-            ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) returning id")
-        })
-    }
-}
-
 #[async_trait]
 impl AccountDao for AccountDaoPostgresImpl {
     async fn get_account_by_id(&self, id: &Uuid) -> Option<Account> {
-        let query = AccountDaoPostgresImpl::get_account_by_id_query();
         let k = self.postgres_client.get().await.unwrap().query(
-            query,
+            BY_ID_QUERY,
             &[id],
         ).await.unwrap();
         k.iter()
