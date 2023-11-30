@@ -15,11 +15,11 @@ begin
                                     substring(int8send(floor(extract(epoch from clock_timestamp()) * 1000)::bigint) from
                                               3)
                                     from 1 for 6
-                                ),
+                            ),
                             52, 1
-                        ),
+                    ),
                     53, 1
-                ),
+            ),
             'hex')::uuid;
 end
 $$
@@ -277,38 +277,101 @@ $$
 --  EXECUTE function create_audit_entry()
 
 
-
 create trigger company_master_audit_trigger
-    after update or delete on company_master
+    after update or delete
+    on company_master
     for each row
 execute function create_audit_entry();
-create type create_tenant_request as (idempotence_key uuid,display_name text, created_by uuid,updated_by uuid, created_at bigint, updated_at bigint);
+create type create_tenant_request as
+(
+    idempotence_key uuid,
+    display_name    text,
+    created_by      uuid,
+    updated_by      uuid,
+    created_at      bigint,
+    updated_at      bigint
+);
+
 create or replace function create_tenant(req create_tenant_request) returns uuid as
 $$
-    DECLARE
-        resp jsonb;
-        tenant_id uuid;
-        impacted_rows int;
+DECLARE
+    resp          jsonb;
+    tenant_id     uuid;
+    impacted_rows int;
 --      t        timestamptz := clock_timestamp();
-    begin
---         raise notice 'resp=%', resp;
-        insert into idempotence_store (idempotence_key, workflow_type, response, created_at, updated_at)
-        values (req.idempotence_key,'create_tenant',null,default,default) on conflict do nothing;
-        get diagnostics impacted_rows=row_count;
+begin
+    --         raise notice 'resp=%', resp;
+    insert into idempotence_store (idempotence_key, workflow_type, response, created_at, updated_at)
+    values (req.idempotence_key, 'create_tenant', null, default, default)
+    on conflict do nothing;
+    get diagnostics impacted_rows= row_count;
 --         raise notice 'resp=%', impacted_rows;
-        if impacted_rows !=0 then
-            select uuid_generate_v7() into tenant_id;
-            insert into tenant (id, display_name, created_by, updated_by, created_at, updated_at)
-            values (tenant_id,req.display_name,req.created_by,req.updated_by,req.created_at,req.updated_at);
-            update idempotence_store set response=jsonb_build_object('id',tenant_id) where idempotence_key=req.idempotence_key and workflow_type='create_tenant';
+    if impacted_rows != 0 then
+        select uuid_generate_v7() into tenant_id;
+        insert into tenant (id, display_name, created_by, updated_by, created_at, updated_at)
+        values (tenant_id, req.display_name, req.created_by, req.updated_by, req.created_at, req.updated_at);
+        update idempotence_store
+        set response=jsonb_build_object('id', tenant_id)
+        where idempotence_key = req.idempotence_key
+          and workflow_type = 'create_tenant';
 --             raise notice 'time spent=%', clock_timestamp() - t;
-            return tenant_id;
-        else
-            select response from idempotence_store where idempotence_key=req.idempotence_key and workflow_type='create_tenant' into resp;
+        return tenant_id;
+    else
+        select response
+        from idempotence_store
+        where idempotence_key = req.idempotence_key
+          and workflow_type = 'create_tenant'
+        into resp;
 --             raise notice 'time spent=%', clock_timestamp() - t;
-            return (resp->> 'id')::uuid;
+        return (resp ->> 'id')::uuid;
 
-        end if;
+    end if;
 
-    end
+end
+$$ language plpgsql;
+
+create type create_account_type_mst_request as
+(
+    idempotence_key uuid,
+    tenant_id       uuid,
+    child_ids       uuid[],
+    parent_id       uuid,
+    display_name    text,
+    account_code    smallint,
+    created_by      uuid,
+    updated_by      uuid,
+    created_at      bigint,
+    updated_at      bigint
+);
+create or replace function create_account_type_master(req create_account_type_mst_request) returns uuid as
+$$
+DECLARE
+    resp                jsonb;
+    account_type_mst_id uuid;
+    impacted_rows       int;
+BEGIN
+    insert into idempotence_store (idempotence_key, workflow_type, response, created_at, updated_at)
+    values (req.idempotence_key, 'create_account_type_mst', null, default, default)
+    on conflict do nothing;
+    get diagnostics impacted_rows= row_count;
+    if impacted_rows != 0 then
+        select uuid_generate_v7() into account_type_mst_id;
+        insert into account_type_master (id, tenant_id, child_ids, parent_id, display_name, account_code, created_by,
+                                         updated_by, created_at, updated_at)
+        values (account_type_mst_id, req.tenant_id, req.child_ids, req.parent_id, req.display_name, req.account_code,
+                req.created_by, req.updated_by, req.created_at, req.updated_at);
+        update idempotence_store
+        set response=jsonb_build_object('id', account_type_mst_id)
+        where idempotence_key = req.idempotence_key
+          and workflow_type = 'create_account_type_mst';
+        return account_type_mst_id;
+    else
+        select response
+        from idempotence_store
+        where idempotence_key = req.idempotence_key
+          and workflow_type = 'create_account_type_mst'
+        into resp;
+        return (resp ->> 'id')::uuid;
+    end if;
+end
 $$ language plpgsql;

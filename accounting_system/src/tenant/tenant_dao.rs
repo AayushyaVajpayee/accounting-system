@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
 
 const SELECT_FIELDS: &str = "id,display_name,created_by,updated_by,created_at,updated_at";
@@ -82,27 +83,7 @@ impl TenantDao for TenantDaoImpl {
         );
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(simple_query.as_str()).await?;
-        let row = rows.get(1).ok_or_else(|| {
-            DaoError::PostgresQueryError("no 2nd statement in script but required".to_string())
-        })?;
-        return match row {
-            SimpleQueryMessage::Row(a) => {
-                let uuid_str = a.get(0).ok_or_else(|| {
-                    DaoError::PostgresQueryError(
-                        "should have returned a result but was none".to_string(),
-                    )
-                })?;
-                Uuid::parse_str(uuid_str).map_err(|a| {
-                    DaoError::PostgresQueryError("unable to convert str to uuid".to_string())
-                })
-            }
-            SimpleQueryMessage::CommandComplete(_) => Err(DaoError::PostgresQueryError(
-                "should have returned a result but was a command".to_string(),
-            )),
-            _ => Err(DaoError::PostgresQueryError(
-                "should have returned a result but was a command".to_string(),
-            )),
-        };
+        parse_db_output_of_insert_create_and_return_uuid(&rows)
     }
 
     // async fn update_tenant(&self, _tenant: &CreateTenantRequest) -> i64 {

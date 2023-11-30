@@ -22,6 +22,7 @@ pub struct AccountTypeMaster {
 
 #[derive(Debug)]
 pub struct CreateAccountTypeMasterRequest {
+    pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
     pub child_ids: Option<Vec<Uuid>>,
     pub parent_id: Option<Uuid>,
@@ -33,6 +34,7 @@ pub struct CreateAccountTypeMasterRequest {
 #[cfg(test)]
 #[derive(Debug, Default)]
 pub struct CreateAccountTypeMasterRequestTestBuilder {
+    pub idempotence_key: Option<Uuid>,
     pub tenant_id: Option<Uuid>,
     pub child_ids: Option<Vec<Uuid>>,
     pub parent_id: Option<Uuid>,
@@ -44,6 +46,7 @@ pub struct CreateAccountTypeMasterRequestTestBuilder {
 #[cfg(test)]
 pub fn a_create_account_type_master_request(builder: CreateAccountTypeMasterRequestTestBuilder) -> CreateAccountTypeMasterRequest {
     CreateAccountTypeMasterRequest {
+        idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
         tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         child_ids: builder.child_ids,
         parent_id: builder.parent_id,

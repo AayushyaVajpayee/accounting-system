@@ -3,7 +3,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
-use tokio_postgres::Row;
+use itertools::Itertools;
+use tokio_postgres::{Row, SimpleQueryMessage};
 use uuid::Uuid;
 
 use crate::accounting::account::account_type::account_type_models::{
@@ -11,6 +12,7 @@ use crate::accounting::account::account_type::account_type_models::{
 };
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 
 const SELECT_FIELDS: &str =
     "id,tenant_id,child_ids,parent_id,display_name,account_code,created_by,updated_by,created_at,updated_at";
@@ -103,34 +105,38 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
         &self,
         request: &CreateAccountTypeMasterRequest,
     ) -> Result<Uuid, DaoError> {
-        let query = INSERT_STATEMENT;
-        let id = Uuid::now_v7();
-        let account_type_id: Option<Uuid> = self
+        let simple_query = format!(r#"
+           begin transaction;
+           select create_account_type_master(Row('{}','{}',{},{},'{}',{},'{}','{}',{},{}));
+           commit;
+        "#, request.idempotence_key,
+                                   request.tenant_id,
+                                   request.child_ids.as_ref()
+                                       .map(|a| {
+                                           let k = a
+                                               .iter()
+                                               .map(|a| format!("'{}'", a))
+                                               .join(",");
+                                           format!("ARRAY[{}]", k)
+                                       })
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   request.parent_id
+                                       .map(|a| format!("'{}'", a))
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   request.display_name,
+                                   request.account_code
+                                       .map(|a| a.to_string())
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   request.audit_metadata.created_by,
+                                   request.audit_metadata.updated_by,
+                                   request.audit_metadata.created_at,
+                                   request.audit_metadata.updated_at
+        );
+        let conn = self
             .postgres_client
-            .get()
-            .await?
-            .query(
-                query,
-                &[
-                    &id,
-                    &request.tenant_id,
-                    &request.child_ids,
-                    &request.parent_id,
-                    &request.display_name,
-                    &request.account_code,
-                    &request.audit_metadata.created_by,
-                    &request.audit_metadata.updated_by,
-                    &request.audit_metadata.created_at,
-                    &request.audit_metadata.updated_at,
-                ],
-            )
-            .await?
-            .iter()
-            .map(|row| row.get(0))
-            .next();
-        account_type_id.ok_or_else(|| {
-            DaoError::PostgresQueryError("no id returned by insert statement".to_string())
-        })
+            .get().await?;
+        let rows = conn.simple_query(simple_query.as_str()).await?;
+        parse_db_output_of_insert_create_and_return_uuid(&rows)
     }
 
     async fn get_all_account_types_for_tenant_id(
@@ -138,7 +144,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
         tenant_id: Uuid,
     ) -> Result<Vec<AccountTypeMaster>, DaoError> {
         let query = ALL_TYPES_FOR_TENANT;
-       let account_types = self.postgres_client
+        let account_types = self.postgres_client
             .get()
             .await?
             .query(query, &[&tenant_id])
@@ -156,18 +162,19 @@ pub fn get_account_type_dao(pool: &'static Pool) -> Arc<dyn AccountTypeDao> {
     };
     Arc::new(dao)
 }
+
 #[cfg(test)]
 mod account_type_tests {
+    use spectral::assert_that;
+    use spectral::prelude::OptionAssertions;
     use crate::accounting::account::account_type::account_type_dao::{
         AccountTypeDao, AccountTypeDaoPostgresImpl,
     };
-    use crate::accounting::account::account_type::account_type_models::{
-        a_create_account_type_master_request, CreateAccountTypeMasterRequestTestBuilder,
-    };
+    use crate::accounting::account::account_type::account_type_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequest, CreateAccountTypeMasterRequestTestBuilder};
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
     };
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::{SEED_TENANT_ID};
 
     #[tokio::test]
     async fn tests() {
@@ -189,5 +196,49 @@ mod account_type_tests {
             .get_all_account_types_for_tenant_id(*SEED_TENANT_ID)
             .await.unwrap();
         assert!(k.len() > 5);
+    }
+
+    #[tokio::test]
+    async fn should_create_account_type_mst_when_only_1_new_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let account_type_mst_request = a_create_account_type_master_request(Default::default());
+        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client };
+        let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
+        let acc = account_type_dao.get_account_type_by_id(&id).await.unwrap();
+        assert_that!(acc).is_some();
+    }
+
+    #[tokio::test]
+    async fn should_return_existing_tenant_when_idempotency_key_is_same_as_earlier_completed_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let name = "tsting";
+        let account_type_mst_request =
+            a_create_account_type_master_request(
+                CreateAccountTypeMasterRequestTestBuilder {
+                    display_name: Some(name.to_string()),
+                    ..Default::default()
+                });
+        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client };
+        let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
+        let id2 = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
+        assert_that!(&id).is_equal_to(id2);
+        let number_of_acc_types_created: i64 = postgres_client
+            .get()
+            .await
+            .unwrap()
+            .query(
+                "select count(id) from account_type_master where display_name=$1",
+                &[&name],
+            )
+            .await
+            .unwrap()
+            .iter()
+            .map(|a| a.get(0))
+            .next()
+            .unwrap();
+        assert_that!(number_of_acc_types_created).is_equal_to(1)
+        ;
     }
 }

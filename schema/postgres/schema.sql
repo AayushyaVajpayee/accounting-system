@@ -191,7 +191,7 @@ create unique index unique_cin_company on company_master (tenant_id, cin);
 
 create type mime_type as enum ('csv','docx','jpeg','json','png','pdf','txt','xlsx');
 
-create type workflow_type as enum ('dummy_test','create_tenant');
+create type workflow_type as enum ('dummy_test','create_tenant','create_account_type_mst');
 
 create table idempotence_store
 (
