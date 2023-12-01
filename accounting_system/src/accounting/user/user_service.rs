@@ -2,17 +2,24 @@ use std::sync::Arc;
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::accounting::user::user_dao::{get_user_dao, UserDao};
 use crate::accounting::user::user_models::{CreateUserRequest, User};
+use crate::common_utils::dao_error::DaoError;
 
+#[derive(Debug, Error, PartialEq)]
+pub enum UserServiceError {
+    #[error(transparent)]
+    Db(#[from]DaoError)
+}
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UserService:Send+Sync {
-    async fn get_user_by_id(&self, id: Uuid) -> Option<User>;
-    async fn create_user(&self, user: &CreateUserRequest) -> Uuid;
+    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, UserServiceError>;
+    async fn create_user(&self, user: &CreateUserRequest) -> Result<Uuid, UserServiceError>;
 }
 
 #[allow(dead_code)]
@@ -41,12 +48,12 @@ struct UserServiceImpl {
 
 #[async_trait]
 impl UserService for UserServiceImpl {
-    async fn get_user_by_id(&self, id: Uuid) -> Option<User> {
+    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, UserServiceError> {
         //todo to be cached locally
-        self.user_dao.get_user_by_id(id).await
+        self.user_dao.get_user_by_id(id).await.map_err(|a| a.into())
     }
 
-    async fn create_user(&self, user: &CreateUserRequest) -> Uuid {
-        self.user_dao.create_user(user).await
+    async fn create_user(&self, user: &CreateUserRequest) -> Result<Uuid, UserServiceError> {
+        self.user_dao.create_user(user).await.map_err(|a| a.into())
     }
 }

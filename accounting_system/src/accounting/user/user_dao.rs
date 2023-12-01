@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::user::user_models::{CreateUserRequest, User};
+use crate::common_utils::dao_error::DaoError;
 
 const SELECT_FIELDS: &str = "id,tenant_id,first_name,last_name,email_id,mobile_number,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "app_user";
@@ -16,9 +17,9 @@ const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_F
 
 
 #[async_trait]
-pub trait UserDao:Send+Sync {
-    async fn get_user_by_id(&self, id: Uuid) -> Option<User>;
-    async fn create_user(&self, request: &CreateUserRequest) -> Uuid;
+pub trait UserDao: Send + Sync {
+    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, DaoError>;
+    async fn create_user(&self, request: &CreateUserRequest) -> Result<Uuid, DaoError>;
 }
 
 pub struct UserDaoPostgresImpl {
@@ -26,7 +27,7 @@ pub struct UserDaoPostgresImpl {
 }
 
 impl TryFrom<&Row> for User {
-    type Error = ();
+    type Error = DaoError;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(User {
@@ -57,19 +58,19 @@ pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
 
 #[async_trait]
 impl UserDao for UserDaoPostgresImpl {
-    async fn get_user_by_id(&self, id: Uuid) -> Option<User> {
+    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, DaoError> {
         let rows = self.postgres_client.get()
-            .await.unwrap()
+            .await?
             .query(BY_ID_QUERY,
-                   &[&id]).await.unwrap();
+                   &[&id]).await?;
         rows.iter().map(|row|
-            row.try_into().unwrap()
-        ).next()
+            row.try_into()
+        ).next().transpose()
     }
 
-    async fn create_user(&self, request: &CreateUserRequest) -> Uuid {
+    async fn create_user(&self, request: &CreateUserRequest) -> Result<Uuid, DaoError> {
         let id = Uuid::now_v7();
-        self.postgres_client.get().await.unwrap().query(
+        let k = self.postgres_client.get().await?.query(
             INSERT_STATEMENT, &[
                 &id,
                 &request.tenant_id,
@@ -82,9 +83,10 @@ impl UserDao for UserDaoPostgresImpl {
                 &request.audit_metadata.created_at,
                 &request.audit_metadata.updated_at
             ],
-        ).await.unwrap()
+        ).await?
             .iter()
-            .map(|row| row.get(0)).next().unwrap()
+            .map(|row| row.get(0)).next().unwrap();
+        Ok(k)
     }
 }
 
@@ -105,9 +107,9 @@ mod tests {
             }
         );
         let postgres_client = get_postgres_conn_pool(port).await;
-        let  user_dao = UserDaoPostgresImpl { postgres_client };
-        let user_id = user_dao.create_user(&user).await;
-        let user = user_dao.get_user_by_id(user_id).await.unwrap();
+        let user_dao = UserDaoPostgresImpl { postgres_client };
+        let user_id = user_dao.create_user(&user).await.unwrap();
+        let user = user_dao.get_user_by_id(user_id).await.unwrap().unwrap();
         assert_eq!(user.id, user_id);
     }
 }

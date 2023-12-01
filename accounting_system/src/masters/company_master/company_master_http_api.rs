@@ -44,6 +44,7 @@ impl ResponseError for ServiceError {
             ServiceError::CompanyWithPrimaryKeyExists => StatusCode::CONFLICT,
             ServiceError::OtherError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServiceError::TenantError(err) => {err.status_code()}
+            ServiceError::UserServiceError(err) => { err.status_code() }
         }
     }
 
@@ -69,6 +70,7 @@ impl ResponseError for ServiceError {
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
             ServiceError::TenantError(err) => {err.error_response()}
+            ServiceError::UserServiceError(err) => { err.error_response() }
         }
     }
 }

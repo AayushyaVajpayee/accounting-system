@@ -1,13 +1,17 @@
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
-use async_trait::async_trait;
 use std::sync::Arc;
+
+use async_trait::async_trait;
+#[cfg(test)]
+use mockall::automock;
 use thiserror::Error;
 use tracing::{error, instrument};
 use uuid::Uuid;
 
-use crate::accounting::user::user_service::UserService;
+use crate::accounting::postgres_factory::get_postgres_conn_pool;
+use crate::accounting::user::user_service::{UserService, UserServiceError};
+use crate::common_utils::dao_error::DaoError;
 use crate::masters::company_master::company_master_dao::{
-    get_company_master_dao, CompanyMasterDao,
+    CompanyMasterDao, get_company_master_dao,
 };
 use crate::masters::company_master::company_master_model::{
     CompanyIdentificationNumber, CompanyName,
@@ -15,9 +19,6 @@ use crate::masters::company_master::company_master_model::{
 use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
 use crate::masters::company_master::company_master_service::ServiceError::OtherError;
 use crate::tenant::tenant_service::{TenantService, TenantServiceError};
-#[cfg(test)]
-use mockall::automock;
-use crate::common_utils::dao_error::DaoError;
 
 #[cfg_attr(test, automock)]
 #[async_trait]
@@ -60,6 +61,8 @@ pub enum ServiceError {
     OtherError(String),
     #[error(transparent)]
     TenantError(#[from] TenantServiceError),
+    #[error(transparent)]
+    UserServiceError(#[from] UserServiceError)
 }
 
 impl From<DaoError> for ServiceError {
@@ -89,7 +92,7 @@ impl CompanyMasterServiceImpl {
             .tenant_service
             .get_tenant_by_id(request.tenant_id)
             .await?;
-        let user = self.user_service.get_user_by_id(request.created_by).await;
+        let user = self.user_service.get_user_by_id(request.created_by).await?;
         let company_name = CompanyName::validate(request.name.as_str());
         let cin = CompanyIdentificationNumber::validate(request.cin.as_str());
         if tenant.is_none() {
@@ -223,7 +226,7 @@ pub mod tests {
             .once();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Some(a_user(Default::default())))
+            .returning(|_a| Ok(Some(a_user(Default::default()))))
             .once();
         let mut company_service = CompanyMasterServiceImpl {
             dao: Arc::new(dao),
@@ -255,7 +258,7 @@ pub mod tests {
             .once();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Some(a_user(Default::default())))
+            .returning(|_a| Ok(Some(a_user(Default::default()))))
             .once();
         let company_service = CompanyMasterServiceImpl {
             dao: Arc::new(dao),
@@ -282,7 +285,7 @@ pub mod tests {
     async fn test_user_not_found_validation() {
         let mut user_service = MockUserService::new();
         let mut tenant_service = MockTenantService::new();
-        user_service.expect_get_user_by_id().returning(|_a| None);
+        user_service.expect_get_user_by_id().returning(|_a| Ok(None));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|a| Ok(Some(a_tenant(Default::default()))));
@@ -312,7 +315,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Some(a_user(Default::default())));
+            .returning(|_a| Ok(Some(a_user(Default::default()))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(None));
@@ -345,7 +348,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Some(a_user(Default::default())));
+            .returning(|_a| Ok(Some(a_user(Default::default()))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(Some(a_tenant(Default::default()))));
