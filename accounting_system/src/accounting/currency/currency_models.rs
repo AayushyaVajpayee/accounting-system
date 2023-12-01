@@ -53,6 +53,7 @@ pub struct CurrencyMaster {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateCurrencyMasterRequest {
+    pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
     pub scale: i16,
     pub display_name: String,
@@ -63,6 +64,7 @@ pub struct CreateCurrencyMasterRequest {
 #[cfg(test)]
 #[derive(Debug, Default)]
 pub struct CreateCurrencyMasterRequestTestBuilder {
+    pub idempotence_key: Option<Uuid>,
     pub tenant_id: Option<Uuid>,
     pub scale: Option<i16>,
     pub display_name: Option<String>,
@@ -75,6 +77,7 @@ pub fn a_create_currency_master_request(builder:
                                         CreateCurrencyMasterRequestTestBuilder)
                                         -> CreateCurrencyMasterRequest {
     CreateCurrencyMasterRequest {
+        idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
         tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
         scale: builder.scale.unwrap_or(0),
         display_name: builder.display_name.unwrap_or("".to_string()),
