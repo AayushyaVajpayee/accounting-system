@@ -9,6 +9,7 @@ use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::accounting::user::user_models::{CreateUserRequest, User};
 use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 
 const SELECT_FIELDS: &str = "id,tenant_id,first_name,last_name,email_id,mobile_number,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "app_user";
@@ -18,7 +19,7 @@ const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_F
 
 #[async_trait]
 pub trait UserDao: Send + Sync {
-    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, DaoError>;
+    async fn get_user_by_id(&self, id: &Uuid) -> Result<Option<User>, DaoError>;
     async fn create_user(&self, request: &CreateUserRequest) -> Result<Uuid, DaoError>;
 }
 
@@ -58,7 +59,7 @@ pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
 
 #[async_trait]
 impl UserDao for UserDaoPostgresImpl {
-    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, DaoError> {
+    async fn get_user_by_id(&self, id: &Uuid) -> Result<Option<User>, DaoError> {
         let rows = self.postgres_client.get()
             .await?
             .query(BY_ID_QUERY,
@@ -69,29 +70,40 @@ impl UserDao for UserDaoPostgresImpl {
     }
 
     async fn create_user(&self, request: &CreateUserRequest) -> Result<Uuid, DaoError> {
-        let id = Uuid::now_v7();
-        let k = self.postgres_client.get().await?.query(
-            INSERT_STATEMENT, &[
-                &id,
-                &request.tenant_id,
-                &request.first_name,
-                &request.last_name,
-                &request.email_id,
-                &request.mobile_number,
-                &request.audit_metadata.created_by,
-                &request.audit_metadata.updated_by,
-                &request.audit_metadata.created_at,
-                &request.audit_metadata.updated_at
-            ],
-        ).await?
-            .iter()
-            .map(|row| row.get(0)).next().unwrap();
-        Ok(k)
+        let simple_query = format!(r#"
+        begin transaction;
+        select create_app_user(Row('{}','{}','{}',{},{},{},'{}','{}',{},{}));
+        commit;
+        "#,
+                                   request.idempotence_key,
+                                   request.tenant_id,
+                                   request.first_name,
+                                   request.last_name.as_ref()
+                                       .map(|a| format!("'{}'", a))
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   request.email_id.as_ref()
+                                       .map(|a| format!("'{}'", a))
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   request.mobile_number.as_ref()
+                                       .map(|a| format!("'{}'", a))
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   request.audit_metadata.created_by,
+                                   request.audit_metadata.updated_by,
+                                   request.audit_metadata.created_at,
+                                   request.audit_metadata.updated_at
+        );
+        let k = self.postgres_client.get().await?
+            .simple_query(simple_query.as_str())
+            .await?;
+        parse_db_output_of_insert_create_and_return_uuid(&k)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use spectral::assert_that;
+    use spectral::option::OptionAssertions;
+
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::tests::{a_create_user_request, CreateUserRequestTestBuilder};
@@ -109,7 +121,52 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port).await;
         let user_dao = UserDaoPostgresImpl { postgres_client };
         let user_id = user_dao.create_user(&user).await.unwrap();
-        let user = user_dao.get_user_by_id(user_id).await.unwrap().unwrap();
+        let user = user_dao.get_user_by_id(&user_id).await.unwrap().unwrap();
         assert_eq!(user.id, user_id);
+    }
+
+
+    #[tokio::test]
+    async fn should_create_account_when_only_1_new_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let user_request = a_create_user_request(Default::default());
+        let user_dao = UserDaoPostgresImpl { postgres_client };
+        let id = user_dao.create_user(&user_request).await.unwrap();
+        let acc = user_dao.get_user_by_id(&id).await.unwrap();
+        assert_that!(acc).is_some();
+    }
+
+    #[tokio::test]
+    async fn should_return_existing_account_when_idempotency_key_is_same_as_earlier_completed_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let name = "tsting";
+        let user_request =
+            a_create_user_request(
+                CreateUserRequestTestBuilder {
+                    first_name: Some(name.to_string()),
+                    ..Default::default()
+                });
+        let user_dao = UserDaoPostgresImpl { postgres_client };
+        let id = user_dao.create_user(&user_request).await;
+        let id2 = user_dao.create_user(&user_request).await;
+        assert_that!(&id).is_equal_to(id2);
+        let number_of_users_created: i64 = postgres_client
+            .get()
+            .await
+            .unwrap()
+            .query(
+                "select count(id) from app_user where first_name=$1",
+                &[&name],
+            )
+            .await
+            .unwrap()
+            .iter()
+            .map(|a| a.get(0))
+            .next()
+            .unwrap();
+        assert_that!(number_of_users_created).is_equal_to(1)
+        ;
     }
 }

@@ -23,6 +23,7 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateUserRequest {
+    pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
     pub first_name: String,
     pub last_name: Option<String>,
@@ -52,6 +53,7 @@ pub mod tests {
 
     #[derive(Default)]
     pub struct CreateUserRequestTestBuilder {
+        pub idempotence_key: Option<Uuid>,
         pub tenant_id: Option<Uuid>,
         pub first_name: Option<String>,
         pub last_name: Option<String>,
@@ -73,6 +75,7 @@ pub mod tests {
     }
     pub fn a_create_user_request(builder: CreateUserRequestTestBuilder) -> CreateUserRequest {
         CreateUserRequest {
+            idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             first_name: builder.first_name.unwrap_or("".to_string().clone()),
             last_name: builder.last_name,
