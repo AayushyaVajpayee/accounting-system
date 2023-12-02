@@ -17,7 +17,7 @@ use crate::masters::company_master::company_master_model::{
     CompanyIdentificationNumber, CompanyName,
 };
 use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
-use crate::masters::company_master::company_master_service::ServiceError::OtherError;
+use crate::masters::company_master::company_master_service::ServiceError::Other;
 use crate::tenant::tenant_service::{TenantService, TenantServiceError};
 
 #[cfg_attr(test, automock)]
@@ -46,10 +46,10 @@ pub struct CompanyMasterServiceImpl {
 #[derive(Debug, Error, PartialEq)]
 pub enum ServiceError {
     #[error("validation failures \n {}", .0.join("\n"))]
-    ValidationError(Vec<String>),
+    Validation(Vec<String>),
     //4xx
     #[error("error in db {}", 0)]
-    DBError(DaoError),
+    Db(DaoError),
     //5xx
     //have to separate out idempotency check
     #[error("company with this cin already exists")]
@@ -58,11 +58,11 @@ pub enum ServiceError {
     #[error("company with this is already exists")]
     CompanyWithPrimaryKeyExists,
     #[error("{0}")]
-    OtherError(String),
+    Other(String),
     #[error(transparent)]
-    TenantError(#[from] TenantServiceError),
+    Tenant(#[from] TenantServiceError),
     #[error(transparent)]
-    UserServiceError(#[from] UserServiceError)
+    UserService(#[from] UserServiceError),
 }
 
 impl From<DaoError> for ServiceError {
@@ -70,7 +70,7 @@ impl From<DaoError> for ServiceError {
         match dao_err {
             DaoError::ConnectionPool(_) |
             DaoError::PostgresQueryError(_) |
-            DaoError::InvalidEntityToDbRowConversion(_) | DaoError::ReturnedValueNone => ServiceError::DBError(dao_err),
+            DaoError::InvalidEntityToDbRowConversion(_) | DaoError::ReturnedValueNone => ServiceError::Db(dao_err),
             DaoError::UniqueConstraintViolated {
                 ref constraint_name,
             } => {
@@ -79,7 +79,7 @@ impl From<DaoError> for ServiceError {
                 } else if constraint_name.as_str() == "company_master_pkey" {
                     return ServiceError::CompanyWithPrimaryKeyExists;
                 }
-                ServiceError::DBError(dao_err)
+                ServiceError::Db(dao_err)
             }
         }
     }
@@ -124,27 +124,17 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
     ) -> Result<Uuid, ServiceError> {
         let validations = self.validate_create_company_request(request).await?;
         if !validations.is_empty() {
-            return Err(ServiceError::ValidationError(validations));
+            return Err(ServiceError::Validation(validations));
         }
         let company_master = request.to_company_master().map_err(|a| {
             error!(?a,%a,"error while converting company creation request to company master");
-            OtherError(a.to_string())
+            Other(a.to_string())
         })?;
         let res = self
             .dao
-            .create_new_company_for_tenant(&company_master)
+            .create_new_company_for_tenant(&company_master, &request.idempotence_key)
             .await?;
-        if res != 1_u64 {
-            error!(
-                res,
-                "only 1 row should have been inserted during company creation but was more or less"
-            );
-            return Err(OtherError(format!(
-                "only row should have been inserted during company creation but count was {}",
-                res
-            )));
-        }
-        Ok(company_master.base_master_fields.id)
+        Ok(res)
     }
 }
 
@@ -218,7 +208,7 @@ pub mod tests {
         let mut user_service = MockUserService::new();
         let mut tenant_service = MockTenantService::new();
         dao.expect_create_new_company_for_tenant()
-            .return_once(|_a| Err(DaoError::UniqueConstraintViolated { constraint_name }))
+            .return_once(|_a, _| Err(DaoError::UniqueConstraintViolated { constraint_name }))
             .once();
         tenant_service
             .expect_get_tenant_by_id()
@@ -243,43 +233,6 @@ pub mod tests {
         assert_that!(actual_err).is_equal_to(expected_err);
     }
 
-    #[traced_test]
-    #[tokio::test]
-    async fn test_no_row_updated_error() {
-        let mut dao = MockCompanyMasterDao::new();
-        let mut user_service = MockUserService::new();
-        let mut tenant_service = MockTenantService::new();
-        dao.expect_create_new_company_for_tenant()
-            .return_once(|_a| Ok(0))
-            .once();
-        tenant_service
-            .expect_get_tenant_by_id()
-            .returning(|_a| Ok(Some(a_tenant(Default::default()))))
-            .once();
-        user_service
-            .expect_get_user_by_id()
-            .returning(|_a| Ok(Some(a_user(Default::default()))))
-            .once();
-        let company_service = CompanyMasterServiceImpl {
-            dao: Arc::new(dao),
-            tenant_service: Arc::new(tenant_service),
-            user_service: Arc::new(user_service),
-        };
-        let company_request = a_create_company_request(Default::default());
-        let p = company_service
-            .create_new_company_for_tenant(&company_request)
-            .await;
-        assert_that!(p).is_err();
-        match p.as_ref().unwrap_err() {
-            ServiceError::OtherError(_) => {}
-            _ => {
-                panic!(
-                    "expected error should be other error but was {:?}",
-                    p.as_ref().unwrap_err()
-                )
-            }
-        }
-    }
 
     #[tokio::test]
     async fn test_user_not_found_validation() {

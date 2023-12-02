@@ -38,22 +38,22 @@ struct ErrorsResponse{
 impl ResponseError for ServiceError {
     fn status_code(&self) -> StatusCode {
         match self {
-            ServiceError::ValidationError(_) => StatusCode::BAD_REQUEST,
-            ServiceError::DBError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ServiceError::Validation(_) => StatusCode::BAD_REQUEST,
+            ServiceError::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServiceError::CompanyCinAlreadyExists => StatusCode::CONFLICT,
             ServiceError::CompanyWithPrimaryKeyExists => StatusCode::CONFLICT,
-            ServiceError::OtherError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ServiceError::TenantError(err) => {err.status_code()}
-            ServiceError::UserServiceError(err) => { err.status_code() }
+            ServiceError::Other(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ServiceError::Tenant(err) => { err.status_code() }
+            ServiceError::UserService(err) => { err.status_code() }
         }
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
         match self {
-            ServiceError::ValidationError(errs) => {
+            ServiceError::Validation(errs) => {
                 HttpResponse::build(self.status_code()).json(Errors { errors: errs })
             }
-            ServiceError::DBError(errs) => {
+            ServiceError::Db(errs) => {
                 let err_list = vec![errs.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
@@ -65,12 +65,12 @@ impl ResponseError for ServiceError {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            ServiceError::OtherError(a) => {
+            ServiceError::Other(a) => {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            ServiceError::TenantError(err) => {err.error_response()}
-            ServiceError::UserServiceError(err) => { err.error_response() }
+            ServiceError::Tenant(err) => { err.error_response() }
+            ServiceError::UserService(err) => { err.error_response() }
         }
     }
 }

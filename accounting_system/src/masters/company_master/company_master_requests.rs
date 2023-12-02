@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 #[derive(Debug,Serialize,Deserialize)]
 pub struct CreateCompanyRequest {
+    pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
     pub name: String,
     pub cin: String,
@@ -18,6 +19,7 @@ pub mod tests {
 
     #[derive(Debug, Default)]
     pub struct CreateCompanyRequestBuilder {
+        pub idempotence_key: Option<Uuid>,
         pub tenant_id: Option<Uuid>,
         pub name: Option<String>,
         pub cin: Option<String>,
@@ -25,6 +27,7 @@ pub mod tests {
     }
     pub fn a_create_company_request(builder: CreateCompanyRequestBuilder) -> CreateCompanyRequest {
         CreateCompanyRequest {
+            idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             name: builder.name.unwrap_or_else(|| "some company".to_string()),
             cin: builder.cin.unwrap_or_else(|| {

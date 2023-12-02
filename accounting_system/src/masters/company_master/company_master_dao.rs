@@ -1,22 +1,23 @@
 use std::sync::Arc;
+
 use async_trait::async_trait;
 use const_format::concatcp;
-use deadpool_postgres::{GenericClient, Pool, PoolError};
-use tokio_postgres::error::{DbError, SqlState};
-use tokio_postgres::Row;
-use tracing::{error, instrument};
-use uuid::Uuid;
+use deadpool_postgres::{GenericClient, Pool};
 #[cfg(test)]
 use mockall::automock;
+use tokio_postgres::Row;
+use tracing::instrument;
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 use crate::masters::company_master::company_master_dao::DaoError::InvalidEntityToDbRowConversion;
-use crate::masters::company_master::company_master_model::MasterStatusEnum::{Approved, Deleted};
 use crate::masters::company_master::company_master_model::{
     BaseMasterFields, CompanyIdentificationNumber, CompanyMaster, CompanyName, MasterStatusEnum,
     MasterUpdationRemarks,
 };
+use crate::masters::company_master::company_master_model::MasterStatusEnum::{Approved, Deleted};
 
 const SELECT_FIELDS:&str ="id,entity_version_id,tenant_id,active,approval_status,remarks,name,cin,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "company_master";
@@ -72,7 +73,7 @@ impl TryFrom<&Row> for CompanyMaster {
         let remarks: Option<&str> = row.get(5);
         let remarks = if remarks.is_some() {
             let k = MasterUpdationRemarks::new(remarks.unwrap())
-                .map_err(|a| InvalidEntityToDbRowConversion(a))?;
+                .map_err(InvalidEntityToDbRowConversion)?;
             Some(k)
         } else {
             None
@@ -115,7 +116,7 @@ pub trait CompanyMasterDao:Send+Sync {
         &self,
         tenant_id: Uuid,
     ) -> Result<Vec<CompanyMaster>, DaoError>;
-    async fn create_new_company_for_tenant(&self, entity: &CompanyMaster) -> Result<u64, DaoError>;
+    async fn create_new_company_for_tenant(&self, entity: &CompanyMaster, idempotence_key: &Uuid) -> Result<Uuid, DaoError>;
     // async fn update_company_data_for_tenant(&self);
     async fn soft_delete_company_for_tenant(
         &self,
@@ -159,32 +160,31 @@ impl CompanyMasterDao for CompanyMasterDaoPostgresImpl {
         Ok(rows)
     }
     #[instrument(skip(self))]
-    async fn create_new_company_for_tenant(&self, entity: &CompanyMaster) -> Result<u64, DaoError> {
+    async fn create_new_company_for_tenant(&self, entity: &CompanyMaster, idempotence_key: &Uuid) -> Result<Uuid, DaoError> {
+        let simple_query = format!(r#"
+        begin transaction;
+        select create_company_master(Row('{}',{},'{}',{},{}::smallint,{},'{}','{}','{}','{}',{},{}),'{}');
+        commit;
+        "#,
+                                   entity.base_master_fields.id,
+                                   entity.base_master_fields.entity_version_id,
+                                   entity.base_master_fields.tenant_id,
+                                   entity.base_master_fields.active,
+                                   entity.base_master_fields.approval_status as i16,
+                                   entity.base_master_fields.remarks.as_ref()
+                                       .map(|a| format!("'{}'", a.get_str()))
+                                       .unwrap_or_else(|| "null".to_string()),
+                                   entity.name.get_str(),
+                                   entity.cin.get_str(),
+                                   entity.audit_metadata.created_by,
+                                   entity.audit_metadata.updated_by,
+                                   entity.audit_metadata.created_at,
+                                   entity.audit_metadata.updated_at,
+                                   idempotence_key
+        );
         let conn = self.postgres_client.get().await?;
-        let inserted_rows = conn
-            .execute(
-                INSERT,
-                &[
-                    &entity.base_master_fields.id,
-                    &entity.base_master_fields.entity_version_id,
-                    &entity.base_master_fields.tenant_id,
-                    &entity.base_master_fields.active,
-                    &(entity.base_master_fields.approval_status as i16),
-                    &entity
-                        .base_master_fields
-                        .remarks
-                        .as_ref()
-                        .map(|a| a.get_str()),
-                    &entity.name.get_str(),
-                    &entity.cin.get_str(),
-                    &entity.audit_metadata.created_by,
-                    &entity.audit_metadata.updated_by,
-                    &entity.audit_metadata.created_at,
-                    &entity.audit_metadata.updated_at,
-                ],
-            )
-            .await?;
-        Ok(inserted_rows)
+        let rows = conn.simple_query(simple_query.as_str()).await?;
+        parse_db_output_of_insert_create_and_return_uuid(&rows)
     }
 
     async fn soft_delete_company_for_tenant(
@@ -218,6 +218,7 @@ mod tests {
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
     use spectral::prelude::VecAssertions;
+    use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
@@ -227,12 +228,12 @@ mod tests {
     use crate::masters::company_master::company_master_dao::{
         CompanyMasterDao, CompanyMasterDaoPostgresImpl, TABLE_NAME,
     };
+    use crate::masters::company_master::company_master_model::{CompanyName, MasterUpdationRemarks};
+    use crate::masters::company_master::company_master_model::MasterStatusEnum::Approved;
     use crate::masters::company_master::company_master_model::test_data::{
         a_base_master_field, a_company_master, BaseMasterFieldsTestDataBuilder,
         CompanyMasterTestDataBuilder,
     };
-    use crate::masters::company_master::company_master_model::MasterStatusEnum::Approved;
-    use crate::masters::company_master::company_master_model::MasterUpdationRemarks;
 
     #[tokio::test]
     async fn test_insert_and_get_for_company_master() {
@@ -247,13 +248,14 @@ mod tests {
             })),
             ..Default::default()
         });
-        dao.create_new_company_for_tenant(&company_master)
+        let idempotence_key = Uuid::now_v7();
+        let id = dao.create_new_company_for_tenant(&company_master, &idempotence_key)
             .await
             .unwrap();
         let k = dao
             .get_company_by_id(
                 company_master.base_master_fields.tenant_id,
-                company_master.base_master_fields.id,
+                id,
             )
             .await
             .unwrap();
@@ -261,7 +263,49 @@ mod tests {
         assert_that!(k)
             .is_some()
             .map(|a| &a.base_master_fields.id)
-            .is_equal_to(company_master.base_master_fields.id);
+            .is_equal_to(id);
+    }
+
+
+    #[tokio::test]
+    async fn should_create_company_mst_when_only_1_new_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let company_request = a_company_master(Default::default());
+        let company_mst_dao = CompanyMasterDaoPostgresImpl { postgres_client };
+        let idempotence_key = Uuid::now_v7();
+        let id = company_mst_dao.create_new_company_for_tenant(&company_request, &idempotence_key).await.unwrap();
+        let company_mst = company_mst_dao.get_company_by_id(company_request.base_master_fields.tenant_id, id).await.unwrap();
+        assert_that!(company_mst).is_some();
+    }
+
+    #[tokio::test]
+    async fn should_return_existing_company_mst_when_idempotency_key_is_same_as_earlier_completed_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port).await;
+        let name = "testing";
+        let company_mst = a_company_master(CompanyMasterTestDataBuilder { name: Some(CompanyName::new(name).unwrap()), ..Default::default() });
+        let company_dao = CompanyMasterDaoPostgresImpl { postgres_client };
+        let idempotence_key = Uuid::now_v7();
+        let id = company_dao.create_new_company_for_tenant(&company_mst, &idempotence_key).await.unwrap();
+        let id2 = company_dao.create_new_company_for_tenant(&company_mst, &idempotence_key).await.unwrap();
+        assert_that!(&id).is_equal_to(id2);
+        let number_of_company_mst_created: i64 = postgres_client
+            .get()
+            .await
+            .unwrap()
+            .query(
+                "select count(id) from company_master where name=$1",
+                &[&name],
+            )
+            .await
+            .unwrap()
+            .iter()
+            .map(|a| a.get(0))
+            .next()
+            .unwrap();
+        assert_that!(number_of_company_mst_created).is_equal_to(1)
+        ;
     }
 
     #[tokio::test]
@@ -276,20 +320,21 @@ mod tests {
             })),
             ..Default::default()
         });
-        dao.create_new_company_for_tenant(&company_master)
+        let idempotence_key = Uuid::now_v7();
+        let id = dao.create_new_company_for_tenant(&company_master, &idempotence_key)
             .await
             .unwrap();
         let p = dao
             .get_company_by_id(
                 company_master.base_master_fields.tenant_id,
-                company_master.base_master_fields.id,
+                id,
             )
             .await
             .unwrap();
         let updated_rows = dao
             .soft_delete_company_for_tenant(
                 company_master.base_master_fields.tenant_id,
-                company_master.base_master_fields.id,
+                id,
                 p.unwrap().base_master_fields.entity_version_id,
                 &MasterUpdationRemarks::new("unit testing delete function").unwrap(),
                 *SEED_USER_ID,
@@ -299,7 +344,7 @@ mod tests {
         assert_that!(updated_rows).is_equal_to(1);
         let k = get_audit_service_for_tests(postgres_client);
         let ppp = k
-            .get_audit_logs_for_id_and_table(company_master.base_master_fields.id, TABLE_NAME)
+            .get_audit_logs_for_id_and_table(id, TABLE_NAME)
             .await;
         assert_that!(ppp).has_length(1);
     }
@@ -316,7 +361,8 @@ mod tests {
             })),
             ..Default::default()
         });
-        dao.create_new_company_for_tenant(&company_master)
+        let idempotence_key = Uuid::now_v7();
+        let id = dao.create_new_company_for_tenant(&company_master, &idempotence_key)
             .await
             .unwrap();
         let p = dao

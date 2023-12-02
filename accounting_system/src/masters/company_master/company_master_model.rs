@@ -197,6 +197,7 @@ pub struct CompanyMaster {
     pub audit_metadata: AuditMetadataBase,
 }
 
+
 #[derive(Debug)]
 pub struct CompanyUnitMaster {
     base_master_fields: BaseMasterFields,
@@ -252,7 +253,7 @@ pub mod test_data {
 
     use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
     use crate::masters::company_master::company_master_model::{BaseMasterFields, CompanyIdentificationNumber, CompanyMaster, CompanyName, GstinNo, MasterStatusEnum, MasterUpdationRemarks};
-    use crate::masters::company_master::company_master_model::MasterStatusEnum::PendingApproval;
+    use crate::masters::company_master::company_master_model::MasterStatusEnum::{Approved, PendingApproval};
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
     const GST_STATE_CODE_LIST: [u16; 39] = [
@@ -315,7 +316,7 @@ pub mod test_data {
             entity_version_id: builder.entity_version_id.unwrap_or(0),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             active: builder.active.unwrap_or(true),
-            approval_status: builder.approval_status.unwrap_or(PendingApproval),
+            approval_status: builder.approval_status.unwrap_or(Approved),
             remarks: builder.remarks,
         }
     }
