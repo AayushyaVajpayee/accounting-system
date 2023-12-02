@@ -194,7 +194,7 @@ pub mod tests {
     #[rstest]
     #[case("unique_cin_company", ServiceError::CompanyCinAlreadyExists)]
     #[case("company_master_pkey", ServiceError::CompanyWithPrimaryKeyExists)]
-    #[case("some_random_constraint", ServiceError::DBError(DaoError::UniqueConstraintViolated{constraint_name: "some_random_constraint".to_string()}))]
+    #[case("some_random_constraint", ServiceError::Db(DaoError::UniqueConstraintViolated{constraint_name: "some_random_constraint".to_string()}))]
     async fn test_duplicate_cin_insertion(
         #[case] constraint_name: String,
         #[case] error: ServiceError,

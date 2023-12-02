@@ -132,11 +132,11 @@ mod tests {
         assert_eq!(res, uuid);
     }
     #[rstest]
-    #[case(ServiceError::ValidationError(vec!["some rr".to_string()]),400)]
-    #[case(ServiceError::DBError(DaoError::ConnectionPool("pool exhausted".to_string())),500)]
+    #[case(ServiceError::Validation(vec ! ["some rr".to_string()]), 400)]
+    #[case(ServiceError::Db(DaoError::ConnectionPool("pool exhausted".to_string())), 500)]
     #[case(ServiceError::CompanyCinAlreadyExists,409)]
     #[case(ServiceError::CompanyWithPrimaryKeyExists,409)]
-    #[case(ServiceError::OtherError("some other error".to_string()),500)]
+    #[case(ServiceError::Other("some other error".to_string()), 500)]
     async fn create_company_test_error(#[case] err:ServiceError,#[case] http_code:u16) {
         // std::env::set_var(env"RUST_LOG", "debug");
         // env_logger::init();
