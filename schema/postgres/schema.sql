@@ -201,4 +201,15 @@ create table idempotence_store
     created_at      bigint default extract(epoch from now()) * 1000000,
     updated_at      bigint default extract(epoch from now()) * 1000000,
     primary key (idempotence_key, workflow_type)
-)
+);
+
+
+create table pagination_data_cache
+(
+    xx_hash     bytea primary key,
+    total_pages integer not null,
+    total_count integer not null,
+    created_at  bigint default extract(epoch from now()) * 1000000,
+    expire_at   bigint  not null
+);
+
