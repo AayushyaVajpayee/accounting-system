@@ -24,6 +24,7 @@ dependencies = [
  "itertools 0.12.0",
  "lazy_static",
  "log",
+ "maplit",
  "mockall",
  "moka",
  "pin-utils",
@@ -1735,6 +1736,12 @@ checksum = "6d0d1830bcd151a6fc4aea1369af235b36c1528fe976b8ff678683c9995eade8"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "maplit"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
 
 [[package]]
 name = "matchers"
