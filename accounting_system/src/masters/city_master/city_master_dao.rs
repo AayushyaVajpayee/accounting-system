@@ -33,14 +33,15 @@ pub trait CityMasterDao:Send+Sync {
 
     async fn get_city_by_id(&self, id: &Uuid) -> Option<CityMaster>;
 }
-pub fn get_city_master_dao(client:&'static Pool)->Arc<dyn CityMasterDao >{
+
+pub fn get_city_master_dao(client: Arc<Pool>) -> Arc<dyn CityMasterDao> {
     let city_master_dao = CityMasterDaoImpl{
         postgres_client:client
     };
     Arc::new(city_master_dao)
 }
 struct CityMasterDaoImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 impl TryFrom<&Row> for CityMaster {
@@ -90,7 +91,7 @@ mod tests{
     #[tokio::test]
     async fn should_be_able_to_fetch_all_cities(){
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let city_master_dao = CityMasterDaoImpl{postgres_client};
         let cities = city_master_dao.get_all_cities().await;
         assert!(!cities.is_empty());
@@ -99,7 +100,7 @@ mod tests{
     #[tokio::test]
     async fn should_be_able_to_fetch_city_by_id(){
         let port =get_postgres_image_port().await;
-        let postgres_client =  get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let city_master_dao = CityMasterDaoImpl{postgres_client};
         let city = city_master_dao.get_city_by_id(&SEED_CITY_ID).await;
         assert_that!(city).is_some();

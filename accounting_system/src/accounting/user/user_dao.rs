@@ -24,7 +24,7 @@ pub trait UserDao: Send + Sync {
 }
 
 pub struct UserDaoPostgresImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 impl TryFrom<&Row> for User {
@@ -50,7 +50,7 @@ impl TryFrom<&Row> for User {
 
 
 #[allow(dead_code)]
-pub fn get_user_dao(client: &'static Pool) -> Arc<dyn UserDao> {
+pub fn get_user_dao(client: Arc<Pool>) -> Arc<dyn UserDao> {
     let user_dao = UserDaoPostgresImpl {
         postgres_client: client
     };
@@ -118,8 +118,8 @@ mod tests {
                 ..Default::default()
             }
         );
-        let postgres_client = get_postgres_conn_pool(port).await;
-        let user_dao = UserDaoPostgresImpl { postgres_client };
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let user_id = user_dao.create_user(&user).await.unwrap();
         let user = user_dao.get_user_by_id(&user_id).await.unwrap().unwrap();
         assert_eq!(user.id, user_id);
@@ -129,9 +129,9 @@ mod tests {
     #[tokio::test]
     async fn should_create_account_when_only_1_new_request() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let user_request = a_create_user_request(Default::default());
-        let user_dao = UserDaoPostgresImpl { postgres_client };
+        let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = user_dao.create_user(&user_request).await.unwrap();
         let acc = user_dao.get_user_by_id(&id).await.unwrap();
         assert_that!(acc).is_some();
@@ -140,7 +140,7 @@ mod tests {
     #[tokio::test]
     async fn should_return_existing_account_when_idempotency_key_is_same_as_earlier_completed_request() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let name = "tsting";
         let user_request =
             a_create_user_request(
@@ -148,9 +148,9 @@ mod tests {
                     first_name: Some(name.to_string()),
                     ..Default::default()
                 });
-        let user_dao = UserDaoPostgresImpl { postgres_client };
-        let id = user_dao.create_user(&user_request).await;
-        let id2 = user_dao.create_user(&user_request).await;
+        let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
+        let id = user_dao.create_user(&user_request).await.unwrap();
+        let id2 = user_dao.create_user(&user_request).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
         let number_of_users_created: i64 = postgres_client
             .get()

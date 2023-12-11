@@ -12,10 +12,11 @@ pub struct CreateCompanyRequest {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::masters::company_master::company_master_model::test_data::generate_random_company_identification_number;
-    use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
+    use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
     use uuid::Uuid;
+    use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::masters::company_master::company_master_models::company_identification_number::cin_tests::generate_random_company_identification_number;
 
     #[derive(Debug, Default)]
     pub struct CreateCompanyRequestBuilder {
@@ -35,7 +36,7 @@ pub mod tests {
                     .get_str()
                     .to_string()
             }),
-            created_by: Default::default(),
+            created_by: *SEED_USER_ID,
         }
     }
 }

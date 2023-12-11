@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
 use thiserror::Error;
@@ -10,7 +11,7 @@ use crate::accounting::user::user_dao::{get_user_dao, UserDao};
 use crate::accounting::user::user_models::{CreateUserRequest, User};
 use crate::common_utils::dao_error::DaoError;
 
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum UserServiceError {
     #[error(transparent)]
     Db(#[from]DaoError)
@@ -23,9 +24,8 @@ pub trait UserService:Send+Sync {
 }
 
 #[allow(dead_code)]
-pub fn get_user_service() -> Arc<dyn UserService> {
-    let pclient = get_postgres_conn_pool();
-    let user_dao = get_user_dao(pclient);
+pub fn get_user_service(arc: Arc<Pool>) -> Arc<dyn UserService> {
+    let user_dao = get_user_dao(arc);
     let user_service = UserServiceImpl {
         user_dao
     };
@@ -34,7 +34,7 @@ pub fn get_user_service() -> Arc<dyn UserService> {
 
 #[allow(dead_code)]
 #[cfg(test)]
-pub fn get_user_service_for_test(postgres_client: &'static deadpool_postgres::Pool) -> Arc<dyn UserService> {
+pub fn get_user_service_for_test(postgres_client: Arc<Pool>) -> Arc<dyn UserService> {
     let user_dao = get_user_dao(postgres_client);
     let user_service = UserServiceImpl {
         user_dao

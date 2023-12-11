@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use uuid::Uuid;
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::ledger::ledger_transfer_dao::{get_ledger_transfer_dao, LedgerTransferDao};
@@ -16,9 +17,8 @@ struct LedgerTransferServiceImpl{
     dao:Arc<dyn LedgerTransferDao>
 }
 
-pub fn get_ledger_transfer_service()->Arc<dyn LedgerTransferService>{
-let pclient = get_postgres_conn_pool();
-    let dao = get_ledger_transfer_dao(pclient);
+pub fn get_ledger_transfer_service(arc: Arc<Pool>) -> Arc<dyn LedgerTransferService> {
+    let dao = get_ledger_transfer_dao(arc);
     let service = LedgerTransferServiceImpl{
         dao
     };

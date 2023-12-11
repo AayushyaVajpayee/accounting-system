@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use moka::future::Cache;
 use uuid::Uuid;
 
@@ -14,9 +15,9 @@ pub trait PincodeMasterService:Send+Sync {
     async fn get_all_pincodes(&self)->Option<Arc<Vec<Arc<PincodeMaster>>>>;
     async fn get_pincode_by_id(&self, id: &Uuid) -> Option<Arc<PincodeMaster>>;
 }
-pub fn get_pincode_master_service() -> Arc<dyn PincodeMasterService> {
-    let pclient = get_postgres_conn_pool();
-    let pincode_dao = get_pincode_master_dao(pclient);
+
+pub fn get_pincode_master_service(arc: Arc<Pool>) -> Arc<dyn PincodeMasterService> {
+    let pincode_dao = get_pincode_master_dao(arc);
     let cache: Cache<i32, Arc<Vec<Arc<PincodeMaster>>>> = Cache::new(1);
     let city_master_service = PincodeMasterServiceImpl {
         dao: pincode_dao,

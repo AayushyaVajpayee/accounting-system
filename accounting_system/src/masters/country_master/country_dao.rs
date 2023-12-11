@@ -20,7 +20,7 @@ pub trait CountryMasterDao:Send+Sync {
 }
 
 struct CountryMasterDaoPostgresImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 impl TryFrom<&Row> for CountryMaster {
@@ -40,7 +40,7 @@ impl TryFrom<&Row> for CountryMaster {
     }
 }
 
-pub fn get_country_master_dao(client: &'static Pool)->Arc<dyn CountryMasterDao>{
+pub fn get_country_master_dao(client: Arc<Pool>) -> Arc<dyn CountryMasterDao> {
     let country_master_dao = CountryMasterDaoPostgresImpl{
         postgres_client:client
     };
@@ -64,7 +64,7 @@ mod tests{
     #[tokio::test]
     async fn should_be_able_to_fetch_all_countries(){
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let country_master_dao = CountryMasterDaoPostgresImpl{
             postgres_client
         };

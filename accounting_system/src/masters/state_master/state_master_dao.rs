@@ -30,7 +30,7 @@ pub trait StateMasterDao:Send+Sync {
 }
 
 struct StateMasterDaoPostgresImpl {
-    postgres_client: &'static Pool
+    postgres_client: Arc<Pool>
 }
 
 impl TryFrom<&Row> for StateMasterModel {
@@ -51,7 +51,7 @@ impl TryFrom<&Row> for StateMasterModel {
     }
 }
 
-pub fn get_state_master_dao(client: &'static Pool) -> Arc<dyn StateMasterDao> {
+pub fn get_state_master_dao(client: Arc<Pool>) -> Arc<dyn StateMasterDao> {
     let state_master_dao = StateMasterDaoPostgresImpl{
         postgres_client:client
     };
@@ -89,8 +89,8 @@ mod tests {
     #[tokio::test]
     async fn should_be_able_to_fetch_all_states() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
-        let state_master_dao = StateMasterDaoPostgresImpl { postgres_client };
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let state_master_dao = StateMasterDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let p = state_master_dao.get_all_states().await;
         assert!(!p.is_empty());
     }
@@ -98,8 +98,8 @@ mod tests {
     #[tokio::test]
     async fn should_be_able_fetch_state_by_id() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
-        let state_master_dao = StateMasterDaoPostgresImpl { postgres_client };
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let state_master_dao = StateMasterDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let state = state_master_dao.get_state_by_id(&SEED_STATE_ID).await;
         assert_that!(state).is_some();
     }

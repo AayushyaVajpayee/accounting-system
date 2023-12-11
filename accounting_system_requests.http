@@ -7,3 +7,6 @@ accounting-service.dev/healthcheck
 
 ####
 https://acc.auth.ap-south-1.amazoncognito.com/login?response_type=token&client_id=5qadjd11plhi3i6d0v311jh8a6&redirect_uri=http://localhost:8080/healtcheck
+
+####
+localhost:8080/company-master/tenant-id/018b33d9-c862-7fde-a0cd-55504d75e5e9?page_no=4&per_page=54

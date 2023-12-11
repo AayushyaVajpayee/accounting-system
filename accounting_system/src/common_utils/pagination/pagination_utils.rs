@@ -1,11 +1,16 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
+use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
+use validator::Validate;
+use crate::common_utils::pagination::constants::{CURRENT_PAGE, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct PaginationRequest {
-    pub page_size: u32,
+    #[validate(range(min = 1, max = 2000, message = "page no should be cannot be less than 1 and more than 2000"))]
     pub page_no: u32,
+    #[validate(range(min = 1, max = 100, message = "per_page count cannot be less than 1 and more than 2000"))]
+    pub per_page: u32,
 }
 
 
@@ -23,6 +28,20 @@ pub struct PaginationMetadata {
     pub total_count: u32,
 }
 
+pub fn set_pagination_headers(header_map: &mut HeaderMap, pagination_metadata: &PaginationMetadata) {
+    let total_key = HeaderName::from_static(TOTAL_COUNT);
+    let total_value = HeaderValue::from(pagination_metadata.total_count);
+    let per_key = HeaderName::from_static(PER_PAGE);
+    let per_value = HeaderValue::from(pagination_metadata.page_size);
+    let curr_key = HeaderName::from_static(CURRENT_PAGE);
+    let curr_value = HeaderValue::from(pagination_metadata.current_page);
+    let total_pages_key = HeaderName::from_static(TOTAL_PAGES);
+    let total_pages_value = HeaderValue::from(pagination_metadata.total_pages);
+    header_map.insert(total_key, total_value);
+    header_map.insert(per_key, per_value);
+    header_map.insert(curr_key, curr_value);
+    header_map.insert(total_pages_key, total_pages_value);
+}
 
 pub fn generate_api_link_header(base_url: &str, page: u32, per_page: u32, total_count: u32) -> String {
     let links = generate_links(base_url, page, per_page, total_count);
@@ -61,6 +80,7 @@ mod tests {
     use crate::common_utils::pagination::pagination_utils::{generate_api_link_header, generate_links};
     use maplit::hashmap;
     use spectral::assert_that;
+    use xxhash_rust::xxh32;
 
     #[rstest]
     #[case("https://example.com/api", 1, 10, 100, hashmap ! {
@@ -105,10 +125,7 @@ mod tests {
         #[case] expected_result: HashMap<&'static str, String>,
     ) {
         let actual_result = generate_links(base_url, page, per_page, total_count);
-        actual_result.iter().sorted().zip(expected_result.iter().sorted()).inspect(|a| {
-            println!("{:?}", a.0);
-            println!("{:?}", a.1);
-        })
+        actual_result.iter().sorted().zip(expected_result.iter().sorted())
             .for_each(|((act_rel, act_url), (exp_rel, exp_url))| {
                 assert_that!(act_rel).is_equal_to(exp_rel);
                 assert_that!(act_url).is_equal_to(exp_url);
@@ -118,7 +135,7 @@ mod tests {
     #[tokio::test]
     async fn verify_paginated_data_function_is_working() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let client = postgres_client.get().await.unwrap();
         client.simple_query("CREATE TABLE IF NOT EXISTS users (id smallserial PRIMARY KEY, username varchar , email varchar , password varchar);").await.unwrap();
 
@@ -135,7 +152,9 @@ mod tests {
         let select_page_query = "SELECT * FROM users LIMIT 10 OFFSET 0";
         let select_count_query = "SELECT COUNT(*) FROM users";
         let page_size = 10;
-        let query_xx_hash = "fake_xx_hash".as_bytes();
+        let mut hasher = xxh32::Xxh32::new(0);
+        hasher.update("fake_xx_hash".as_bytes());
+        let query_xx_hash = hasher.digest() as i64;
         let result = client.query("SELECT get_paginated_data($1, $2, $3, $4)", &[&select_page_query, &select_count_query, &page_size, &query_xx_hash]).await.unwrap();
         let row = result.into_iter().next().unwrap();
 

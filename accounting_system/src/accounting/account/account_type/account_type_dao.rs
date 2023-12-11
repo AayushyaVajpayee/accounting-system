@@ -56,7 +56,7 @@ pub trait AccountTypeDao: Send + Sync {
 }
 
 struct AccountTypeDaoPostgresImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 impl TryFrom<&Row> for AccountTypeMaster {
@@ -156,7 +156,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
     }
 }
 
-pub fn get_account_type_dao(pool: &'static Pool) -> Arc<dyn AccountTypeDao> {
+pub fn get_account_type_dao(pool: Arc<Pool>) -> Arc<dyn AccountTypeDao> {
     let dao = AccountTypeDaoPostgresImpl {
         postgres_client: pool,
     };
@@ -180,7 +180,7 @@ mod account_type_tests {
     async fn tests() {
         let port = get_postgres_image_port().await;
         let account_type_dao = AccountTypeDaoPostgresImpl {
-            postgres_client: get_postgres_conn_pool(port).await,
+            postgres_client: get_postgres_conn_pool(port, None).await,
         };
         let an_account_type =
             a_create_account_type_master_request(CreateAccountTypeMasterRequestTestBuilder {
@@ -201,9 +201,9 @@ mod account_type_tests {
     #[tokio::test]
     async fn should_create_account_type_mst_when_only_1_new_request() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let account_type_mst_request = a_create_account_type_master_request(Default::default());
-        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client };
+        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         let acc = account_type_dao.get_account_type_by_id(&id).await.unwrap();
         assert_that!(acc).is_some();
@@ -212,7 +212,7 @@ mod account_type_tests {
     #[tokio::test]
     async fn should_return_existing_account_type_when_idempotency_key_is_same_as_earlier_completed_request() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let name = "tsting";
         let account_type_mst_request =
             a_create_account_type_master_request(
@@ -220,7 +220,7 @@ mod account_type_tests {
                     display_name: Some(name.to_string()),
                     ..Default::default()
                 });
-        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client };
+        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         let id2 = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         assert_that!(&id).is_equal_to(id2);

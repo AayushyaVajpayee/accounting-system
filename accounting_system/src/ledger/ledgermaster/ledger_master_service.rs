@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use uuid::Uuid;
 use crate::accounting::postgres_factory::get_postgres_conn_pool;
 
@@ -28,9 +29,8 @@ impl LedgerMasterService for LedgerMasterServiceImpl {
 }
 
 
-pub fn get_ledger_master_service()->Arc<dyn LedgerMasterService>{
-    let pclient = get_postgres_conn_pool();
-    let dao = get_ledger_master_dao(pclient);
+pub fn get_ledger_master_service(arc: Arc<Pool>) -> Arc<dyn LedgerMasterService> {
+    let dao = get_ledger_master_dao(arc);
     let service = LedgerMasterServiceImpl{
         dao
     };
@@ -38,7 +38,7 @@ pub fn get_ledger_master_service()->Arc<dyn LedgerMasterService>{
 }
 
 #[cfg(test)]
-pub fn get_ledger_master_service_for_test(postgres_client: &'static deadpool_postgres::Pool) -> Arc<dyn LedgerMasterService> {
+pub fn get_ledger_master_service_for_test(postgres_client: Arc<Pool>) -> Arc<dyn LedgerMasterService> {
     let ledger_master_dao =get_ledger_master_dao(postgres_client);
     Arc::new(LedgerMasterServiceImpl {
         dao: ledger_master_dao

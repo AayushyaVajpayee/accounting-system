@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
 use thiserror::Error;
@@ -8,7 +9,6 @@ use uuid::Uuid;
 
 use crate::accounting::currency::currency_dao::{CurrencyDao, get_currency_dao};
 use crate::accounting::currency::currency_models::{CreateCurrencyMasterRequest, CurrencyMaster};
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::common_utils::dao_error::DaoError;
 
 #[derive(Debug, Error)]
@@ -30,16 +30,15 @@ struct CurrencyServiceImpl {
 }
 
 #[allow(dead_code)]
-pub fn get_currency_service() -> Arc<dyn CurrencyService> {
-    let pclient = get_postgres_conn_pool();
-    let currency_dao = get_currency_dao(pclient);
+pub fn get_currency_service(arc: Arc<Pool>) -> Arc<dyn CurrencyService> {
+    let currency_dao = get_currency_dao(arc);
     let currency_s = CurrencyServiceImpl { currency_dao };
     Arc::new(currency_s)
 }
 
 #[allow(dead_code)]
 #[cfg(test)]
-pub fn get_currency_service_for_test(postgres_client: &'static deadpool_postgres::Pool) -> Arc<dyn CurrencyService> {
+pub fn get_currency_service_for_test(postgres_client: Arc<Pool>) -> Arc<dyn CurrencyService> {
     let currency_dao = get_currency_dao(postgres_client);
     let currency_service = CurrencyServiceImpl {
         currency_dao

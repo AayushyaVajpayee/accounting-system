@@ -17,9 +17,8 @@ struct AuditServiceImpl {
 }
 
 #[allow(dead_code)]
-pub fn get_audit_service() -> Arc<dyn AuditService> {
-    let pclient = get_postgres_conn_pool();
-    let audit_dao = get_audit_dao(pclient);
+pub fn get_audit_service(arc: Arc<Pool>) -> Arc<dyn AuditService> {
+    let audit_dao = get_audit_dao(arc);
     let audit_service = AuditServiceImpl {
         audit_dao
     };
@@ -27,7 +26,7 @@ pub fn get_audit_service() -> Arc<dyn AuditService> {
 }
 
 #[cfg(test)]
-pub fn get_audit_service_for_tests(pool:&'static Pool)->Arc<dyn AuditService>{
+pub fn get_audit_service_for_tests(pool: Arc<Pool>) -> Arc<dyn AuditService> {
     let audit_dao = get_audit_dao(pool);
     let audit_service = AuditServiceImpl {
         audit_dao

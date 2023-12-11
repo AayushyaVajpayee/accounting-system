@@ -2,8 +2,12 @@ use anyhow::anyhow;
 use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::utils::get_current_time_us;
-use crate::masters::company_master::company_master_model::{BaseMasterFields, CompanyIdentificationNumber, CompanyMaster, CompanyName, MasterStatusEnum};
-use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
+use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
+use crate::masters::company_master::company_master_models::company_identification_number::CompanyIdentificationNumber;
+use crate::masters::company_master::company_master_models::company_master::CompanyMaster;
+use crate::masters::company_master::company_master_models::company_name::CompanyName;
+use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
+use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
 
 impl CreateCompanyRequest{
     pub fn to_company_master(&self)->anyhow::Result<CompanyMaster>{

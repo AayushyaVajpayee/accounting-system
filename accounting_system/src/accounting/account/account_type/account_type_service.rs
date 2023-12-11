@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use serde::Serialize;
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::accounting::account::account_type::account_type_dao::{AccountTypeDao, get_account_type_dao};
 use crate::accounting::account::account_type::account_type_models::AccountTypeMaster;
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::common_utils::dao_error::DaoError;
 
 #[async_trait]
@@ -30,9 +30,8 @@ impl AccountTypeService for AccountTypeServiceImpl {
     }
 }
 
-pub fn get_account_type_master_service()->Arc<dyn AccountTypeService>{
-    let pclient = get_postgres_conn_pool();
-    let dao = get_account_type_dao(pclient);
+pub fn get_account_type_master_service(arc: Arc<Pool>) -> Arc<dyn AccountTypeService> {
+    let dao = get_account_type_dao(arc);
     let service =AccountTypeServiceImpl{
         dao
     };

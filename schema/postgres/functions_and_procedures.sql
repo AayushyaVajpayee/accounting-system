@@ -557,7 +557,7 @@ CREATE OR REPLACE FUNCTION get_paginated_data(
     select_page_query text,
     select_count_query text,
     page_size integer,
-    query_xx_hash bytea
+    query_xx_hash bigint
 ) returns jsonb
 AS
 $$

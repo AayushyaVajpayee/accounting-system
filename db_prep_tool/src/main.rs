@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
@@ -7,16 +7,6 @@ use postgres::NoTls;
 use tokio_postgres::Config;
 
 use db_prep_tool::get_seed_service;
-
-static CONNECTION_POOL: OnceLock<Pool> = OnceLock::new();
-
-pub fn get_postgres_conn_pool() -> &'static Pool {
-    let p = CONNECTION_POOL.get();
-    p.unwrap()
-}
-pub fn init_pool(pool: Pool) {
-    CONNECTION_POOL.set(pool).expect("TODO: panic message");
-}
 
 #[derive(Parser)]
 struct Cli {
@@ -68,17 +58,13 @@ async fn main() {
                 .await
                 .unwrap();
             println!("created database");
-            let pool =
-                connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str());
-            init_pool(pool);
-            let seed_ser = get_seed_service(CONNECTION_POOL.get().unwrap());
+            let pool = Arc::new(connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str()));
+            let seed_ser = get_seed_service(pool);
             seed_ser.copy_tables().await;
         }
         MySubCommand::CreateSeedData { dbname } => {
-            let pool =
-                connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str());
-            init_pool(pool);
-            let seed_ser = get_seed_service(CONNECTION_POOL.get().unwrap());
+            let pool = Arc::new(connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str()));
+            let seed_ser = get_seed_service(pool);
             seed_ser.copy_tables().await;
         }
         MySubCommand::DropAllDbs => {

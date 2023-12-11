@@ -1,13 +1,14 @@
 use std::sync::Arc;
+
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
+#[cfg(test)]
+use mockall::automock;
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::accounting::account::account_dao::{AccountDao, get_account_dao};
 use crate::accounting::account::account_models::{Account, CreateAccountRequest};
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
-#[cfg(test)]
-use mockall::automock;
-use thiserror::Error;
 use crate::common_utils::dao_error::DaoError;
 
 #[derive(Debug, Error)]
@@ -40,14 +41,13 @@ impl AccountService for AccountServiceImpl {
     }
 }
 
-pub fn get_account_service() -> Arc<dyn AccountService> {
-    let pool = get_postgres_conn_pool();
-    let dao = get_account_dao(pool);
+pub fn get_account_service(arc: Arc<Pool>) -> Arc<dyn AccountService> {
+    let dao = get_account_dao(arc);
     let service = AccountServiceImpl { account_dao: dao };
     Arc::new(service)
 }
 
 #[cfg(test)]
-pub fn get_account_service_for_test(client: &'static deadpool_postgres::Pool) -> Arc<dyn AccountService> {
+pub fn get_account_service_for_test(client: Arc<Pool>) -> Arc<dyn AccountService> {
     Arc::new(AccountServiceImpl { account_dao: get_account_dao(client) })
 }

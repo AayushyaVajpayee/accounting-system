@@ -18,7 +18,7 @@ const TABLE_NAME: &str = "audit_entries";
 
 const QUERY_BY_TABLE_AND_ID: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," ae join pg_class pc on pc.oid=ae.table_id  where pc.relname=$1 and ae.audit_record_id=$2");
 
-pub fn get_audit_dao(client: &'static Pool) -> Arc<dyn AuditDao> {
+pub fn get_audit_dao(client: Arc<Pool>) -> Arc<dyn AuditDao> {
     let audit_dao = AuditDaoImpl {
         postgres_client: client
     };
@@ -42,7 +42,7 @@ impl TryFrom<&Row> for AuditEntry {
 }
 
 struct AuditDaoImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 #[async_trait]
@@ -70,8 +70,8 @@ mod tests {
     #[tokio::test]
     async fn test() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
-        let audit_dao = AuditDaoImpl { postgres_client };
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let audit_dao = AuditDaoImpl { postgres_client: postgres_client.clone() };
         {
             let conn = audit_dao.postgres_client.get().await.unwrap();
             let raw_script =format!( r#"

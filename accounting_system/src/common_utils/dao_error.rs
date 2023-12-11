@@ -1,7 +1,8 @@
 use deadpool_postgres::PoolError;
 use tokio_postgres::error::SqlState;
+use anyhow::Error as AnyhowError;
 
-#[derive(Debug, thiserror::Error,PartialEq)]
+#[derive(Debug, thiserror::Error)]
 pub enum DaoError {
     #[error("error while fetching db connection. {0}")]
     ConnectionPool(String),
@@ -9,22 +10,25 @@ pub enum DaoError {
     PostgresQueryError(String),
     #[error("cannot convert entity to db row {0}")]
     InvalidEntityToDbRowConversion(&'static str),
-    #[error("unique constraint violated {}",0)]
+    #[error("unique constraint violated {}", 0)]
     UniqueConstraintViolated { constraint_name: String },
     #[error("query returned nothing")]
-    ReturnedValueNone
+    ReturnedValueNone,
+    #[error(transparent)]
+    AnyhowError(#[from] AnyhowError),
 }
 
-impl From<PoolError> for DaoError{
+impl From<PoolError> for DaoError {
     fn from(value: PoolError) -> Self {
         DaoError::ConnectionPool(value.to_string())
     }
 }
-impl From<tokio_postgres::Error> for DaoError{
-    fn from(value:tokio_postgres::Error)->Self{
-        if let Some(k) = value.as_db_error(){
-            if k.code().code()==SqlState::UNIQUE_VIOLATION.code(){
-                return DaoError::UniqueConstraintViolated {constraint_name:k.constraint().unwrap().to_string()};
+
+impl From<tokio_postgres::Error> for DaoError {
+    fn from(value: tokio_postgres::Error) -> Self {
+        if let Some(k) = value.as_db_error() {
+            if k.code().code() == SqlState::UNIQUE_VIOLATION.code() {
+                return DaoError::UniqueConstraintViolated { constraint_name: k.constraint().unwrap().to_string() };
             }
         }
         DaoError::PostgresQueryError(value.to_string())

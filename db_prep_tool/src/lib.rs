@@ -19,13 +19,13 @@ pub trait SeedService:Send+Sync {
 }
 
 struct SeedServiceImpl {
-    pool: &'static Pool,
+    pool: Arc<Pool>,
 }
 
 #[async_trait]
 impl SeedService for SeedServiceImpl {
     async fn copy_tables(&self) {
-        let pool = self.pool;
+        let pool = self.pool.as_ref();
         let file_names = get_seed_filenames_ordered();
         validate_seed_file_names(&file_names).unwrap();
         create_schema(pool).await;
@@ -60,12 +60,12 @@ impl SeedService for SeedServiceImpl {
 }
 
 
-pub fn get_seed_service(pool:&'static Pool) -> Arc<dyn SeedService> {
+pub fn get_seed_service(pool: Arc<Pool>) -> Arc<dyn SeedService> {
     let seed_s = SeedServiceImpl { pool };
     Arc::new(seed_s)
 }
 #[allow(dead_code)]
-pub fn get_seed_service_with_pool_supplied(pool: &'static Pool) -> Arc<dyn SeedService> {
+pub fn get_seed_service_with_pool_supplied(pool: Arc<Pool>) -> Arc<dyn SeedService> {
     let seed_s = SeedServiceImpl { pool };
     Arc::new(seed_s)
 }

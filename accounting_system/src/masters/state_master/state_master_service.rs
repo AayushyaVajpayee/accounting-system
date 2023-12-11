@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use moka::future::Cache;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::state_master::state_master_dao::{get_state_master_dao, StateMasterDao};
 use crate::masters::state_master::state_models::StateMasterModel;
 
@@ -20,9 +20,9 @@ struct StateMasterServiceImpl {
     cache_by_id: Cache<Uuid, Arc<StateMasterModel>>,
     cache_all: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>>,
 }
-pub fn get_state_master_service() -> Arc<dyn StateMasterService> {
-    let pclient = get_postgres_conn_pool();
-    let state_master_dao = get_state_master_dao(pclient);
+
+pub fn get_state_master_service(arc: Arc<Pool>) -> Arc<dyn StateMasterService> {
+    let state_master_dao = get_state_master_dao(arc);
     let cache: Cache<i32, Arc<Vec<Arc<StateMasterModel>>>> = Cache::new(40);
     let state_master_s = StateMasterServiceImpl {
         dao: state_master_dao,
@@ -72,6 +72,7 @@ impl StateMasterService for StateMasterServiceImpl {
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
+
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;

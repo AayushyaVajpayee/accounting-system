@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use moka::future::Cache;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::city_master::city_master_dao::{CityMasterDao, get_city_master_dao};
 use crate::masters::city_master::city_master_models::CityMaster;
 
@@ -22,9 +22,8 @@ struct CityMasterServiceImpl {
     cache_by_id: Cache<Uuid, Arc<CityMaster>>,
 }
 
-pub fn get_city_master_service() -> Arc<dyn CityMasterService> {
-    let pclient = get_postgres_conn_pool();
-    let city_master_dao = get_city_master_dao(pclient);
+pub fn get_city_master_service(arc: Arc<Pool>) -> Arc<dyn CityMasterService> {
+    let city_master_dao = get_city_master_dao(arc);
     let cache: Cache<i32, Arc<Vec<Arc<CityMaster>>>> = Cache::new(733);
     let city_master_service = CityMasterServiceImpl {
         dao: city_master_dao,
@@ -70,6 +69,7 @@ impl CityMasterService for CityMasterServiceImpl {
 #[cfg(test)]
 mod tests{
     use std::sync::Arc;
+
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;

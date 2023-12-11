@@ -27,7 +27,7 @@ pub trait PincodeMasterDao:Send+Sync {
 }
 
 struct PincodeMasterDaoImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 impl TryFrom<&Row> for PincodeMaster {
@@ -64,7 +64,7 @@ impl PincodeMasterDao for PincodeMasterDaoImpl {
     }
 }
 
-pub fn get_pincode_master_dao(client: &'static Pool)->Arc<dyn PincodeMasterDao>{
+pub fn get_pincode_master_dao(client: Arc<Pool>) -> Arc<dyn PincodeMasterDao> {
     let pincode_master_dao = PincodeMasterDaoImpl{
         postgres_client:client
     };
@@ -83,7 +83,7 @@ mod tests {
     #[tokio::test]
     async fn should_be_able_to_fetch_all_pincodes() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let pincode_master_dao = PincodeMasterDaoImpl{postgres_client};
         let pincodes = pincode_master_dao.get_all_pincodes().await;
        assert!(!pincodes.is_empty())
@@ -92,7 +92,7 @@ mod tests {
     #[tokio::test]
     async fn should_be_able_to_fetch_pincode_by_id(){
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let pincode_master_dao = PincodeMasterDaoImpl{postgres_client};
         let pincode = pincode_master_dao.get_pincode_by_id(&SEED_PINCODE_ID).await;
         assert_that!(pincode).is_some();

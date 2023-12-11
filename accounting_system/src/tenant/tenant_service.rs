@@ -1,16 +1,17 @@
-use async_trait::async_trait;
 use std::sync::Arc;
-use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
-use crate::common_utils::dao_error::DaoError;
-use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
-use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
+use async_trait::async_trait;
+use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
 use thiserror::Error;
+use uuid::Uuid;
 
-#[derive(Debug, Error, PartialEq)]
+use crate::common_utils::dao_error::DaoError;
+use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
+use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
+
+#[derive(Debug, Error)]
 pub enum TenantServiceError {
     #[error("validation failures \n {}",.0.join("\n"))]
     Validation(Vec<String>), //4xx
@@ -50,9 +51,8 @@ impl TenantService for TenantServiceImpl {
     }
 }
 
-pub fn get_tenant_service() -> Arc<dyn TenantService> {
-    let pclient = get_postgres_conn_pool();
-    let tenant_d = get_tenant_dao(pclient);
+pub fn get_tenant_service(arc: Arc<Pool>) -> Arc<dyn TenantService> {
+    let tenant_d = get_tenant_dao(arc);
     let tenant_s = TenantServiceImpl {
         tenant_dao: tenant_d,
     };
@@ -62,7 +62,7 @@ pub fn get_tenant_service() -> Arc<dyn TenantService> {
 #[allow(dead_code)]
 #[cfg(test)]
 pub fn get_tenant_service_for_test(
-    postgres_client: &'static deadpool_postgres::Pool,
+    postgres_client: Arc<Pool>,
 ) -> Arc<dyn TenantService> {
     let tenant_d = get_tenant_dao(postgres_client);
     let tenant_s = TenantServiceImpl {

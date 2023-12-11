@@ -16,7 +16,7 @@ pub trait LedgerMasterDao:Send+Sync {
 
 
 #[allow(dead_code)]
-pub fn get_ledger_master_dao(client: &'static Pool) -> Arc<dyn LedgerMasterDao> {
+pub fn get_ledger_master_dao(client: Arc<Pool>) -> Arc<dyn LedgerMasterDao> {
     Arc::new(LedgerMasterPostgresDaoImpl {
         postgres_client: client
     })
@@ -24,7 +24,7 @@ pub fn get_ledger_master_dao(client: &'static Pool) -> Arc<dyn LedgerMasterDao> 
 
 
 struct LedgerMasterPostgresDaoImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 const SELECT_FIELDS: &str = "id,tenant_id,display_name,\
@@ -114,10 +114,10 @@ mod tests {
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_ledger_master() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let ledger_master = a_create_ledger_master_entry_request(
             Default::default());
-        let  ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client };
+        let ledger_master_dao = LedgerMasterPostgresDaoImpl { postgres_client: postgres_client.clone() };
         let id = ledger_master_dao.create_ledger_master_entry(&ledger_master).await;
         let fetched_ledger_master = ledger_master_dao.get_ledger_master_by_id(&id).await.unwrap();
         assert_eq!(fetched_ledger_master.id, id);

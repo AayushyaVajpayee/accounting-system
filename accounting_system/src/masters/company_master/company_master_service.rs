@@ -1,40 +1,39 @@
 use std::sync::Arc;
 
+use anyhow::Context;
+use anyhow::Error as AnyhowError;
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
+use itertools::Itertools;
 #[cfg(test)]
 use mockall::automock;
 use thiserror::Error;
 use tracing::{error, instrument};
 use uuid::Uuid;
+use validator::Validate;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::accounting::user::user_service::{UserService, UserServiceError};
 use crate::common_utils::dao_error::DaoError;
-use crate::masters::company_master::company_master_dao::{
-    CompanyMasterDao, get_company_master_dao,
-};
-use crate::masters::company_master::company_master_model::{
-    CompanyIdentificationNumber, CompanyName,
-};
-use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
-use crate::masters::company_master::company_master_service::ServiceError::Other;
+use crate::common_utils::pagination::pagination_utils::{PaginatedResponse, PaginationRequest};
+use crate::common_utils::utils::flatten_errors;
+use crate::masters::company_master::company_master_models::company_identification_number::CompanyIdentificationNumber;
+use crate::masters::company_master::company_master_models::company_master::CompanyMaster;
+use crate::masters::company_master::company_master_models::company_name::CompanyName;
+use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
+use crate::masters::company_master::dao::dao_trait::CompanyMasterDao;
+use crate::masters::company_master::dao::dao_trait_impl::get_company_master_dao;
 use crate::tenant::tenant_service::{TenantService, TenantServiceError};
 
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CompanyMasterService: Send + Sync {
-    // async fn get_all_companies_for_tenant_id(&self,tenant_id:i32);
-
-    // async fn get_all_company_units_for_company_id_and_tenant_id(&self,tenant_id:i32);
+    async fn get_all_companies_for_tenant_id(&self, tenant_id: &Uuid, pagination_request: &PaginationRequest) -> Result<PaginatedResponse<CompanyMaster>, ServiceError>;
 
     async fn create_new_company_for_tenant(
         &self,
         request: &CreateCompanyRequest,
     ) -> Result<Uuid, ServiceError>;
 
-    // async fn create_new_company_unit_for_tenant_and_company_id(&self,tenant_id:i32);
-    //
-    // async fn soft_delete_company(&self);
 }
 
 pub struct CompanyMasterServiceImpl {
@@ -43,7 +42,7 @@ pub struct CompanyMasterServiceImpl {
     user_service: Arc<dyn UserService>,
 }
 
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error)]
 pub enum ServiceError {
     #[error("validation failures \n {}", .0.join("\n"))]
     Validation(Vec<String>),
@@ -57,12 +56,13 @@ pub enum ServiceError {
     // company_master_pkey
     #[error("company with this is already exists")]
     CompanyWithPrimaryKeyExists,
-    #[error("{0}")]
-    Other(String),
+
     #[error(transparent)]
     Tenant(#[from] TenantServiceError),
     #[error(transparent)]
     UserService(#[from] UserServiceError),
+    #[error(transparent)]
+    AnyhowError(#[from] AnyhowError),
 }
 
 impl From<DaoError> for ServiceError {
@@ -79,6 +79,9 @@ impl From<DaoError> for ServiceError {
                 } else if constraint_name.as_str() == "company_master_pkey" {
                     return ServiceError::CompanyWithPrimaryKeyExists;
                 }
+                ServiceError::Db(dao_err)
+            }
+            DaoError::AnyhowError(_) => {
                 ServiceError::Db(dao_err)
             }
         }
@@ -117,6 +120,18 @@ impl CompanyMasterServiceImpl {
 
 #[async_trait]
 impl CompanyMasterService for CompanyMasterServiceImpl {
+    async fn get_all_companies_for_tenant_id(&self, tenant_id: &Uuid, pagination_request: &PaginationRequest) -> Result<PaginatedResponse<CompanyMaster>, ServiceError> {
+        let validated = pagination_request.validate();
+        if let Err(validated) = validated {
+            let errs = flatten_errors(&validated)
+                .context("flatten_errors failed in CompanyMasterService.get_all_companies_for_tenant_id")?;
+            let errs = errs.iter().map(|a| a.to_string()).collect_vec();
+            return Err(ServiceError::Validation(errs));
+        }
+        let resp = self.dao.get_all_companies_for_tenant(tenant_id, pagination_request.page_no, pagination_request.per_page).await?;
+        return Ok(resp);
+    }
+
     #[instrument(skip(self))]
     async fn create_new_company_for_tenant(
         &self,
@@ -126,10 +141,8 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
         if !validations.is_empty() {
             return Err(ServiceError::Validation(validations));
         }
-        let company_master = request.to_company_master().map_err(|a| {
-            error!(?a,%a,"error while converting company creation request to company master");
-            Other(a.to_string())
-        })?;
+        let company_master = request.to_company_master()
+            .context("error while converting company creation request to company master")?;
         let res = self
             .dao
             .create_new_company_for_tenant(&company_master, &request.idempotence_key)
@@ -138,14 +151,14 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
     }
 }
 
-pub fn get_company_master_service(tenant_service: Arc<dyn TenantService>, user_service: Arc<dyn UserService>) -> Arc<dyn CompanyMasterService> {
-    let p_client = get_postgres_conn_pool();
-    let dao = get_company_master_dao(p_client);
+pub fn get_company_master_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantService>, user_service: Arc<dyn UserService>) -> Arc<dyn CompanyMasterService> {
+    let dao = get_company_master_dao(arc);
     Arc::new(CompanyMasterServiceImpl { dao, tenant_service, user_service })
 }
 
 #[cfg(test)]
 pub mod tests {
+    use std::error::Error;
     use std::mem::discriminant;
     use std::sync::Arc;
 
@@ -153,6 +166,7 @@ pub mod tests {
     use spectral::assert_that;
     use spectral::prelude::{ResultAssertions, VecAssertions};
     use tracing_test::traced_test;
+    use validator::Validate;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
@@ -162,15 +176,14 @@ pub mod tests {
         get_user_service_for_test, MockUserService, UserService,
     };
     use crate::common_utils::dao_error::DaoError;
-    use crate::masters::company_master::company_master_dao::{
-        get_company_master_dao, MockCompanyMasterDao,
-    };
-    use crate::masters::company_master::company_master_requests::tests::{
+    use crate::masters::company_master::company_master_request_response::tests::{
         a_create_company_request, CreateCompanyRequestBuilder,
     };
     use crate::masters::company_master::company_master_service::{
         CompanyMasterService, CompanyMasterServiceImpl, ServiceError,
     };
+    use crate::masters::company_master::dao::dao_trait::MockCompanyMasterDao;
+    use crate::masters::company_master::dao::dao_trait_impl::get_company_master_dao;
     use crate::tenant::tenant_models::a_tenant;
     use crate::tenant::tenant_service::{
         get_tenant_service_for_test, MockTenantService, TenantService,
@@ -178,10 +191,10 @@ pub mod tests {
 
     pub async fn get_company_master_service_for_tests() -> Arc<dyn CompanyMasterService> {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
-        let tenant_service = get_tenant_service_for_test(postgres_client);
-        let user_service = get_user_service_for_test(postgres_client);
-        let dao = get_company_master_dao(postgres_client);
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let tenant_service = get_tenant_service_for_test(postgres_client.clone());
+        let user_service = get_user_service_for_test(postgres_client.clone());
+        let dao = get_company_master_dao(postgres_client.clone());
         let service = CompanyMasterServiceImpl {
             dao,
             tenant_service,

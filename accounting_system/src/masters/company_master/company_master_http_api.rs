@@ -5,18 +5,23 @@ use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Scope, web};
 use actix_web::body::BoxBody;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, ServiceConfig};
+use actix_web::web::{Data, Path, Query, ServiceConfig};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
+use uuid::Uuid;
 
-use crate::masters::company_master::company_master_requests::CreateCompanyRequest;
+use crate::common_utils::pagination::pagination_utils::{PaginationRequest, set_pagination_headers};
+use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
 use crate::masters::company_master::company_master_service::{CompanyMasterService, ServiceError};
 
-//
-// async fn get_company_by_id() -> actix_web::Result<impl Responder> {
-//     todo!()
-// }
-//
+async fn get_companies_by_tenant_id(data: Data<Arc<dyn CompanyMasterService>>, query: Query<PaginationRequest>, tenant_id: Path<Uuid>) -> actix_web::Result<impl Responder> {
+    let resp = data.get_all_companies_for_tenant_id(&tenant_id, &query.0).await?;
+    let mut response = HttpResponseBuilder::new(StatusCode::OK).json(&resp);
+    let headers = response.headers_mut();
+    set_pagination_headers(headers, &resp.meta);
+    Ok(response)
+}
+
 #[instrument(skip(data))]
 pub async fn create_company(
     request: web::Json<CreateCompanyRequest>,
@@ -27,14 +32,17 @@ pub async fn create_company(
     let response = HttpResponseBuilder::new(StatusCode::CREATED).json(created_uuid);
     Ok(response)
 }
-#[derive(Serialize,Debug)]
+
+#[derive(Serialize, Debug)]
 struct Errors<'a> {
     errors: &'a Vec<String>,
 }
-#[derive(Deserialize,Debug)]
-struct ErrorsResponse{
-    errors:Vec<String>
+
+#[derive(Deserialize, Debug)]
+struct ErrorsResponse {
+    errors: Vec<String>,
 }
+
 impl ResponseError for ServiceError {
     fn status_code(&self) -> StatusCode {
         match self {
@@ -42,7 +50,7 @@ impl ResponseError for ServiceError {
             ServiceError::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServiceError::CompanyCinAlreadyExists => StatusCode::CONFLICT,
             ServiceError::CompanyWithPrimaryKeyExists => StatusCode::CONFLICT,
-            ServiceError::Other(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ServiceError::AnyhowError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServiceError::Tenant(err) => { err.status_code() }
             ServiceError::UserService(err) => { err.status_code() }
         }
@@ -65,7 +73,7 @@ impl ResponseError for ServiceError {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            ServiceError::Other(a) => {
+            ServiceError::AnyhowError(a) => {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
@@ -74,6 +82,7 @@ impl ResponseError for ServiceError {
         }
     }
 }
+
 pub fn init_routes(
     config: &mut ServiceConfig,
     country_master_service: Arc<dyn CompanyMasterService>,
@@ -83,7 +92,9 @@ pub fn init_routes(
 }
 
 fn map_endpoints_to_functions() -> Scope {
-    web::scope("/company-master").route("/create", web::post().to(create_company))
+    web::scope("/company-master")
+        .route("/create", web::post().to(create_company))
+        .route("/tenant-id/{tenant_id}", web::get().to(get_companies_by_tenant_id))
 }
 
 #[cfg(test)]
@@ -92,6 +103,7 @@ mod tests {
 
     use actix_web::{App, test};
     use actix_web::middleware::Logger;
+    use anyhow::anyhow;
     use bytes::Buf;
     use rstest::rstest;
     use spectral::assert_that;
@@ -99,9 +111,10 @@ mod tests {
     use tracing::info;
     use tracing_test::traced_test;
     use uuid::Uuid;
+
     use crate::common_utils::dao_error::DaoError;
     use crate::masters::company_master::company_master_http_api::{ErrorsResponse, map_endpoints_to_functions};
-    use crate::masters::company_master::company_master_requests::tests::a_create_company_request;
+    use crate::masters::company_master::company_master_request_response::tests::a_create_company_request;
     use crate::masters::company_master::company_master_service::{CompanyMasterService, MockCompanyMasterService, ServiceError};
 
     #[traced_test]
@@ -131,13 +144,14 @@ mod tests {
         let res: Uuid = test::call_and_read_body_json(&app_service, request).await;
         assert_eq!(res, uuid);
     }
+
     #[rstest]
     #[case(ServiceError::Validation(vec ! ["some rr".to_string()]), 400)]
     #[case(ServiceError::Db(DaoError::ConnectionPool("pool exhausted".to_string())), 500)]
-    #[case(ServiceError::CompanyCinAlreadyExists,409)]
-    #[case(ServiceError::CompanyWithPrimaryKeyExists,409)]
-    #[case(ServiceError::Other("some other error".to_string()), 500)]
-    async fn create_company_test_error(#[case] err:ServiceError,#[case] http_code:u16) {
+    #[case(ServiceError::CompanyCinAlreadyExists, 409)]
+    #[case(ServiceError::CompanyWithPrimaryKeyExists, 409)]
+    #[case(ServiceError::AnyhowError(anyhow ! ("some other error")), 500)]
+    async fn create_company_test_error(#[case] err: ServiceError, #[case] http_code: u16) {
         // std::env::set_var(env"RUST_LOG", "debug");
         // env_logger::init();
         let mut mocked = MockCompanyMasterService::new();
@@ -162,9 +176,8 @@ mod tests {
         let res = test::call_service(&app_service, request).await;
         // let pdfda = res.reader();
         // let p = pdfda.to_string();
-        assert_eq!(res.status().as_u16(),http_code);
-        let p:ErrorsResponse =test::read_body_json(res).await;
+        assert_eq!(res.status().as_u16(), http_code);
+        let p: ErrorsResponse = test::read_body_json(res).await;
         assert_that!(p.errors).has_length(1);
-
     }
 }

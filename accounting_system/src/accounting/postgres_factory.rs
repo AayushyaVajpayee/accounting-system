@@ -7,10 +7,9 @@ use tokio_postgres::{Config, NoTls};
 
 use crate::configurations::{get_dev_conf, Setting};
 
-static CONNECTION_POOL: OnceLock<Pool> = OnceLock::new();
 
-pub fn get_postgres_conn_pool() -> &'static Pool {
-    CONNECTION_POOL.get_or_init(init)
+pub fn get_postgres_conn_pool() -> Pool {
+    init()
 }
 
 fn init() -> Pool {
@@ -49,9 +48,10 @@ fn get_recycling_method(recycling_method_str: &str) -> RecyclingMethod {
 
 #[cfg(test)]
 pub mod test_utils_postgres {
+    use std::sync::Arc;
     use std::time::Duration;
 
-    use deadpool_postgres::{ManagerConfig, Pool, Runtime};
+    use deadpool_postgres::{Manager, ManagerConfig, Pool, Runtime};
     use testcontainers::clients::Cli;
     use testcontainers::{Container, GenericImage};
     use testcontainers::core::WaitFor;
@@ -74,27 +74,61 @@ pub mod test_utils_postgres {
 
     unsafe impl Sync for PK<'_> {}
 
-    pub async fn get_postgres_conn_pool(port: u16) -> &'static Pool {
-        CONNECTION_POOL.get_or_init(|| init_pool(port)).await
+    pub async fn get_postgres_conn_pool(port: u16, dbname: Option<&str>) -> Arc<Pool> {
+        init_pool(port, dbname).await
     }
 
-    async fn init_pool(port: u16) -> Pool {
-        let settings: Setting = get_dev_conf();
-        let cfg = get_pg_config(&settings, port);
-        let mgr = deadpool_postgres::Manager::from_config(cfg, NoTls,
-                                                          ManagerConfig {
-                                                              recycling_method:
-                                                              get_recycling_method(
-                                                                  settings.db
-                                                                      .recycling_method
-                                                                      .as_str())
-                                                          });
+    pub async fn get_postgres_conn_pool_with_new_db(port: u16, dbname: &str) -> Arc<Pool> {
+        let pool = init_pool(port, Some(dbname)).await;
+        let seed_s = get_seed_service_with_pool_supplied(pool.clone());
+        seed_s.copy_tables().await;
+        pool
+    }
+
+    fn build_pool(mgr: Manager, settings: &Setting) -> Pool {
         Pool::builder(mgr)
             .max_size(1)
             .runtime(Runtime::Tokio1)
             .create_timeout(Some(Duration::from_secs(settings.db.connect_timeout_seconds as u64)))
             .wait_timeout(Some(Duration::from_secs(settings.db.wait_timeout_seconds as u64)))
             .build().unwrap()
+    }
+
+    async fn init_pool(port: u16, dbname: Option<&str>) -> Arc<Pool> {
+        let settings: Setting = get_dev_conf();
+        let mut cfg = get_pg_config(&settings, port);
+        let mut to_be_seeded = false;
+        if let Some(dbname) = dbname {
+            let mgr = Manager::from_config(cfg.clone(), NoTls,
+                                           ManagerConfig {
+                                               recycling_method:
+                                               get_recycling_method(
+                                                   settings.db
+                                                       .recycling_method
+                                                       .as_str())
+                                           });
+
+            let p = build_pool(mgr, &settings);
+            let k = format!("create database {};", dbname);
+            p.get().await.unwrap().simple_query(k.as_str()).await.unwrap();
+            cfg.dbname(dbname);
+            to_be_seeded = true;
+        }
+
+        let mgr = Manager::from_config(cfg, NoTls,
+                                       ManagerConfig {
+                                           recycling_method:
+                                           get_recycling_method(
+                                               settings.db
+                                                   .recycling_method
+                                                   .as_str())
+                                       });
+        let p = Arc::new(build_pool(mgr, &settings));
+        if to_be_seeded {
+            let seed_s = get_seed_service_with_pool_supplied(p.clone());
+            seed_s.copy_tables().await;
+        }
+        p
     }
 
 
@@ -114,7 +148,7 @@ pub mod test_utils_postgres {
     async fn init_container() -> PK<'static> {
         let container = run_postgres().await;
         let port = container.get_host_port_ipv4(5432);
-        let pool = get_postgres_conn_pool(port).await;
+        let pool = get_postgres_conn_pool(port, None).await;
         let seed_s = get_seed_service_with_pool_supplied(pool);
         seed_s.copy_tables().await;
         PK { container }

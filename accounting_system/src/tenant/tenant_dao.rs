@@ -28,7 +28,7 @@ pub trait TenantDao: Send + Sync {
     // async fn delete_tenant(&self, tenant_id: &str) -> i64;
 }
 
-pub fn get_tenant_dao(client: &'static Pool) -> Arc<dyn TenantDao> {
+pub fn get_tenant_dao(client: Arc<Pool>) -> Arc<dyn TenantDao> {
     let td = TenantDaoImpl {
         postgres_client: client,
     };
@@ -36,7 +36,7 @@ pub fn get_tenant_dao(client: &'static Pool) -> Arc<dyn TenantDao> {
 }
 
 struct TenantDaoImpl {
-    postgres_client: &'static Pool,
+    postgres_client: Arc<Pool>,
 }
 
 impl TryFrom<&Row> for Tenant {
@@ -110,9 +110,9 @@ mod tests {
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_tenant() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let t1 = a_create_tenant_request(Default::default());
-        let tenant_dao = TenantDaoImpl { postgres_client };
+        let tenant_dao = TenantDaoImpl { postgres_client: postgres_client.clone() };
         tenant_dao.create_tenant(&t1).await.unwrap();
         let created_tenant_id = tenant_dao.create_tenant(&t1).await.unwrap();
         let fetched_tenant = tenant_dao
@@ -125,9 +125,9 @@ mod tests {
     #[tokio::test]
     async fn should_create_tenant_when_only_1_new_request() {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let tenant_request = a_create_tenant_request(Default::default());
-        let tenant_dao = TenantDaoImpl { postgres_client };
+        let tenant_dao = TenantDaoImpl { postgres_client: postgres_client.clone() };
         let id = tenant_dao.create_tenant(&tenant_request).await.unwrap();
         let tenant = tenant_dao.get_tenant_by_id(id).await.unwrap();
         assert_that(&tenant).is_some().matches(|a| a.id == id);
@@ -136,13 +136,13 @@ mod tests {
     async fn should_return_existing_tenant_when_idempotency_key_is_same_as_earlier_completed_request(
     ) {
         let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port).await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
         let name = "tsting";
         let tenant_request = a_create_tenant_request(CreateTenantTestBuilder {
             display_name: Some(name.to_string()),
             ..Default::default()
         });
-        let tenant_dao = TenantDaoImpl { postgres_client };
+        let tenant_dao = TenantDaoImpl { postgres_client: postgres_client.clone() };
         let id = tenant_dao.create_tenant(&tenant_request).await.unwrap();
         let id1 = tenant_dao.create_tenant(&tenant_request).await.unwrap();
         assert_that!(&id).is_equal_to(id1);
