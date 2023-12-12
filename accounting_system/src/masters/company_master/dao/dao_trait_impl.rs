@@ -175,6 +175,9 @@ mod tests {
     async fn test_paginated_get_all_companies_for_tenant() {
         let port = get_postgres_image_port().await;
         let pg_pool = get_postgres_conn_pool(port, Some("get_all_companies_for_tenant")).await;
+        {
+            pg_pool.get().await.unwrap().simple_query("delete from company_master").await.unwrap();
+        }
         let company_master_dao = CompanyMasterDaoPostgresImpl { postgres_client: pg_pool };
         for i in 0..20 {
             let k = a_create_company_request(Default::default());
