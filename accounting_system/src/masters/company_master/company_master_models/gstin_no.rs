@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use gstin_validator::gstin_models::validate_gstin;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GstinNo(String);
 
 impl GstinNo {
@@ -14,14 +16,15 @@ impl GstinNo {
 }
 
 #[cfg(test)]
-mod gstin_no_tests {
+pub mod gstin_no_tests {
     use rand::Rng;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
-    use gstin_validator::gstin_models::gstin_checksum;
-    use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
+    use gstin_validator::gstin_models::gstin_checksum;
+
+    use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
     const GST_STATE_CODE_LIST: [u16; 39] = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26,
@@ -29,6 +32,12 @@ mod gstin_no_tests {
     ];
     const ALPHABETS: &[u8] = b"ABCDEFGHIJKLNMNOPQRSTUVWXYZ";
     const SEED_GSTIN: &str = "05AABCA5291p1ZD";
+
+    impl GstinNo {
+        pub fn get_str(&self) -> &str {
+            self.0.as_str()
+        }
+    }
 
     pub fn generate_random_gstin_no() -> GstinNo {
         let mut rng = rand::thread_rng();
