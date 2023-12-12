@@ -34,7 +34,11 @@ pub struct CreateAccountRequest {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use lazy_static::lazy_static;
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
     use uuid::Uuid;
 
     use crate::accounting::account::account_models::CreateAccountRequest;
@@ -43,13 +47,14 @@ pub mod tests {
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
-    use std::str::FromStr;
+
     lazy_static! {
         pub static ref SEED_DEBIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap();
     }
     lazy_static! {
         pub static ref SEED_CREDIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-0580-7444-9da8-107986ab3d35").unwrap();
     }
+
     #[derive(Debug, Default)]
     pub struct CreateAccountRequestTestBuilder {
         pub idempotence_key: Option<Uuid>,
@@ -66,7 +71,11 @@ pub mod tests {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             display_code: builder.display_code.unwrap_or_else(|| {
-                Uuid::now_v7().to_string().split_at(19).0.to_string()
+                let rng = rand::thread_rng();
+                rng.sample_iter(Alphanumeric)
+                    .take(19)
+                    .map(|a| a as char)
+                    .collect::<String>()
             }),
             account_type_id: builder.account_type_id.unwrap_or(*SEED_ACCOUNT_TYPE_ID),
             ledger_master_id: builder.ledger_master_id.unwrap_or(*SEED_LEDGER_MASTER_ID),
