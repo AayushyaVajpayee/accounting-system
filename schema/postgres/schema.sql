@@ -167,7 +167,6 @@ create table address
     line_1            varchar(60)                         not null,
     line_2            varchar(60)                         not null,
     landmark          varchar(60), -- mostly landmark
-    address_type      varchar(40)                         not null,
     created_by        uuid references app_user (id)       not null,
     updated_by        uuid references app_user (id),
     created_at        bigint  default extract(epoch from now()) * 1000000,
