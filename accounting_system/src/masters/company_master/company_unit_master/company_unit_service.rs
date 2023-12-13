@@ -7,8 +7,7 @@ use uuid::Uuid;
 
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::pagination::pagination_utils::{PaginatedResponse, PaginationRequest};
-use crate::masters::company_master::company_unit_master::company_unit_master::CompanyUnitMaster;
-use crate::masters::company_master::company_unit_master::company_unit_models::CreateCompanyUnitRequest;
+use crate::masters::company_master::company_unit_master::company_unit_models::{CompanyUnitMaster, CreateCompanyUnitRequest};
 
 #[derive(Debug, Error)]
 pub enum CompanyUnitServiceError {
