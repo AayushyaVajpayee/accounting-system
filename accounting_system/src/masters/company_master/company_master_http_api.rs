@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::common_utils::pagination::pagination_utils::{PaginationRequest, set_pagination_headers};
 use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
 use crate::masters::company_master::company_master_service::{CompanyMasterService, ServiceError};
+use crate::setup_routes;
 
 async fn get_companies_by_tenant_id(data: Data<Arc<dyn CompanyMasterService>>, query: Query<PaginationRequest>, tenant_id: Path<Uuid>) -> actix_web::Result<impl Responder> {
     let resp = data.get_all_companies_for_tenant_id(&tenant_id, &query.0).await?;
@@ -83,19 +84,11 @@ impl ResponseError for ServiceError {
     }
 }
 
-pub fn init_routes(
-    config: &mut ServiceConfig,
-    country_master_service: Arc<dyn CompanyMasterService>,
-) {
-    let data = Data::new(country_master_service);
-    config.service(map_endpoints_to_functions().app_data(data));
-}
 
-fn map_endpoints_to_functions() -> Scope {
-    web::scope("/company-master")
-        .route("/create", web::post().to(create_company))
-        .route("/tenant-id/{tenant_id}", web::get().to(get_companies_by_tenant_id))
-}
+setup_routes!(CompanyMasterService,"/company-master",
+    "/tenant-id/{tenant_id}",web::get().to(get_companies_by_tenant_id),
+    "/create",web::post().to(create_company));
+
 
 #[cfg(test)]
 mod tests {

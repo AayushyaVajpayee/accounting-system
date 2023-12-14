@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::accounting::user::user_models::CreateUserRequest;
 use crate::accounting::user::user_service::{UserService, UserServiceError};
+use crate::setup_routes;
 
 impl ResponseError for UserServiceError {
     fn status_code(&self) -> StatusCode {
@@ -36,18 +37,8 @@ async fn create_user(request: web::Json<CreateUserRequest>,
     Ok(web::Json(p))
 }
 
-pub fn init_routes(config: &mut web::ServiceConfig, user_service: Arc<dyn UserService>) {
-    let data = Data::new(user_service);
-    config.service(
-        map_endpoints_to_functions().app_data(data)
-    );
-}
+setup_routes!(UserService,"user","/id/{id}",web::get().to(get_user_by_id),"/create",web::post().to(create_user));
 
-fn map_endpoints_to_functions() -> Scope {
-    web::scope("user")
-        .route("/id/{id}", web::get().to(get_user_by_id))
-        .route("/create", web::post().to(create_user))
-}
 
 #[cfg(test)]
 mod tests {
@@ -60,33 +51,23 @@ mod tests {
     use crate::accounting::user::user_models::{SEED_USER_ID, User};
     use crate::accounting::user::user_models::tests::{a_create_user_request, a_user, UserTestDataBuilder};
     use crate::accounting::user::user_service::{MockUserService, UserService};
+    use crate::get_and_create_api_test;
 
     #[tokio::test]
     async fn test_api() {
-        let mut mocked = MockUserService::new();
-        mocked.expect_get_user_by_id().returning(|_| Ok(Some(a_user(
+        let closure= ||{
+            let mut mocked = MockUserService::new();
+            mocked.expect_get_user_by_id().returning(|_| Ok(Some(a_user(
+                UserTestDataBuilder { id: Some(Default::default()), ..Default::default() }
+            ))));
+            mocked.expect_create_user().returning(|_| Ok(Default::default()));
+            mocked
+        };
+
+        let get_uri = format!("/user/id/{}", *SEED_USER_ID);
+        let exp_user = a_user(
             UserTestDataBuilder { id: Some(Default::default()), ..Default::default() }
-        ))));
-        mocked.expect_create_user().returning(|_| Ok(Default::default()));
-        let mock: Arc<dyn UserService> = Arc::new(mocked);
-        let exp = mock.get_user_by_id(*SEED_USER_ID).await.unwrap().unwrap();
-        let exp1 = mock.create_user(&a_create_user_request(Default::default())).await.unwrap();
-        let app_data = actix_web::web::Data::new(mock);
-        let app = App::new()
-            .service(map_endpoints_to_functions())
-            .app_data(app_data);
-        let app = test::init_service(app).await;
-        let uri = format!("/user/id/{}", *SEED_USER_ID);
-        let req = test::TestRequest::get()
-            .uri(uri.as_str())
-            .to_request();
-        let res: User = test::call_and_read_body_json(&app, req).await;
-        assert_eq!(exp, res);
-        let req = test::TestRequest::post()
-            .uri("/user/create")
-            .set_json(a_create_user_request(Default::default()))
-            .to_request();
-        let res: Uuid = test::call_and_read_body_json(&app, req).await;
-        assert_eq!(exp1, res);
+        );
+        get_and_create_api_test!(User,UserService,closure,get_uri,"/user/create",a_create_user_request(Default::default()),exp_user);
     }
 }

@@ -6,6 +6,7 @@ use actix_web::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use web::{Data, Path};
+use crate::setup_routes;
 
 use crate::tenant::tenant_models::CreateTenantRequest;
 use crate::tenant::tenant_service::{TenantService, TenantServiceError};
@@ -60,16 +61,10 @@ impl ResponseError for TenantServiceError {
         }
     }
 }
-pub fn init_routes(config: &mut web::ServiceConfig, tenant_service: Arc<dyn TenantService>) {
-    let data = Data::new(tenant_service);
-    config.service(map_endpoints_to_functions().app_data(data));
-}
 
-fn map_endpoints_to_functions() -> Scope {
-    web::scope("/tenant")
-        .route("/id/{id}", web::get().to(get_tenant_by_id))
-        .route("/create", web::post().to(create_tenant))
-}
+setup_routes!(TenantService,
+    "/tenant","/id/{id}",web::get().to(get_tenant_by_id),
+    "/create",web::post().to(create_tenant));
 
 #[cfg(test)]
 mod tests {
@@ -78,33 +73,25 @@ mod tests {
     use actix_web::{App, test};
     use uuid::Uuid;
 
+    use crate::get_and_create_api_test;
     use crate::tenant::tenant_http_api::map_endpoints_to_functions;
     use crate::tenant::tenant_models::{a_create_tenant_request, CreateTenantTestBuilder, SEED_TENANT_ID, Tenant};
     use crate::tenant::tenant_service::{MockTenantService, TenantService};
 
     #[tokio::test]
     async fn test_api() {
-        let mut mocked = MockTenantService::new();
-        mocked.expect_get_tenant_by_id()
-            .returning(|_|Ok(Some(Default::default())));
-        mocked.expect_create_tenant()
-            .returning(|_|Ok(Default::default()));
-        let mock: Arc<dyn TenantService> = Arc::new(mocked);
-        let tenant_expected = mock.get_tenant_by_id(*SEED_TENANT_ID).await.unwrap();
-        let app_data = actix_web::web::Data::new(mock);
-        let app = App::new()
-            .service(map_endpoints_to_functions())
-            .app_data(app_data);
-        let app_service = test::init_service(app).await;
-        let uri = format!("/tenant/id/{}", *SEED_TENANT_ID);
-        let request = test::TestRequest::get().uri(&uri).to_request();
-        let res: Tenant = test::call_and_read_body_json(&app_service, request).await;
-        assert_eq!(res, tenant_expected.unwrap());
-        let request = test::TestRequest::post()
-            .uri("/tenant/create")
-            .set_json(
-                a_create_tenant_request(CreateTenantTestBuilder{..Default::default()}))
-            .to_request();
-        let _: Uuid = test::call_and_read_body_json(&app_service, request).await;
+        let closure =||{
+            let mut mocked = MockTenantService::new();
+            mocked.expect_get_tenant_by_id()
+                .returning(|_| Ok(Some(Default::default())));
+            mocked.expect_create_tenant()
+                .returning(|_| Ok(Default::default()));
+            mocked
+        };
+        let get_uri=format!("/tenant/id/{}", *SEED_TENANT_ID);
+        let tenant_expected:Tenant = Default::default();
+        get_and_create_api_test!(Tenant,TenantService,closure,
+            get_uri,"/tenant/create",
+            a_create_tenant_request(CreateTenantTestBuilder { ..Default::default() }),tenant_expected);
     }
 }

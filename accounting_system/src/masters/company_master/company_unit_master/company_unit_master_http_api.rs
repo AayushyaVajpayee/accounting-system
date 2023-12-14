@@ -8,6 +8,7 @@ use uuid::Uuid;
 use crate::common_utils::pagination::pagination_utils::{PaginationRequest, set_pagination_headers};
 use crate::masters::company_master::company_unit_master::company_unit_models::CreateCompanyUnitRequest;
 use crate::masters::company_master::company_unit_master::company_unit_service::{CompanyUnitService, CompanyUnitServiceError};
+use crate::setup_routes;
 
 impl ResponseError for CompanyUnitServiceError {
     fn status_code(&self) -> StatusCode {
@@ -36,20 +37,12 @@ async fn get_company_units_by_company_id(data: Data<Arc<dyn CompanyUnitService>>
     Ok(response)
 }
 
-pub fn init_routes(
-    config: &mut ServiceConfig,
-    company_unit_service: Arc<dyn CompanyUnitService>,
-) {
-    let data = Data::new(company_unit_service);
-    config.service(map_endpoints_to_functions().app_data(data));
-}
+setup_routes!(CompanyUnitService,"/company-unit-master",
+    "/create",web::post().to(create_company_unit),
+    "/company-unit-id/{company_unit_id}",web::get().to(get_company_unit_by_id),
+    "/company-id/{company_id}",web::get().to(get_company_units_by_company_id)
+);
 
-fn map_endpoints_to_functions() -> Scope {
-    web::scope("/company-unit-master")
-        .route("/create", web::post().to(create_company_unit))
-        .route("/company-unit-id/{company_unit_id}", web::get().to(get_company_unit_by_id))
-        .route("/company-id/{company_id}", web::get().to(get_company_units_by_company_id))
-}
 
 #[cfg(test)]
 mod tests {

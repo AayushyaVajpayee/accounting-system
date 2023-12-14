@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::accounting::account::account_models::CreateAccountRequest;
 use crate::accounting::account::account_service::{AccountService, AccountServiceError};
+use crate::setup_routes;
 
 impl ResponseError for AccountServiceError {
     fn status_code(&self) -> StatusCode {
@@ -38,16 +39,9 @@ async fn create_account(request: web::Json<CreateAccountRequest>,
 }
 
 
-pub fn init_routes(config: &mut web::ServiceConfig, account_service: Arc<dyn AccountService>) {
-    let data = Data::new(account_service);
-    config.service(map_endpoints_to_functions().app_data(data));
-}
-
-fn map_endpoints_to_functions() -> Scope {
-    web::scope("/account")
-        .route("/id/{id}", web::get().to(get_account_by_id))
-        .route("/create", web::post().to(create_account))
-}
+setup_routes!(AccountService,
+    "/account","/id/{id}",web::get().to(get_account_by_id),
+    "/create",web::post().to(create_account));
 
 #[cfg(test)]
 mod tests {
@@ -59,31 +53,21 @@ mod tests {
     use crate::accounting::account::account_http_api::map_endpoints_to_functions;
     use crate::accounting::account::account_models::{Account, CreateAccountRequest};
     use crate::accounting::account::account_service::{AccountService, MockAccountService};
+    use crate::get_and_create_api_test;
 
     #[tokio::test]
     async fn test_api() {
+        let closure=||{
         let mut mocked = MockAccountService::new();
         mocked.expect_create_account().returning(|_a| Ok(Default::default()));
         mocked.expect_get_account_by_id().returning(|_| Ok(Some(Default::default())));
-        let mock: Arc<dyn AccountService> = Arc::new(mocked);
+            mocked
+        };
         let uuid = Uuid::now_v7();
-        let account_expected = mock.get_account_by_id(&uuid).await.unwrap().unwrap();
-        let app_data = actix_web::web::Data::new(mock);
-        let app = App::new()
-            .service(map_endpoints_to_functions())
-            .app_data(app_data);
-        let app_service = test::init_service(app).await;
-        let uri = format!("/account/id/{}", uuid);
-        let request = test::TestRequest::get()
-            .uri(uri.as_str())
-            .to_request();
-        let res: Account = test::call_and_read_body_json(&app_service, request).await;
-        assert_eq!(res, account_expected);
-        let request = test::TestRequest::post()
-            .uri("/account/create")
-            .set_json(CreateAccountRequest { ..Default::default() })
-            .to_request();
-        let _: Uuid = test::call_and_read_body_json(&app_service, request).await;
+        let get_uri = format!("/account/id/{}", uuid);
+        let account_expected:Account = Default::default();
+        get_and_create_api_test!(Account,AccountService,closure,get_uri,
+            "/account/create",CreateAccountRequest { ..Default::default() },account_expected);
     }
 }
 
