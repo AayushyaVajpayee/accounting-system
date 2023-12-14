@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use gstin_validator::gstin_models::validate_gstin;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Default,PartialEq)]
 pub struct GstinNo(String);
 
 impl GstinNo {

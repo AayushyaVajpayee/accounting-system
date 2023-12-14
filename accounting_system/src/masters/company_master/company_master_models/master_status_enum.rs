@@ -1,9 +1,10 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Copy, Clone,Default,)]
 pub enum MasterStatusEnum {
     PendingApproval = 0,
+    #[default]
     Approved = 1,
     ChangesRequested = 2,
     Deleted = 3,

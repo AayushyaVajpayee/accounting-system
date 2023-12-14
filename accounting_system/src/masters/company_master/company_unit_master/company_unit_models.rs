@@ -6,7 +6,7 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Default,PartialEq)]
 pub struct CompanyUnitMaster {
     base_master_fields: BaseMasterFields,
     company_id: Uuid,
@@ -36,7 +36,7 @@ pub mod tests {
     use crate::masters::company_master::company_unit_master::company_unit_models::{CreateCompanyUnitRequest, CreateCompanyUnitRequestBuilder};
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
-    fn a_create_company_unit_request(builder: CreateCompanyUnitRequestBuilder) -> CreateCompanyUnitRequest {
+   pub fn a_create_company_unit_request(builder: CreateCompanyUnitRequestBuilder) -> CreateCompanyUnitRequest {
         CreateCompanyUnitRequest {
             idempotency_key: builder.company_id.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),

@@ -34,6 +34,6 @@ macro_rules! get_and_create_api_test {
             .uri($create_uri)
             .set_json($create_request)
             .to_request();
-        let _: Uuid = test::call_and_read_body_json(&app_service, request).await;
+        let _: uuid::Uuid = test::call_and_read_body_json(&app_service, request).await;
     };
 }

@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
 use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Default,PartialEq)]
 pub struct BaseMasterFields {
     pub id: Uuid,
     pub entity_version_id: i32,

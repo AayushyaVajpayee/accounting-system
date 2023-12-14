@@ -10,6 +10,7 @@ use crate::accounting::currency::currency_models::CreateCurrencyMasterRequest;
 use crate::accounting::currency::currency_service::{
     CurrencyService, CurrencyServiceError,
 };
+use crate::setup_routes;
 
 impl ResponseError for CurrencyServiceError {
     fn status_code(&self) -> StatusCode {
@@ -41,17 +42,9 @@ async fn create_currency(
     let p = data.create_currency_entry(&request.0).await?;
     Ok(web::Json(p))
 }
-
-pub fn init_routes(config: &mut web::ServiceConfig, currency_service: Arc<dyn CurrencyService>) {
-    let data = Data::new(currency_service);
-    config.service(map_endpoints_to_functions().app_data(data));
-}
-
-fn map_endpoints_to_functions() -> Scope {
-    web::scope("/currency")
-        .route("/id/{id}", web::get().to(get_currency_by_id))
-        .route("/create", web::post().to(create_currency))
-}
+setup_routes!(CurrencyService,"/currency",
+    "/id/{id}", web::get().to(get_currency_by_id),
+    "/create",web::post().to(create_currency));
 
 #[cfg(test)]
 mod tests {
