@@ -1,9 +1,10 @@
+use std::str::FromStr;
+
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use std::str::FromStr;
-use crate::accounting::currency::currency_models::AuditMetadataBase;
 
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 lazy_static!{
     pub static ref SEED_TENANT_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
@@ -14,6 +15,7 @@ pub struct Tenant {
     pub display_name: String,
     pub audit_metadata: AuditMetadataBase,
 }
+
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateTenantRequest {
