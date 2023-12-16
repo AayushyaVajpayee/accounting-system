@@ -1,3 +1,4 @@
+use crate::accounting::user::user_db_mapping::UserDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
 
 pub trait DbStructMapping {
@@ -31,7 +32,7 @@ async fn execute_db_struct_mapping(structs: Vec<impl DbStructMapping>) {
 
 fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
     let list: Vec<Box<dyn DbStructMapping>> = vec![
-        Box::new(TenantDbMapping {}),
+        Box::new(TenantDbMapping {}),Box::new(UserDbMapping{})
 
     ];
     list
