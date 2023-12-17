@@ -1,3 +1,6 @@
+use crate::accounting::account::account_db_mapping::AccountDbMapping;
+use crate::accounting::account::account_type::account_type_db_mapping::AccountTypeDbMapping;
+use crate::accounting::currency::currency_db_mapping::CurrencyDbMapping;
 use crate::accounting::user::user_db_mapping::UserDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
 
@@ -32,7 +35,11 @@ async fn execute_db_struct_mapping(structs: Vec<impl DbStructMapping>) {
 
 fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
     let list: Vec<Box<dyn DbStructMapping>> = vec![
-        Box::new(TenantDbMapping {}),Box::new(UserDbMapping{})
+        Box::new(TenantDbMapping {}),
+        Box::new(UserDbMapping{}),
+        Box::new(CurrencyDbMapping{}),
+        Box::new(AccountTypeDbMapping{}),
+        Box::new(AccountDbMapping{})
 
     ];
     list
