@@ -13,6 +13,7 @@ use crate::accounting::account::account_db_mapping::AccountDbMapping;
 use crate::accounting::account::account_type::account_type_db_mapping::AccountTypeDbMapping;
 use crate::accounting::currency::currency_db_mapping::CurrencyDbMapping;
 use crate::accounting::user::user_db_mapping::UserDbMapping;
+use crate::audit_table::audit_table_db_mapping::AuditTableDbMapping;
 use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
@@ -57,6 +58,7 @@ async fn execute_db_struct_mapping(structs: Vec<Box<dyn DbStructMapping>>,pool:A
 fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
     let list: Vec<Box<dyn DbStructMapping>> = vec![
         Box::new(TenantDbMapping {}),
+        Box::new(AuditTableDbMapping{}),
         Box::new(UserDbMapping {}),
         Box::new(CurrencyDbMapping {}),
         Box::new(LedgerMasterDbMapping{}),
