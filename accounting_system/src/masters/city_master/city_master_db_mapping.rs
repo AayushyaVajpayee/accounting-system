@@ -6,8 +6,8 @@ const CITY_MASTER_DDL_SQL: &str = include_str!("./city_master_sql/city_master_dd
 const CITY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./city_master_sql/city_master_functions_and_procedures.sql");
 const CITY_MASTER_SEED_CSV:&str =include_str!("./city_master_sql/city_master.csv");
 impl DbStructMapping for CityMasterDbMapping{
-    fn table_name(&self) -> &'static str {
-        "city_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("city_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {

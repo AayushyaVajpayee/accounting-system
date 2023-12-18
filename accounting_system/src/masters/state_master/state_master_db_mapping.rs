@@ -6,8 +6,8 @@ const STATE_MASTER_DDL_SQL: &str = include_str!("./state_master_sql/state_master
 const STATE_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./state_master_sql/state_master_functions_and_procedures.sql");
 const STATE_MASTER_SEED_CSV:&str =include_str!("./state_master_sql/state_master.csv");
 impl DbStructMapping for StateMasterDbMapping{
-    fn table_name(&self) -> &'static str {
-        "state_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("state_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {

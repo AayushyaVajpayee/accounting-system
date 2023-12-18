@@ -7,8 +7,8 @@ const USER_FUNCTIONS_AND_PROCEDURES_SQL: &str =
     include_str!("./user_sql/user_functions_and_procedures.sql");
 const USER_SEED_CSV: &str = include_str!("./user_sql/user.csv");
 impl DbStructMapping for UserDbMapping {
-    fn table_name(&self) -> &'static str {
-        "app_user"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("app_user")
     }
 
     fn get_ddl_script(&self) -> &'static str {

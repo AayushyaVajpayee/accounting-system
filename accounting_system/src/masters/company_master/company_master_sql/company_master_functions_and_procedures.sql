@@ -8,9 +8,8 @@
 create trigger company_master_audit_trigger
     after update or delete
     on company_master
-    for each row;
-
-
+    for each row
+execute function create_audit_entry();
 
 create or replace function create_company_master(req company_master, idemp_key uuid) returns uuid as
 $$

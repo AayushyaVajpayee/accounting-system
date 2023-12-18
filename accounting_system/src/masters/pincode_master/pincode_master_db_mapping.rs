@@ -6,8 +6,8 @@ const PINCODE_MASTER_DDL_SQL: &str = include_str!("./pincode_master_sql/pincode_
 const PINCODE_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./pincode_master_sql/pincode_master_functions_and_procedures.sql");
 const PINCODE_MASTER_SEED_CSV:&str =include_str!("./pincode_master_sql/pincode_master.csv");
 impl DbStructMapping for PincodeMasterDbMapping{
-    fn table_name(&self) -> &'static str {
-        "pincode_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("pincode_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {

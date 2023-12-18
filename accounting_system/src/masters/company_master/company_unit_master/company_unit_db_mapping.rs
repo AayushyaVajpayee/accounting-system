@@ -6,8 +6,8 @@ const COMPANY_UNIT_MASTER_DDL_SQL: &str = include_str!("./company_unit_master_sq
 const COMPANY_UNIT_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./company_unit_master_sql/company_unit_master_functions_and_procedures.sql");
 const COMPANY_UNIT_MASTER_SEED_CSV:&str =include_str!("./company_unit_master_sql/company_unit_master.csv");
 impl DbStructMapping for CompanyUnitMasterDbMapping{
-    fn table_name(&self) -> &'static str {
-        "company_unit_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("company_unit_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {

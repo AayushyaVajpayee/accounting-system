@@ -6,8 +6,8 @@ const LEDGER_TRANSFER_DDL_SQL: &str = include_str!("./ledger_transfer_sql/ledger
 const LEDGER_TRANSFER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./ledger_transfer_sql/ledger_transfer_functions_and_procedures.sql");
 const LEDGER_TRANSFER_SEED_CSV:&str =include_str!("./ledger_transfer_sql/ledger_transfer.csv");
 impl DbStructMapping for LedgerTransferDbMapping{
-    fn table_name(&self) -> &'static str {
-        "transfer"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("transfer")
     }
 
     fn get_ddl_script(&self) -> &'static str {

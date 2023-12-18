@@ -6,8 +6,8 @@ const LEDGER_MASTER_DDL_SQL: &str = include_str!("./ledger_master_sql/ledger_mas
 const LEDGER_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./ledger_master_sql/ledger_master_functions_and_procedures.sql");
 const LEDGER_MASTER_SEED_CSV:&str =include_str!("./ledger_master_sql/ledger_master.csv");
 impl DbStructMapping for LedgerMasterDbMapping{
-    fn table_name(&self) -> &'static str {
-        "ledger_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("ledger_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {

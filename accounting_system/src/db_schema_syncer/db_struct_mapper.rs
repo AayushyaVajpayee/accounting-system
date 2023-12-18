@@ -14,6 +14,8 @@ use crate::accounting::account::account_type::account_type_db_mapping::AccountTy
 use crate::accounting::currency::currency_db_mapping::CurrencyDbMapping;
 use crate::accounting::user::user_db_mapping::UserDbMapping;
 use crate::audit_table::audit_table_db_mapping::AuditTableDbMapping;
+use crate::common_utils::common_utils_db_mapping::CommonUtilsDbMapping;
+use crate::common_utils::pagination::pagination_db_mapping::PaginationDataDbMapping;
 use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::masters::address_master::address_db_mapping::AddressDbMapping;
@@ -26,7 +28,7 @@ use crate::masters::state_master::state_master_db_mapping::StateMasterDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
 
 pub trait DbStructMapping {
-    fn table_name(&self) -> &'static str;
+    fn table_name(&self) -> Option<&'static str>;
     fn get_ddl_script(&self) -> &'static str; //can embed in code
     fn get_index_creation_script(&self) -> &'static str; //can embed in code
     fn get_functions_and_procedures_script(&self) -> &'static str; //can embed in code
@@ -50,7 +52,10 @@ async fn execute_db_struct_mapping(structs: Vec<Box<dyn DbStructMapping>>,pool:A
     txn.simple_query(whole_scrip.as_str()).await.unwrap();
 
     for table in structs {
-        let query = format!("copy {} from stdin with csv header", table.table_name());
+        if table.table_name().is_none(){
+            continue;
+        }
+        let query = format!("copy {} from stdin with csv header", table.table_name().unwrap());
         let content = async { Ok::<_, Error>(Bytes::from(table.get_seed_data_script())) };
         let stream = stream::once(content);
         let copy_in_writer = txn.copy_in(&query).await.unwrap();
@@ -67,6 +72,8 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
     let list: Vec<Box<dyn DbStructMapping>> = vec![
         Box::new(TenantDbMapping {}),
         Box::new(AuditTableDbMapping{}),
+        Box::new(CommonUtilsDbMapping{}),
+        Box::new(PaginationDataDbMapping{}),
         Box::new(UserDbMapping {}),
         Box::new(CurrencyDbMapping {}),
         Box::new(LedgerMasterDbMapping{}),

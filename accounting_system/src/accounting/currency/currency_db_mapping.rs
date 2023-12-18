@@ -6,8 +6,8 @@ const CURRENCY_DDL_SQL: &str = include_str!("./currency_sql/currency_ddl.sql");
 const CURRENCY_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./currency_sql/currency_functions_and_procedures.sql");
 const CURRENCY_SEED_CSV:&str =include_str!("./currency_sql/currency.csv");
 impl DbStructMapping for CurrencyDbMapping{
-    fn table_name(&self) -> &'static str {
-        "currency_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("currency_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {

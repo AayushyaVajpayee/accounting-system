@@ -1,2 +1,0 @@
-id,entity_version_id,tenant_id,active,approval_status,remarks,pincode_id,city_id,country,line_1,line_2,landmark,created_by,updated_by,created_at,updated_at
-018c6261-186b-763f-a3ae-13d44e2bf01d,0,018b33d9-c862-7fde-a0cd-55504d75e5e9,true,1,,c8c1da55-8be8-722c-9623-1295611b2eee,c7d82fae-7928-7f91-970b-41450b26f197,018b05dd-2983-7809-a2d1-95b3f1776eb3,some fake address,s,,018b3444-dc75-7a3f-a4d9-02c41071d3bd,018b3444-dc75-7a3f-a4d9-02c41071d3bd,1702457723832674,1702457723832674

@@ -6,8 +6,8 @@ const ADDRESS_DDL_SQL: &str = include_str!("./address_sql/address_ddl.sql");
 const ADDRESS_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./address_sql/address_functions_and_procedures.sql");
 const ADDRESS_SEED_CSV:&str =include_str!("./address_sql/address.csv");
 impl DbStructMapping for AddressDbMapping{
-    fn table_name(&self) -> &'static str {
-        "address"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("address")
     }
 
     fn get_ddl_script(&self) -> &'static str {

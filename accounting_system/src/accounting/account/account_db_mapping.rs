@@ -6,8 +6,8 @@ const ACCOUNT_DDL_SQL: &str = include_str!("./account_sql/account_ddl.sql");
 const ACCOUNT_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./account_sql/account_functions_and_procedures.sql");
 const ACCOUNT_SEED_CSV:&str =include_str!("./account_sql/account.csv");
 impl DbStructMapping for AccountDbMapping{
-    fn table_name(&self) -> &'static str {
-        "user_account"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("user_account")
     }
 
     fn get_ddl_script(&self) -> &'static str {

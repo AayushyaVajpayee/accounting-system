@@ -6,8 +6,8 @@ const AUDIT_TABLE_DDL_SQL: &str = include_str!("./audit_table_sql/audit_table_dd
 const AUDIT_TABLE_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./audit_table_sql/audit_table_functions_and_procedures.sql");
 const AUDIT_TABLE_SEED_CSV:&str =include_str!("./audit_table_sql/audit_table.csv");
 impl DbStructMapping for AuditTableDbMapping{
-    fn table_name(&self) -> &'static str {
-        "audit_entries"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("audit_entries")
     }
 
     fn get_ddl_script(&self) -> &'static str {

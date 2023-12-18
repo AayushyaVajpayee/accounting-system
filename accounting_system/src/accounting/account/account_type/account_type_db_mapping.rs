@@ -6,8 +6,8 @@ const ACCOUNT_TYPE_DDL_SQL: &str = include_str!("./account_type_sql/account_type
 const ACCOUNT_TYPE_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./account_type_sql/account_type_functions_and_procedures.sql");
 const ACCOUNT_TYPE_SEED_CSV:&str =include_str!("./account_type_sql/account_type_seed.csv");
 impl DbStructMapping for AccountTypeDbMapping{
-    fn table_name(&self) -> &'static str {
-        "account_type_master"
+    fn table_name(&self) -> Option<&'static str> {
+        Some("account_type_master")
     }
 
     fn get_ddl_script(&self) -> &'static str {
