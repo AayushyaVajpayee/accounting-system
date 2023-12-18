@@ -122,7 +122,6 @@ create table state_master-- this can also be an enum
     created_at bigint default extract(epoch from now()) * 1000000,
     updated_at bigint default extract(epoch from now()) * 1000000,
     country_id uuid references country_master (id)
-
 );
 
 create table city_master
