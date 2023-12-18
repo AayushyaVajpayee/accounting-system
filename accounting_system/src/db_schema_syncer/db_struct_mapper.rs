@@ -18,6 +18,7 @@ use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::masters::city_master::city_master_db_mapping::CityMasterDbMapping;
 use crate::masters::country_master::country_master_db_mapping::CountryMasterDbMapping;
+use crate::masters::pincode_master::pincode_master_db_mapping::PincodeMasterDbMapping;
 use crate::masters::state_master::state_master_db_mapping::StateMasterDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
 
@@ -70,7 +71,8 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(LedgerTransferDbMapping{}),
         Box::new(CountryMasterDbMapping{}),
         Box::new(StateMasterDbMapping{}),
-        Box::new(CityMasterDbMapping{})
+        Box::new(CityMasterDbMapping{}),
+        Box::new(PincodeMasterDbMapping{})
     ];
     list
 }
