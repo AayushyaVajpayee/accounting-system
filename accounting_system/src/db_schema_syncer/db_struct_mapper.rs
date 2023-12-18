@@ -16,6 +16,7 @@ use crate::accounting::user::user_db_mapping::UserDbMapping;
 use crate::audit_table::audit_table_db_mapping::AuditTableDbMapping;
 use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
+use crate::masters::city_master::city_master_db_mapping::CityMasterDbMapping;
 use crate::masters::country_master::country_master_db_mapping::CountryMasterDbMapping;
 use crate::masters::state_master::state_master_db_mapping::StateMasterDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
@@ -68,7 +69,8 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(AccountDbMapping {}),
         Box::new(LedgerTransferDbMapping{}),
         Box::new(CountryMasterDbMapping{}),
-        Box::new(StateMasterDbMapping{})
+        Box::new(StateMasterDbMapping{}),
+        Box::new(CityMasterDbMapping{})
     ];
     list
 }
