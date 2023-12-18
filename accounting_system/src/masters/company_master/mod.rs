@@ -6,3 +6,4 @@ pub mod company_master_http_api;
 mod dao;
 pub mod company_master_models;
 mod company_unit_master;
+pub mod company_master_db_mapping;
