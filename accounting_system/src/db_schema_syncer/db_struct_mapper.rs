@@ -19,6 +19,7 @@ use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::masters::address_master::address_db_mapping::AddressDbMapping;
 use crate::masters::city_master::city_master_db_mapping::CityMasterDbMapping;
 use crate::masters::company_master::company_master_db_mapping::CompanyMasterDbMapping;
+use crate::masters::company_master::company_unit_master::company_unit_db_mapping::CompanyUnitMasterDbMapping;
 use crate::masters::country_master::country_master_db_mapping::CountryMasterDbMapping;
 use crate::masters::pincode_master::pincode_master_db_mapping::PincodeMasterDbMapping;
 use crate::masters::state_master::state_master_db_mapping::StateMasterDbMapping;
@@ -61,6 +62,7 @@ async fn execute_db_struct_mapping(structs: Vec<Box<dyn DbStructMapping>>,pool:A
     txn.commit().await.unwrap();
 }
 
+
 fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
     let list: Vec<Box<dyn DbStructMapping>> = vec![
         Box::new(TenantDbMapping {}),
@@ -76,7 +78,8 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(CityMasterDbMapping{}),
         Box::new(PincodeMasterDbMapping{}),
         Box::new(AddressDbMapping{}),
-        Box::new(CompanyMasterDbMapping{})
+        Box::new(CompanyMasterDbMapping{}),
+        Box::new(CompanyUnitMasterDbMapping{})
     ];
     list
 }
