@@ -13,6 +13,7 @@ use crate::accounting::account::account_db_mapping::AccountDbMapping;
 use crate::accounting::account::account_type::account_type_db_mapping::AccountTypeDbMapping;
 use crate::accounting::currency::currency_db_mapping::CurrencyDbMapping;
 use crate::accounting::user::user_db_mapping::UserDbMapping;
+use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
 
@@ -61,6 +62,7 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(LedgerMasterDbMapping{}),
         Box::new(AccountTypeDbMapping {}),
         Box::new(AccountDbMapping {}),
+        Box::new(LedgerTransferDbMapping{})
     ];
     list
 }
