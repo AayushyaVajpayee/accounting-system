@@ -5,8 +5,8 @@ use clap::{Parser, Subcommand};
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
 use postgres::NoTls;
 use tokio_postgres::Config;
+use accounting_system::init_db_with_seed;
 
-use db_prep_tool::get_seed_service;
 
 #[derive(Parser)]
 struct Cli {
@@ -59,13 +59,11 @@ async fn main() {
                 .unwrap();
             println!("created database");
             let pool = Arc::new(connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str()));
-            let seed_ser = get_seed_service(pool);
-            seed_ser.copy_tables().await;
+            init_db_with_seed(pool.clone()).await;
         }
         MySubCommand::CreateSeedData { dbname } => {
             let pool = Arc::new(connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str()));
-            let seed_ser = get_seed_service(pool);
-            seed_ser.copy_tables().await;
+            init_db_with_seed(pool.clone()).await;
         }
         MySubCommand::DropAllDbs => {
             let k = pool.get().await.unwrap()

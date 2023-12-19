@@ -1,4 +1,3 @@
-use std::sync::OnceLock;
 use std::time::Duration;
 
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
@@ -6,7 +5,6 @@ use deadpool_postgres::RecyclingMethod::{Clean, Fast, Verified};
 use tokio_postgres::{Config, NoTls};
 
 use crate::configurations::{get_dev_conf, Setting};
-
 
 pub fn get_postgres_conn_pool() -> Pool {
     init()
@@ -52,15 +50,15 @@ pub mod test_utils_postgres {
     use std::time::Duration;
 
     use deadpool_postgres::{Manager, ManagerConfig, Pool, Runtime};
-    use testcontainers::clients::Cli;
     use testcontainers::{Container, GenericImage};
+    use testcontainers::clients::Cli;
     use testcontainers::core::WaitFor;
     use tokio::sync::OnceCell;
     use tokio_postgres::{Config, NoTls};
-    use db_prep_tool::get_seed_service_with_pool_supplied;
 
     use crate::accounting::postgres_factory::get_recycling_method;
     use crate::configurations::{get_dev_conf, Setting};
+    use crate::db_schema_syncer::db_struct_mapper::init_db_with_seed;
 
     static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
     static TEST_CONTAINER_CLIENT: OnceCell<Cli> = OnceCell::const_new();
@@ -80,8 +78,7 @@ pub mod test_utils_postgres {
 
     pub async fn get_postgres_conn_pool_with_new_db(port: u16, dbname: &str) -> Arc<Pool> {
         let pool = init_pool(port, Some(dbname)).await;
-        let seed_s = get_seed_service_with_pool_supplied(pool.clone());
-        seed_s.copy_tables().await;
+        init_db_with_seed(pool.clone()).await;
         pool
     }
 
@@ -125,8 +122,7 @@ pub mod test_utils_postgres {
                                        });
         let p = Arc::new(build_pool(mgr, &settings));
         if to_be_seeded {
-            let seed_s = get_seed_service_with_pool_supplied(p.clone());
-            seed_s.copy_tables().await;
+            init_db_with_seed(p.clone()).await;
         }
         p
     }
@@ -149,8 +145,7 @@ pub mod test_utils_postgres {
         let container = run_postgres().await;
         let port = container.get_host_port_ipv4(5432);
         let pool = get_postgres_conn_pool(port, None).await;
-        let seed_s = get_seed_service_with_pool_supplied(pool);
-        seed_s.copy_tables().await;
+        init_db_with_seed(pool).await;
         PK { container }
     }
 

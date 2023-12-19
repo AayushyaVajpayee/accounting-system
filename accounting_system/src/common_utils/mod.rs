@@ -4,3 +4,4 @@ pub mod dao_error;
 pub mod pagination;
 pub mod macro_utils;
 pub mod db_row_conversion_utils;
+pub mod common_utils_db_mapping;
