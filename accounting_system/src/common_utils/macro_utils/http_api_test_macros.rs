@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! setup_routes {
     ($service_name:ident,$root:literal,$($path:literal,$http_mapping:expr),*) => {
-        pub fn init_routes(config: &mut web::ServiceConfig, service: Arc<dyn $service_name>) {
+        pub fn init_routes(config: &mut web::ServiceConfig, service: std::sync::Arc<dyn $service_name>) {
     let data = Data::new(service);
     config.service(map_endpoints_to_functions().app_data(data));
 }
@@ -20,6 +20,7 @@ fn map_endpoints_to_functions() -> Scope {
 #[macro_export]
 macro_rules! get_and_create_api_test {
     ($entity_name:ident,$service_name:ident,$initialised_mock:expr,$get_uri:expr,$create_uri:literal,$create_request:expr,$expected:expr) => {
+        use std::sync::Arc;
         let mocked = ($initialised_mock)();
         let mock: Arc<dyn $service_name> = Arc::new(mocked);
         let app_data = actix_web::web::Data::new(mock);

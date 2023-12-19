@@ -58,15 +58,3 @@ pub fn get_tenant_service(arc: Arc<Pool>) -> Arc<dyn TenantService> {
     };
     Arc::new(tenant_s)
 }
-
-#[allow(dead_code)]
-#[cfg(test)]
-pub fn get_tenant_service_for_test(
-    postgres_client: Arc<Pool>,
-) -> Arc<dyn TenantService> {
-    let tenant_d = get_tenant_dao(postgres_client);
-    let tenant_s = TenantServiceImpl {
-        tenant_dao: tenant_d,
-    };
-    Arc::new(tenant_s)
-}

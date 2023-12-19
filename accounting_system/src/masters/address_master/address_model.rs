@@ -1,64 +1,135 @@
+use anyhow::bail;
+use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug,Eq, PartialEq)]
+use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
+
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressLine(String);
 
-
-impl AddressLine{
-    pub fn new(line:&str)->Result<Self,&str>{
-        let line = line.trim();
-        if line.len()>60{
-            return Err("address line cannot be more than 60 chars")
-        } else if line.len()==0{
-            return Err("address line cannot be empty")
+impl AddressLine {
+    pub fn new_nullable(line: Option<&str>) -> anyhow::Result<Option<Self>> {
+        match line {
+            None => { Ok(None) }
+            Some(line) => {
+                Some(AddressLine::new(line)).transpose()
+            }
         }
-        return Ok(Self(line.to_string()))
     }
-}
-#[derive(Debug)]
-pub struct Address{
-    id:Uuid,
-    tenant_id:i32,
-    line_1:AddressLine,//Flat, House no., Building, Company, Apartment
-    line_2:AddressLine,//Area, Street, Sector, Village
-    line_3:Option<AddressLine>,//Landmark
-    city_id: Uuid,
-    country_id:Uuid,
-    country_specific_fields: CountrySpecificAddressFields,
-    audit_metadata:AuditMetadataBase
-}
-
-
-#[derive(Debug)]
-pub enum CountrySpecificAddressFields {
-    IndiaAddress {
-        pincode_id: i32,
-        state_id: Uuid
+    pub fn new(line: &str) -> anyhow::Result<Self> {
+        let line = line.trim();
+        if line.len() > 60 {
+            bail!("address line cannot be more than 60 chars");
+        } else if line.is_empty() {
+            bail!("address line cannot be empty");
+        }
+        Ok(Self(line.to_string()))
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct Address {
+    pub base_master_fields: BaseMasterFields,
+    pub line_1: AddressLine,
+    //Flat, House no., Building, Company, Apartment
+    pub line_2: Option<AddressLine>,
+    //Area, Street, Sector, Village
+    pub landmark: Option<AddressLine>,
+    //Landmark
+    pub city_id: Uuid,
+    pub state_id: Uuid,
+    pub pincode_id: Uuid,
+    pub country_id: Uuid,
+    pub audit_metadata: AuditMetadataBase,
+}
 
+
+#[derive(Debug, Serialize, Deserialize, Builder)]
+pub struct CreateAddressRequest {
+    pub idempotence_key: Uuid,
+    pub tenant_id: Uuid,
+    pub line_1: String,
+    pub line_2: Option<String>,
+    pub landmark: Option<String>,
+    pub city_id: Uuid,
+    pub state_id: Uuid,
+    pub country_id: Uuid,
+}
 
 
 #[cfg(test)]
-mod tests{
+pub mod tests {
+    use anyhow::anyhow;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
-    use crate::masters::address_master::address_model::AddressLine;
+    use uuid::Uuid;
+
+    use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+    use crate::masters::address_master::address_model::{Address, AddressLine, CreateAddressRequest, CreateAddressRequestBuilder};
+    use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
+    use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
+    use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
+    use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
+    use crate::masters::pincode_master::pincode_models::tests::SEED_PINCODE_ID;
+    use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
+
+    pub struct AddressBuilder {
+        base_master_fields: Option<BaseMasterFields>,
+        line_1: Option<AddressLine>,
+        line_2: Option<AddressLine>,
+        landmark: Option<AddressLine>,
+        //Landmark
+        city_id: Option<Uuid>,
+        state_id: Option<Uuid>,
+        pincode_id: Option<Uuid>,
+        country_id: Option<Uuid>,
+        audit_metadata: Option<AuditMetadataBase>,
+    }
+
+    pub fn an_address(builder: AddressBuilder) -> Address {
+        Address {
+            base_master_fields: builder.base_master_fields.unwrap_or_else(|| a_base_master_field(Default::default())),
+            line_1: AddressLine("some fake address".to_string()),
+            line_2: None,
+            landmark: None,
+            city_id: builder.city_id.unwrap_or(*SEED_CITY_ID),
+            state_id: builder.state_id.unwrap_or(*SEED_STATE_ID),
+            pincode_id: builder.pincode_id.unwrap_or(*SEED_PINCODE_ID),
+            country_id: builder.country_id.unwrap_or(*INDIA_COUNTRY_ID),
+            audit_metadata: builder.audit_metadata.unwrap_or_else(|| an_audit_metadata_base(Default::default())),
+        }
+    }
+
+    pub fn a_create_address_request(builder: CreateAddressRequestBuilder) -> CreateAddressRequest {
+        CreateAddressRequest {
+            idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
+            tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
+            line_1: "some fake address".to_string(),
+            line_2: None,
+            landmark: None,
+            city_id: builder.city_id.unwrap_or(*SEED_CITY_ID),
+            state_id: builder.state_id.unwrap_or(*SEED_STATE_ID),
+            country_id: builder.country_id.unwrap_or(*INDIA_COUNTRY_ID),
+        }
+    }
 
     #[rstest]
-    #[case("kldlfdakjfdklajfdlkajafjlkjdalkjflakjdlkajflkajlkjdflkajkldfaj",false,Err("address line cannot be more than 60 chars"))]
-    #[case("",false,Err("address line cannot be empty"))]
-    #[case("baker street ",true,Ok(AddressLine("baker street".to_string())))]
-    fn test_address_line(#[case] input:String, #[case] valid:bool, #[case] output:Result<AddressLine,&'static str>){
+    #[case("kldlfdakjfdklajfdlkajafjlkjdalkjflakjdlkajflkajlkjdflkajkldfaj", false, Err(anyhow ! ("address line cannot be more than 60 chars")))]
+    #[case("", false, Err(anyhow ! ("address line cannot be empty")))]
+    #[case("baker street ", true, Ok(AddressLine("baker street".to_string())))]
+    fn test_address_line(#[case] input: String, #[case] valid: bool, #[case] output: anyhow::Result<AddressLine>) {
         let address_line = AddressLine::new(input.as_str());
-        if valid{
+        if valid {
             assert_that!(address_line).is_ok();
-        }else{
+            assert_that!(address_line.unwrap()).is_equal_to(output.unwrap())
+        } else {
             assert_that!(address_line).is_err();
+            assert_that!(address_line.unwrap_err().to_string())
+                .is_equal_to(output.unwrap_err().to_string());
         }
-        assert_eq!(address_line,output);
     }
 }

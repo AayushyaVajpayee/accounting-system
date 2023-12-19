@@ -185,14 +185,12 @@ pub mod tests {
     use crate::masters::company_master::dao::dao_trait::MockCompanyMasterDao;
     use crate::masters::company_master::dao::dao_trait_impl::get_company_master_dao;
     use crate::tenant::tenant_models::a_tenant;
-    use crate::tenant::tenant_service::{
-        get_tenant_service_for_test, MockTenantService, TenantService,
-    };
+    use crate::tenant::tenant_service::{get_tenant_service, MockTenantService, TenantService};
 
     pub async fn get_company_master_service_for_tests() -> Arc<dyn CompanyMasterService> {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
-        let tenant_service = get_tenant_service_for_test(postgres_client.clone());
+        let tenant_service = get_tenant_service(postgres_client.clone());
         let user_service = get_user_service_for_test(postgres_client.clone());
         let dao = get_company_master_dao(postgres_client.clone());
         let service = CompanyMasterServiceImpl {
