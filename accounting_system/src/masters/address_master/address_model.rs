@@ -56,6 +56,9 @@ pub struct CreateAddressRequest {
     pub city_id: Uuid,
     pub state_id: Uuid,
     pub country_id: Uuid,
+    pub pincode_id: Uuid,
+    pub created_by: Uuid
+
 }
 
 
@@ -68,6 +71,7 @@ pub mod tests {
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::address_master::address_model::{Address, AddressLine, CreateAddressRequest, CreateAddressRequestBuilder};
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
     use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
@@ -114,6 +118,8 @@ pub mod tests {
             city_id: builder.city_id.unwrap_or(*SEED_CITY_ID),
             state_id: builder.state_id.unwrap_or(*SEED_STATE_ID),
             country_id: builder.country_id.unwrap_or(*INDIA_COUNTRY_ID),
+            pincode_id: builder.pincode_id.unwrap_or(*SEED_PINCODE_ID),
+            created_by: builder.created_by.unwrap_or(*SEED_USER_ID)
         }
     }
 
