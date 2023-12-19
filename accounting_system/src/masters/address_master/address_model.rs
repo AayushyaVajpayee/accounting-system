@@ -112,7 +112,7 @@ pub mod tests {
         CreateAddressRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
-            line_1: "some fake address".to_string(),
+            line_1: builder.line_1.unwrap_or("some fake address".to_string()),
             line_2: None,
             landmark: None,
             city_id: builder.city_id.unwrap_or(*SEED_CITY_ID),

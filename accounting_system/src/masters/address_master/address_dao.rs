@@ -116,4 +116,34 @@ mod tests {
             .map(|a| &a.base_master_fields.id)
             .is_equal_to(id);
     }
+
+    #[tokio::test]
+    async fn should_return_address_when_idempotency_key_is_same_as_earlier_completed_request() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port, Some("address_t1")).await;
+        let name = "address_t1";
+        let mut ab = CreateAddressRequestBuilder::default();
+        ab.line_1(name.to_string());
+        let address = a_create_address_request(ab);
+        let dao = AddressDaoImpl { postgres_client: postgres_client.clone() };
+        let id = dao.create_address(&address).await.unwrap();
+        let id2 = dao.create_address(&address).await.unwrap();
+        assert_that!(&id).is_equal_to(id2);
+        let number_of_addr_created: i64 = postgres_client
+            .get()
+            .await
+            .unwrap()
+            .query(
+                "select count(id) from address where line_1=$1",
+                &[&name],
+            )
+            .await
+            .unwrap()
+            .iter()
+            .map(|a| a.get(0))
+            .next()
+            .unwrap();
+        assert_that!(number_of_addr_created).is_equal_to(1)
+        ;
+    }
 }
