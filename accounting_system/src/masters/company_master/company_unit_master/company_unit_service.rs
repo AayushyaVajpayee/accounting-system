@@ -32,29 +32,25 @@ pub trait CompanyUnitService: Send + Sync {
 
 struct CompanyUnitServiceImpl {
     dao: Arc<dyn CompanyUnitDao>,
-    address_service: Arc<dyn AddressService>,
 }
 
 #[async_trait]
 impl CompanyUnitService for CompanyUnitServiceImpl {
     async fn create_company_unit(&self, request: &CreateCompanyUnitRequest) -> Result<Uuid, CompanyUnitServiceError> {
-        let jj = self.dao.create_company_unit(request).await?;
-        // let k = match request.address {
-        //      CompanyUnitAddressRequest::ExistingAddress { id } => {
-        //          self.dao.create_company_unit_with_existing_address()
-        //      }
-        //      CompanyUnitAddressRequest::NewAddress { request } => {
-        //
-        //      }
-        //  }
-        Ok(jj)
+        let uuid = self.dao.create_company_unit(request).await?;
+        Ok(uuid)
     }
 
     async fn get_company_unit_by_id(&self, id: &Uuid) -> Result<Option<CompanyUnitMaster>, CompanyUnitServiceError> {
-        todo!()
+        let cmp_unit = self.dao.get_company_unit_by_id(id).await?;
+        Ok(cmp_unit)
     }
 
-    async fn get_company_units_by_company_id(&self, company_id: &Uuid, pagination_request: &PaginationRequest) -> Result<PaginatedResponse<CompanyUnitMaster>, CompanyUnitServiceError> {
-        todo!()
+    async fn get_company_units_by_company_id(&self, company_id: &Uuid,
+                                             pagination_request: &PaginationRequest)
+                                             -> Result<PaginatedResponse<CompanyUnitMaster>, CompanyUnitServiceError> {
+        let resp = self.dao.get_company_units_by_company_id(company_id, pagination_request.page_no,
+                                                            pagination_request.per_page).await?;
+        Ok(resp)
     }
 }

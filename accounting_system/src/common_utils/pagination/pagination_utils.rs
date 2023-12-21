@@ -1,10 +1,20 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
+
 use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
+
 use crate::common_utils::pagination::constants::{CURRENT_PAGE, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};
 
+pub const PAGINATED_DATA_QUERY: &str = "select get_paginated_data($1,$2,$3,$4)";
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PaginatedDbResponse<T> {
+    pub rows: Vec<T>,
+    pub total_pages: u32,
+    pub total_count: u32,
+}
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct PaginationRequest {
     #[validate(range(min = 1, max = 2000, message = "page no should be cannot be less than 1 and more than 2000"))]
@@ -74,13 +84,15 @@ fn generate_links(base_url: &str, page: u32, per_page: u32, total_count: u32) ->
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
     use itertools::Itertools;
-    use rstest::rstest;
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
-    use crate::common_utils::pagination::pagination_utils::{generate_api_link_header, generate_links};
     use maplit::hashmap;
+    use rstest::rstest;
     use spectral::assert_that;
     use xxhash_rust::xxh32;
+
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::common_utils::pagination::pagination_utils::generate_links;
 
     #[rstest]
     #[case("https://example.com/api", 1, 10, 100, hashmap ! {

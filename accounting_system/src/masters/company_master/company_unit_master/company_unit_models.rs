@@ -9,10 +9,12 @@ use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct CompanyUnitMaster {
+    #[serde(flatten)]
     pub base_master_fields: BaseMasterFields,
     pub company_id: Uuid,
     pub address_id: Uuid,
     pub gstin: GstinNo,
+    #[serde(flatten)]
     pub audit_metadata: AuditMetadataBase,
 }
 

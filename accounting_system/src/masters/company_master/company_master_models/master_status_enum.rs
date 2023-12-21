@@ -2,6 +2,8 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Copy, Clone,Default,)]
+#[serde(try_from = "i32")]
+#[serde(into = "i32")]
 pub enum MasterStatusEnum {
     PendingApproval = 0,
     #[default]
@@ -19,6 +21,21 @@ impl MasterStatusEnum {
             3 => Ok(MasterStatusEnum::Deleted),
             _ => bail!("no master status for this value"),
         }
+    }
+}
+
+impl From<MasterStatusEnum> for i32 {
+    fn from(value: MasterStatusEnum) -> Self {
+        value as i32
+    }
+}
+
+impl TryFrom<i32> for MasterStatusEnum {
+    type Error = anyhow::Error;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        let value: usize = value.try_into()?;
+        MasterStatusEnum::get_enum_for_value(value)
     }
 }
 
