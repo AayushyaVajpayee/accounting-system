@@ -5,6 +5,7 @@ pub struct CompanyUnitMasterDbMapping{}
 const COMPANY_UNIT_MASTER_DDL_SQL: &str = include_str!("./company_unit_master_sql/company_unit_master_ddl.sql");
 const COMPANY_UNIT_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./company_unit_master_sql/company_unit_master_functions_and_procedures.sql");
 const COMPANY_UNIT_MASTER_SEED_CSV:&str =include_str!("./company_unit_master_sql/company_unit_master.csv");
+const COMPANY_UNIT_MASTER_INDEX_SQL: &str = inclu
 impl DbStructMapping for CompanyUnitMasterDbMapping{
     fn table_name(&self) -> Option<&'static str> {
         Some("company_unit_master")

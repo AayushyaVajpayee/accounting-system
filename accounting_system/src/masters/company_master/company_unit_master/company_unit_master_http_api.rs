@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::sync::Arc;
 
 use actix_web::{HttpResponseBuilder, Responder, ResponseError, Scope, web};

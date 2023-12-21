@@ -18,7 +18,7 @@ pub enum AddressServiceError {
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait AddressService {
+pub trait AddressService: Send + Sync {
     async fn get_address_by_id(&self, address_id: &Uuid) -> Result<Option<Address>, AddressServiceError>;
     async fn create_address(&self, request: &CreateAddressRequest) -> Result<Uuid, AddressServiceError>;
 }

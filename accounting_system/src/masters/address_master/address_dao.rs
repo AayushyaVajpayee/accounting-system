@@ -10,6 +10,7 @@ use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::db_row_conversion_utils::{convert_row_to_audit_metadata_base, convert_row_to_base_master_fields};
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 use crate::masters::address_master::address_model::{Address, AddressLine, CreateAddressRequest};
+use crate::masters::address_master::address_utils::create_address_input_for_db_function;
 
 #[async_trait]
 pub trait AddressDao: Send + Sync {
@@ -70,22 +71,9 @@ impl AddressDao for AddressDaoImpl {
         let simple_query = format!(
             r#"
             begin transaction;
-            select create_address(Row('{}','{}','{}',{},{},'{}','{}','{}','{}','{}',{}::smallint));
+            select create_address({});
             commit;
-            "#,
-            request.idempotence_key,
-            request.tenant_id,
-            request.line_1,
-            request.line_2.as_ref().map(|a| format!("'{}'", a))
-                .unwrap_or_else(|| "null".to_string()),
-            request.landmark.as_ref().map(|a| format!("'{}'", a))
-                .unwrap_or_else(|| "null".to_string()),
-            request.city_id,
-            request.state_id,
-            request.country_id,
-            request.pincode_id,
-            request.created_by,
-            1
+            "#, create_address_input_for_db_function(request)
         );
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(simple_query.as_str()).await?;
