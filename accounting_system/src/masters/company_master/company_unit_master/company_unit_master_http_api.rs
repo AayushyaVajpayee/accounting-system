@@ -72,9 +72,13 @@ mod tests {
     use std::sync::Arc;
 
     use actix_web::{App, test};
+    use actix_web_lab::middleware::from_fn;
     use uuid::Uuid;
 
+    use crate::common_utils::pagination::constants::{CURRENT_PAGE, LINKS, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};
+    use crate::common_utils::pagination::pagination_utils::{PaginatedResponse, pagination_header_middleware, PaginationMetadata};
     use crate::get_and_create_api_test;
+    use crate::masters::company_master::company_master_models::company_master::tests::SEED_COMPANY_MASTER_ID;
     use crate::masters::company_master::company_unit_master::company_unit_master_http_api::map_endpoints_to_functions;
     use crate::masters::company_master::company_unit_master::company_unit_models::{CompanyUnitMaster, CreateCompanyUnitRequestBuilder};
     use crate::masters::company_master::company_unit_master::company_unit_models::tests::a_create_company_unit_request;
@@ -82,6 +86,36 @@ mod tests {
         CompanyUnitService, MockCompanyUnitService,
     };
 
+    #[tokio::test]
+    async fn test_get_company_units_by_company_id() {
+        let mut mocked = MockCompanyUnitService::new();
+        mocked.expect_get_company_units_by_company_id()
+            .returning(|_, data| Ok(PaginatedResponse::<CompanyUnitMaster> {
+                data: vec![],
+                meta: PaginationMetadata {
+                    current_page: data.page_no,
+                    page_size: data.per_page,
+                    total_pages: 51,
+                    total_count: 510,
+                },
+            }));
+        let uri = format!("/company-unit-master/company-id/{}?page_no={}&per_page={}"
+                          , *SEED_COMPANY_MASTER_ID, 2, 12);
+        let mock: Arc<dyn CompanyUnitService> = Arc::new(mocked);
+        let app_data = actix_web::web::Data::new(mock);
+        let app = App::new()
+            .wrap(from_fn(pagination_header_middleware))
+            .service(map_endpoints_to_functions())
+            .app_data(app_data);
+        let app_service = test::init_service(app).await;
+        let request = test::TestRequest::get().uri(&uri).to_request();
+        let j = test::call_service(&app_service, request).await;
+        assert!(j.headers().contains_key(TOTAL_COUNT));
+        assert!(j.headers().contains_key(PER_PAGE));
+        assert!(j.headers().contains_key(CURRENT_PAGE));
+        assert!(j.headers().contains_key(TOTAL_PAGES));
+        assert!(j.headers().contains_key(LINKS));
+    }
     #[tokio::test]
     async fn test_create_company_unit_api() {
         let closure = || {

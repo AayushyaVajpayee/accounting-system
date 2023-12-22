@@ -1,11 +1,41 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
+use std::num::ParseIntError;
 
-use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue};
+use actix_web::{Error as ActixWebError, ResponseError};
+use actix_web::body::MessageBody;
+use actix_web::dev::{ServiceRequest, ServiceResponse};
+use actix_web::http::header::{HeaderMap, HeaderName, HeaderValue, InvalidHeaderValue, ToStrError};
+use actix_web::http::StatusCode;
+use actix_web_lab::middleware::Next;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use validator::Validate;
 
-use crate::common_utils::pagination::constants::{CURRENT_PAGE, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};
+use crate::common_utils::pagination::constants::{CURRENT_PAGE, LINKS, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};
+use crate::common_utils::pagination::pagination_utils::MiddlewareErrorEnum::PaginationHeaderMissing;
+
+#[derive(Debug, Error)]
+pub enum MiddlewareErrorEnum {
+    #[error("pagination header {0} is missing in response")]
+    PaginationHeaderMissing(String),
+    #[error(transparent)]
+    NonAsciiHeaderValue(#[from] ToStrError),
+    #[error(transparent)]
+    ParsingError(#[from] ParseIntError),
+    #[error(transparent)]
+    InvalidHeader(#[from] InvalidHeaderValue),
+}
+
+impl ResponseError for MiddlewareErrorEnum {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            MiddlewareErrorEnum::InvalidHeader(_) | MiddlewareErrorEnum::PaginationHeaderMissing(_) | MiddlewareErrorEnum::NonAsciiHeaderValue(_) | MiddlewareErrorEnum::ParsingError(_) => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        }
+    }
+}
 
 pub const PAGINATED_DATA_QUERY: &str = "select get_paginated_data($1,$2,$3,$4)";
 
@@ -24,19 +54,20 @@ pub struct PaginationRequest {
 }
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PaginatedResponse<T: Debug + Serialize> {
     pub data: Vec<T>,
     pub meta: PaginationMetadata,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PaginationMetadata {
     pub current_page: u32,
     pub page_size: u32,
     pub total_pages: u32,
     pub total_count: u32,
 }
+
 
 pub fn set_pagination_headers(header_map: &mut HeaderMap, pagination_metadata: &PaginationMetadata) {
     let total_key = HeaderName::from_static(TOTAL_COUNT);
@@ -80,6 +111,43 @@ fn generate_links(base_url: &str, page: u32, per_page: u32, total_count: u32) ->
     links.insert("last", last_page_url);
     links
 }
+
+pub async fn pagination_header_middleware(
+    req: ServiceRequest,
+    next: Next<impl MessageBody>,
+) -> Result<ServiceResponse<impl MessageBody>, ActixWebError> {
+    let host_path = req.request().connection_info().host().to_owned();
+    let request_path = req.path().to_owned();
+    // pre-processing
+    let mut resp = next.call(req).await;
+    if let Ok(resp) = &mut resp {
+        add_api_headers(resp, host_path.as_str(), request_path.as_str())?;
+    }
+    resp
+    // post-processing
+}
+
+fn add_api_headers(resp: &mut ServiceResponse<impl MessageBody>, host_path: &str, request_path: &str) -> Result<(), MiddlewareErrorEnum> {
+    let headers = resp.headers();
+    if headers.contains_key(TOTAL_PAGES) {
+        let base_url = format!("{}{}", host_path, request_path);
+        let cur_page = get_header_value(headers, CURRENT_PAGE)?;
+        let per_page = get_header_value(headers, PER_PAGE)?;
+        let total_count = get_header_value(headers, TOTAL_COUNT)?;
+        let link = generate_api_link_header(base_url.as_str(), cur_page, per_page, total_count);
+        resp.headers_mut().insert(HeaderName::from_static(LINKS), HeaderValue::from_str(link.as_str())?);
+    }
+    Ok(())
+}
+
+fn get_header_value(headers: &HeaderMap, name: &'static str) -> Result<u32, MiddlewareErrorEnum> {
+    let value = headers
+        .get(HeaderName::from_static(name))
+        .ok_or_else(|| PaginationHeaderMissing(name.to_string()))?;
+    let value = value.to_str()?;
+    value.parse::<u32>().map_err(|a| a.into())
+}
+
 
 #[cfg(test)]
 mod tests {
