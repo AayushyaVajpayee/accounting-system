@@ -47,7 +47,9 @@ async fn execute_db_struct_mapping(structs: Vec<Box<dyn DbStructMapping>>,pool:A
         .iter()
         .map(|s| s.get_functions_and_procedures_script())
         .join(";");
-    let whole_scrip = format!("{};{}", master_ddl, fn_and_procs);
+    let constraints_and_indexes = structs.iter().map(|s| s.get_index_creation_script())
+        .join(";");
+    let whole_scrip = format!("{};{};{}", master_ddl, fn_and_procs, constraints_and_indexes);
     let mut txn = conn.transaction().await.unwrap();
     txn.simple_query(whole_scrip.as_str()).await.unwrap();
 

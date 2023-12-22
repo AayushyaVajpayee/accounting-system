@@ -9,13 +9,13 @@ use uuid::Uuid;
 use xxhash_rust::xxh32;
 
 use crate::common_utils::dao_error::DaoError;
-use crate::common_utils::pagination::pagination_utils::{PaginatedResponse, PaginationMetadata};
+use crate::common_utils::pagination::pagination_utils::{PAGINATED_DATA_QUERY, PaginatedDbResponse, PaginatedResponse, PaginationMetadata};
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 use crate::masters::company_master::company_master_models::company_master::CompanyMaster;
 use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
 use crate::masters::company_master::dao::dao_trait::CompanyMasterDao;
-use crate::masters::company_master::dao::models::{CompanyMasterSql, PaginatedDbResponse};
-use crate::masters::company_master::dao::queries_and_constants::{GET_ALL_FOR_TENANT, GET_BY_ID, SOFT_DELETE};
+use crate::masters::company_master::dao::models::CompanyMasterSql;
+use crate::masters::company_master::dao::queries_and_constants::{GET_BY_ID, SOFT_DELETE};
 
 struct CompanyMasterDaoPostgresImpl {
     postgres_client: Arc<Pool>,
@@ -61,7 +61,7 @@ impl CompanyMasterDao for CompanyMasterDaoPostgresImpl {
         hasher.update(tenant_id.as_bytes());
         let hash = hasher.digest();
         let rows = conn
-            .query(GET_ALL_FOR_TENANT, &[&select_rows_query, &select_count_query, &(per_page as i32), &(hash as i64)])
+            .query(PAGINATED_DATA_QUERY, &[&select_rows_query, &select_count_query, &(per_page as i32), &(hash as i64)])
             .await?
             .iter()
             .map(|a| a.get::<usize, serde_json::Value>(0))

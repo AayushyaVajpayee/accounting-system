@@ -10,7 +10,7 @@ create table company_unit_master
     address_id        uuid references address (id),
     gstin             varchar(16),
     created_by        uuid references app_user (id) not null,
-    updated_y         uuid references app_user (id),
+    updated_by uuid references app_user (id),
     created_at        bigint  default extract(epoch from now()) * 1000000,
     updated_at        bigint  default extract(epoch from now()) * 1000000
-)
+);

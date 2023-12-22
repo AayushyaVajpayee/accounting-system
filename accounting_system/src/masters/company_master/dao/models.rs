@@ -16,9 +16,3 @@ pub struct CompanyMasterSql {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PaginatedDbResponse<T> {
-    pub rows: Vec<T>,
-    pub total_pages: u32,
-    pub total_count: u32,
-}

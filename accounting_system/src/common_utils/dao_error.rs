@@ -1,6 +1,6 @@
+use anyhow::Error as AnyhowError;
 use deadpool_postgres::PoolError;
 use tokio_postgres::error::SqlState;
-use anyhow::Error as AnyhowError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DaoError {
@@ -10,7 +10,7 @@ pub enum DaoError {
     PostgresQueryError(String),
     #[error("cannot convert entity to db row {0}")]
     InvalidEntityToDbRowConversion(&'static str),
-    #[error("unique constraint violated {}", 0)]
+    #[error("unique constraint violated {constraint_name:?}")]
     UniqueConstraintViolated { constraint_name: String },
     #[error("query returned nothing")]
     ReturnedValueNone,

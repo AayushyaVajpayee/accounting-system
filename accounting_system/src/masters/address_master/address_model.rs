@@ -6,9 +6,15 @@ use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 
-#[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Clone)]
+#[serde(try_from = "String")]
 pub struct AddressLine(String);
 
+impl Default for AddressLine {
+    fn default() -> Self {
+        AddressLine("some fake address".to_string())
+    }
+}
 impl AddressLine {
     pub fn new_nullable(line: Option<&str>) -> anyhow::Result<Option<Self>> {
         match line {
@@ -27,7 +33,20 @@ impl AddressLine {
         }
         Ok(Self(line.to_string()))
     }
+    pub fn get_inner(self) -> String {
+        self.0
+    }
 }
+
+impl TryFrom<String> for AddressLine {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let value = value.trim();
+        AddressLine::new(value)
+    }
+}
+
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Address {
@@ -46,7 +65,7 @@ pub struct Address {
 }
 
 
-#[derive(Debug, Serialize, Deserialize, Builder)]
+#[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateAddressRequest {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
@@ -64,7 +83,10 @@ pub struct CreateAddressRequest {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use anyhow::anyhow;
+    use lazy_static::lazy_static;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
@@ -81,6 +103,9 @@ pub mod tests {
     use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
+    lazy_static! {
+        pub static ref SEED_ADDRESS_ID:Uuid = Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap();
+    }
     pub struct AddressBuilder {
         base_master_fields: Option<BaseMasterFields>,
         line_1: Option<AddressLine>,

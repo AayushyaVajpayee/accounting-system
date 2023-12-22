@@ -1,17 +1,35 @@
 use serde::{Deserialize, Serialize};
 
-use gstin_validator::gstin_models::validate_gstin;
+use gstin_validator::gstin_models::{GstinValidationError, validate_gstin};
 
-#[derive(Debug, Serialize, Deserialize,Default,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(try_from = "String")]
 pub struct GstinNo(String);
 
+impl Default for GstinNo {
+    fn default() -> Self {
+        GstinNo("05AABCA5291p1ZD".to_string())//seed gstin no
+    }
+}
 impl GstinNo {
-    pub fn new(gstin: String) -> Result<Self, String> {
-        let validation_errors = validate_gstin(gstin.as_str());
+    pub fn new(gstin: &str) -> Result<Self, GstinValidationError> {
+        let validation_errors = validate_gstin(gstin);
         if let Some(err) = validation_errors {
-            return Err(err.to_string());
+            return Err(err);
         }
-        Ok(GstinNo(gstin))
+        Ok(GstinNo(gstin.to_string()))
+    }
+    pub fn get_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl TryFrom<String> for GstinNo {
+    type Error = GstinValidationError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let gstin = value.trim();
+        GstinNo::new(gstin)
     }
 }
 
@@ -33,12 +51,6 @@ pub mod gstin_no_tests {
     const ALPHABETS: &[u8] = b"ABCDEFGHIJKLNMNOPQRSTUVWXYZ";
     const SEED_GSTIN: &str = "05AABCA5291p1ZD";
 
-    impl GstinNo {
-        pub fn get_str(&self) -> &str {
-            self.0.as_str()
-        }
-    }
-
     pub fn generate_random_gstin_no() -> GstinNo {
         let mut rng = rand::thread_rng();
         let gst_idx = rng.gen_range(0..GST_STATE_CODE_LIST.len());
@@ -58,7 +70,7 @@ pub mod gstin_no_tests {
         let check_sum = gstin_checksum(new_gst.as_str()).unwrap();
         new_gst.remove(14);
         new_gst.push(check_sum);
-        GstinNo::new(new_gst).unwrap()
+        GstinNo::new(new_gst.as_str()).unwrap()
     }
 
     #[rstest]
@@ -67,7 +79,7 @@ pub mod gstin_no_tests {
     #[case("dfafdadad", false)]
     #[case("22AAAAA0000A1Z5", false)]
     fn test_gstin_no(#[case] input: String, #[case] valid: bool) {
-        let k = GstinNo::new(input);
+        let k = GstinNo::new(input.as_str());
         if valid {
             assert_that!(k).is_ok();
         } else {
