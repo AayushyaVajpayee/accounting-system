@@ -1,12 +1,23 @@
-use crate::invoice_line::line_quantity::LineQuantityError::{NegativeValue, TooLarge};
-use crate::invoice_line1::UOM;
+use anyhow::bail;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+use crate::invoice_line1::UOM;
+use crate::invoice_line::line_quantity::LineQuantityError::{NegativeValue, TooLarge};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LineQuantityRaw {
+    quantity: f64,
+    uom: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "LineQuantityRaw")]
 pub struct LineQuantity {
     quantity: f64,
     uom: UOM,
 }
+
 #[derive(Debug, Error)]
 pub enum LineQuantityError {
     #[error("quantity {0} cannot be negative")]
@@ -26,23 +37,43 @@ impl LineQuantity {
         Ok(Self { quantity, uom })
     }
 }
+
+impl TryFrom<LineQuantityRaw> for LineQuantity {
+    type Error = anyhow::Error;
+
+    fn try_from(value: LineQuantityRaw) -> Result<Self, Self::Error> {
+        let uom: UOM = value.uom.try_into()?;
+        if value.quantity <= 0.0 {
+            bail!("quantity cannot be less than 0")
+        }
+        if value.quantity >= 10_000_000.00 {
+            bail!("quantity cannot be more than 1_00_00_000")
+        }
+        Ok(LineQuantity {
+            quantity: value.quantity,
+            uom,
+        })
+    }
+}
+
 #[cfg(test)]
 mod line_quantity_tests {
     use rstest::rstest;
-    use crate::invoice_line1::UOM;
-    use crate::invoice_line::line_quantity::LineQuantity;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
 
+    use crate::invoice_line1::UOM;
+    use crate::invoice_line::line_quantity::LineQuantity;
+
     #[rstest]
-    #[case(34.0,true)]
-    #[case(-34.0,false)]
-    #[case(9999999999999999999999999.0,false)]
+    #[case(34.0, true)]
+    #[case(- 34.0, false)]
+    #[case(9999999999999999999999999.0, false)]
     fn test_line_quantity(#[case] input: f64, #[case] valid: bool) {
-        let q = LineQuantity::new(input,UOM::Piece);
+        let q = LineQuantity::new(input, UOM::Piece);
         if valid {
             assert_that!(q).is_ok();
-        }else{
+        } else {
             assert_that!(q).is_err();
         }
     }

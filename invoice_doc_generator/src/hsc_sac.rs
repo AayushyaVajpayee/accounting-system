@@ -1,16 +1,21 @@
 use std::ops::Not;
 
+use anyhow::Context;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::hsn_code_generated::HSN_SET;
 use crate::sac_code_generated::SAC_SET;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum GstItemCode {
-    HSN(Hsn),
-    SAC(Sac),
+    HsnCode(Hsn),
+    SacCode(Sac),
 }
-#[derive(Debug)]
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "String")]
 pub struct Hsn(String);
 
 #[derive(Debug, Error)]
@@ -22,6 +27,7 @@ pub enum HsnError {
     #[error("hsn not found in gst data. Please enter a valid hsn code")]
     NotFoundInMasterData,
 }
+
 impl Hsn {
     pub fn new(hsn: String) -> Result<Self, HsnError> {
         if hsn.len() < 4 || hsn.len() > 8 {
@@ -37,8 +43,19 @@ impl Hsn {
         Ok(Self(hsn))
     }
 }
-#[derive(Debug)]
+
+impl TryFrom<String> for Hsn {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Hsn::new(value).context("")
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "String")]
 pub struct Sac(String);
+
 #[derive(Debug, Error)]
 pub enum SacError {
     #[error("Sac length {0} is invalid. it should be of minimum 4 digits and maximum 6")]
@@ -65,22 +82,31 @@ impl Sac {
     }
 }
 
+impl TryFrom<String> for Sac {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Sac::new(value).context("")
+    }
+}
+
 #[cfg(test)]
 mod hsn_tests {
-    use crate::hsc_sac::Hsn;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
+    use crate::hsc_sac::Hsn;
 
     #[rstest]
     #[case("", false)]
     #[case("123432432", false)]
     #[case("99", false)]
     #[case("9980k", false)]
-    #[case("9801",true)]
-    #[case("91081100",true)]
-    #[case("910811000",false)]
-    #[case("0101",true)]
+    #[case("9801", true)]
+    #[case("91081100", true)]
+    #[case("910811000", false)]
+    #[case("0101", true)]
     pub fn test_hsn(#[case] input: String, #[case] valid: bool) {
         let hsn = Hsn::new(input);
         if valid {
@@ -90,11 +116,13 @@ mod hsn_tests {
         }
     }
 }
+
 #[cfg(test)]
-mod sac_tests{
+mod sac_tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
     use crate::hsc_sac::Sac;
 
     #[rstest]
@@ -102,12 +130,12 @@ mod sac_tests{
     #[case("", false)]
     #[case("123432432", false)]
     #[case("99", false)]
-    #[case("9954",true)]
-    #[case("9997",true)]
-    #[case("9954av",false)]
-    #[case("999799",true)]
-    #[case("99979900",false)]
-    #[case("0101",false)]
+    #[case("9954", true)]
+    #[case("9997", true)]
+    #[case("9954av", false)]
+    #[case("999799", true)]
+    #[case("99979900", false)]
+    #[case("0101", false)]
     pub fn test_sac(#[case] input: String, #[case] valid: bool) {
         let hsn = Sac::new(input);
         if valid {

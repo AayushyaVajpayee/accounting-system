@@ -11,6 +11,8 @@ lazy_static = "1.4.0"
 thiserror = "1.0.40"
 gstin_validator = {path="../gstin_validator"}
 regex="1.9.1"
+serde = { version = "1.0.193", features = ["derive"] }
+anyhow = "1.0.75"
 [dev-dependencies]
 rstest = "0.18.2"
 spectral = "0.6.0"

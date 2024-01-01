@@ -1,17 +1,16 @@
 use crate::invoice_line1::{GstinNo, InvoiceLine, PaymentTerms};
-use crate::invoice_line::unit_price::UnitPrice;
+use crate::invoice_line::unit_price::Price;
 use crate::invoice_number::InvoiceNumber;
 use crate::percentages::tax_discount_cess::TaxPercentage;
 
 mod invoice_model;
-
-mod hsn_code_generated;
+pub mod hsn_code_generated;
 mod sac_code_generated;
-mod invoice_number;
-mod hsc_sac;
-mod invoice_line1;
-mod invoice_line;
-mod percentages;
+pub mod invoice_number;
+pub mod hsc_sac;
+pub mod invoice_line1;
+pub mod invoice_line;
+pub mod percentages;
 
 
 pub struct InvoiceHeader{
@@ -35,8 +34,8 @@ pub struct CustomerDetail{
 }
 
 pub struct AdditionalCharge {
-    unit_price: UnitPrice,
-    tax_percent: TaxPercentage,
+    unit_price: Price,
+    tax_percent: TaxPercentage,// lets not tax additional charge just show it.
 }
 
 

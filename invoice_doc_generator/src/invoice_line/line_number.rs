@@ -1,20 +1,22 @@
-use thiserror::Error;
-use crate::invoice_line::line_number::LineNumberError::ShouldBeGreaterThan0;
+use anyhow::ensure;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "i32")]
 pub struct LineNumber(u16);
 
-#[derive(Debug, Error)]
-pub enum LineNumberError {
-    #[error("line number {0} should start from 1")]
-    ShouldBeGreaterThan0(u16),
-}
 impl LineNumber {
-    pub fn new(line_number: u16) -> Result<Self, LineNumberError> {
-        if line_number == 0 {
-            return Err(ShouldBeGreaterThan0(line_number));
-        }
-        Ok(Self(line_number))
+    pub fn new(line_number: i32) -> anyhow::Result<Self> {
+        ensure!(line_number>0,"line number ({}) should be greater than 0 ",line_number);
+        ensure!(line_number<=2000,"line number ({}) should be less than 2000 ",line_number);
+        Ok(Self(line_number as u16))
+    }
+}
+
+impl TryFrom<i32> for LineNumber {
+    type Error = anyhow::Error;
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        LineNumber::new(value)
     }
 }
 
@@ -23,12 +25,13 @@ mod line_number_tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
     use crate::invoice_line::line_number::LineNumber;
 
     #[rstest]
     #[case(0, false)]
     #[case(1, true)]
-    fn test_line_number(#[case] input: u16, #[case] valid: bool) {
+    fn test_line_number(#[case] input: i32, #[case] valid: bool) {
         let line_no = LineNumber::new(input);
         if valid {
             assert_that!(line_no).is_ok();

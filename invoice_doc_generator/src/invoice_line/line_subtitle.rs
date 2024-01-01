@@ -1,7 +1,11 @@
-use crate::invoice_line::line_subtitle::LineSubtitleError::Empty;
+use anyhow::Context;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug)]
+use crate::invoice_line::line_subtitle::LineSubtitleError::Empty;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "String")]
 pub struct LineSubtitle(String);
 #[derive(Debug, Error)]
 pub enum LineSubtitleError {
@@ -23,12 +27,21 @@ impl LineSubtitle {
     }
 }
 
+impl TryFrom<String> for LineSubtitle {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        LineSubtitle::new(value).context("")
+    }
+}
+
 
 #[cfg(test)]
 mod line_subtitle_tests{
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
     use crate::invoice_line::line_subtitle::LineSubtitle;
 
     #[rstest]
