@@ -74,11 +74,8 @@ pub struct InvoiceLine {
     subtitle: LineSubtitle,
     //length at most 50 char per line and max 2 lines
     hsn_sac_code: GstItemCode,
-    //todo make it an enum of hsn and sac and validate it
     quantity: LineQuantity,
-    //todo round everything to 2 decimal places max
     discount_percentage: DiscountPercentage,
-    //todo will have to apply validations like not negative and rounding to 2 deimal places
     unit_price: Price,
     tax_percentage: TaxPercentage,
     cess_percentage: CessPercentage,
