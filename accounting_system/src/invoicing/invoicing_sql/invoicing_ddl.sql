@@ -85,6 +85,7 @@ create table invoice
     active                     bool,
     approval_status            smallint                                            not null,
     remarks                    varchar(70),
+    invoicing_counter_id uuid references invoicing_series_counter (id) not null,
     invoice_number             varchar(20),
     currency_id                uuid references currency_master (id)                not null,
     service_invoice            bool                                                not null,
