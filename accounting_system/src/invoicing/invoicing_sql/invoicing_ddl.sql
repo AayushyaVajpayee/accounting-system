@@ -2,7 +2,7 @@
 -- this can store invoice details, credit note details, delivery challan details
 create table business_entity --should we be storing customers in this table?
 (
-    id                uuid,
+    id uuid primary key,
     entity_version_id integer default 0,
     tenant_id         uuid references tenant (id),
     active            bool,
@@ -22,7 +22,7 @@ create table business_entity --should we be storing customers in this table?
 
 create table business_entity_invoice_detail --similarly other can be business_entity_delivery_challan_dtl
 (
-    id                         uuid,
+    id uuid primary key,
     entity_version_id          integer default 0,
     tenant_id                  uuid references tenant (id),
     active                     bool,
@@ -69,7 +69,7 @@ create table line_title
 );
 create table line_subtitle
 (
-    id          uuid,
+    id uuid primary key,
     tenant_id   uuid references tenant (id),
     description varchar(80),
     xx_hash     bigint,
@@ -79,7 +79,7 @@ create table line_subtitle
 
 create table invoice
 (
-    id                         uuid,
+    id uuid primary key,
     entity_version_id          integer default 0,
     tenant_id                  uuid references tenant (id),
     active                     bool,
@@ -137,7 +137,7 @@ create table invoice_line
 
 create table additional_charge
 (
-    id            uuid,
+    id uuid primary key,
     tenant_id     uuid references tenant (id),
     invoice_id    uuid references invoice (id),
     line_no       smallint                        not null,

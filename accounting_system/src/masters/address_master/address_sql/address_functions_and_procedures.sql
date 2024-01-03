@@ -44,7 +44,6 @@ BEGIN
           and workflow_type = 'create_address'
         into resp;
         return (resp ->> 'id')::uuid;
-
     end if;
 end
 $$ language plpgsql;
