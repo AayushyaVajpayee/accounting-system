@@ -1,7 +1,7 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize,Default,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
 pub struct MasterUpdationRemarks(String);
 
 impl MasterUpdationRemarks {
@@ -23,8 +23,8 @@ mod master_updation_remarks_tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
-    use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
 
+    use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
 
     #[rstest]
     #[case("abdfad", true)]

@@ -8,6 +8,7 @@ create table address
     active            bool,
     approval_status   smallint                            not null,
     remarks           varchar(70),
+
     line_1            varchar(60)                         not null,
     line_2     varchar(60),
     landmark   varchar(60), -- mostly landmark,
