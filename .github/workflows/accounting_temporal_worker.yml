@@ -18,13 +18,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./accounting_temporal_worker
     steps:
       - uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            .github
-            accounting_temporal_worker
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -39,9 +37,9 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
           cache: 'gradle'
-          cache-dependency-path: | # optional
-            sub-project/*.gradle*
-            sub-project/**/gradle-wrapper.properties
+#          cache-dependency-path: | # optional
+#            sub-project/*.gradle*
+#            sub-project/**/gradle-wrapper.properties
       - run: ./gradlew buildImage --no-daemon
         working-directory: ./accounting_temporal_worker
 
