@@ -153,14 +153,14 @@ object HelloActivity {
 
         override fun getGreeting(name: String): String {
             // This is a blocking call that returns only after the activity has completed.
-            return activities.composeGreeting("Hello", name)
+            return activities.composeGreeting("Hellsso", name)
         }
     }
 
     /** Simple activity implementation, that concatenates two strings.  */
     internal class GreetingActivitiesImpl : GreetingActivities {
         override fun composeGreeting(greeting: String, name: String): String {
-            log.info("Composing greeting...")
+            log.info("Composing greetindaaag...")
             return "$greeting $name!"
         }
 
