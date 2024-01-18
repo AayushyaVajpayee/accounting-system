@@ -2,8 +2,12 @@ name: Rust
 
 on:
   push:
+    paths:
+      - 'accounting_system_rust/**'
     branches: [ "main" ]
   pull_request:
+    paths:
+      - 'accounting_system_rust/**'
     branches: [ "main" ]
 
 env:
