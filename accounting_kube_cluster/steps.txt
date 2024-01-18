@@ -12,6 +12,7 @@ dev postgres setup and running. Setup requires:
 Now information regarding  this db needs to be stored in configmaps and secrets
 
 
+
 ** Please be patient while the chart is being deployed **
 
 PostgreSQL can be accessed via port 5432 on the following DNS names from within your cluster:
