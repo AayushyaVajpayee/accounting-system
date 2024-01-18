@@ -26,7 +26,7 @@ ktor {
     docker {
         jreVersion.set(JavaVersion.VERSION_21)
         localImageName.set("accounting-temporal-worker")
-        imageTag.set("0.0.1-preview")
+        imageTag.set(providers.environmentVariable("GITHUB_SHA").getOrElse("local_or_unknown"))
         externalRegistry.set(
             io.ktor.plugin.features.DockerImageRegistry.externalRegistry(
                 username = provider { "AWS" },
