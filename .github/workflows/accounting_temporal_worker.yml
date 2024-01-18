@@ -25,6 +25,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            accounting_temporal_worker
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
