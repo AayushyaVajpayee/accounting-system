@@ -17,10 +17,6 @@ permissions:
 
 jobs:
   build:
-    defaults:
-      run:
-        working-directory: ./accounting_temporal_worker
-
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +24,7 @@ jobs:
         with:
           sparse-checkout: |
             .github
-            accounting_temporal_worker/**
+            accounting_temporal_worker
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -47,6 +43,8 @@ jobs:
             sub-project/*.gradle*
             sub-project/**/gradle-wrapper.properties
       - run: ./gradlew buildImage --no-daemon
+        working-directory: ./accounting_temporal_worker
+
       - name: Build, tag, and push docker image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -55,3 +53,4 @@ jobs:
         run: |
           docker load -i ./build/jib_image.tar
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+        working-directory: ./accounting_temporal_worker
