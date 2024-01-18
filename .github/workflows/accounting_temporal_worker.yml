@@ -37,9 +37,9 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
           cache: 'gradle'
-#          cache-dependency-path: | # optional
-#            sub-project/*.gradle*
-#            sub-project/**/gradle-wrapper.properties
+          cache-dependency-path: | # optional
+            ./*.gradle*
+            ./**/gradle-wrapper.properties
       - run: ./gradlew buildImage --no-daemon
         working-directory: ./accounting_temporal_worker
 
@@ -49,6 +49,6 @@ jobs:
           REPOSITORY: accounting_temporal_java_worker
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker load -i ./build/jib_image.tar
+          docker load -i ./build/jib-image.tar
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
         working-directory: ./accounting_temporal_worker
