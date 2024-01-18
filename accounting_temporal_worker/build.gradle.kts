@@ -63,6 +63,7 @@ fun get_value(key: String): String {
         val k = Properties();
         k.load(FileInputStream("custom.properties"));
         k[key] as String
+
     }
 
 }
