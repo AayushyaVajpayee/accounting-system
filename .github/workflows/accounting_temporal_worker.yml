@@ -50,5 +50,6 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker load -i ./build/jib-image.tar
+          docker tag accounting-temporal-java_worker:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
         working-directory: ./accounting_temporal_worker

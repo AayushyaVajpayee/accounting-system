@@ -25,7 +25,7 @@ ktor {
 
     docker {
         jreVersion.set(JavaVersion.VERSION_21)
-        localImageName.set("accounting_temporal_java_worker")
+        localImageName.set("accounting-temporal-java_worker")
         imageTag.set(providers.environmentVariable("GITHUB_SHA").getOrElse("local_or_unknown"))
         externalRegistry.set(
             io.ktor.plugin.features.DockerImageRegistry.externalRegistry(
