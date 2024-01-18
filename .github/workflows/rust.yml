@@ -24,5 +24,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ./accounting_system_rust
+
     - name: build and run tests
       run: cargo test
