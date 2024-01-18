@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-temporal-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: accounting-temporal-worker
+  template:
+    metadata:
+      labels:
+        app: accounting-temporal-worker
+    spec:
+      containers:
+        - name: my-container
+          image: accounting-temporal-worker # Replace with your actual image name
+#          envFrom:
+#            - secretRef:
+#                name: postgres-db-pwd
+#            - configMapRef:
+#                name: postgres-db-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 50Mi
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1

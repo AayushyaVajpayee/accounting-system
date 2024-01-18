@@ -1,0 +1,24 @@
+ // download helm charts repo from https://github.com/temporalio/helm-charts
+ // update the helm chart in this repository
+ // change the directory to ./accounting_kube_cluster/temporal_helm_chart/
+helm install postgres-db oci://registry-1.docker.io/bitnamicharts/postgresql \
+--set global.postgresql.auth.postgresPassword=pwd \
+--set global.postgresql.auth.username=account_user \
+--set global.postgresql.auth.password=pwd_user \
+--set primary.initdb.scriptsConfigMap=postgres-init-config \
+
+helm template accounting . --values ./values.my_custom.postgres.yaml \
+ --set server.config.persistence.default.sql.host=host \
+ --set server.config.persistence.default.sql.port=port \
+ --set server.config.persistence.default.sql.database=dbname \
+ --set server.config.persistence.default.sql.user=user \
+ --set server.config.persistence.default.sql.password=pwd \
+ --set server.config.persistence.visibility.sql.host=host \
+ --set server.config.persistence.visibility.sql.port=port \
+ --set server.config.persistence.visibility.sql.database=dbname \
+ --set server.config.persistence.visibility.sql.user=user \
+ --set server.config.persistence.visibility.sql.password=pwd >./../accounting_system_topology/temporal/manifests.yaml
+
+
+// the db credentials and config need to be changed for both temporal above and ./accounting_system_topology/postgres_db_config_map.yaml
+// and ./accounting_system_topology/postgres_db_pwd.yaml
