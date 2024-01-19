@@ -45,6 +45,6 @@ jobs:
         role-to-assume: arn:aws:iam::169296002015:role/ecr_automation_github
         role-session-name: GitHub_to_AWS_via_FederatedOIDC
     - name: Login to Amazon ECR
-      id: login-ecr
       if: {{env.build_docker}}
+      id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
