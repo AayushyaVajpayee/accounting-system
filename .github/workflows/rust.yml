@@ -13,7 +13,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  MESSAGE: ${{contains(github.event.push.head_commit.message,'#bld_img')}}
+  MESSAGE: ${{contains(github.event.head_commit.message,'#bld_img')}}
 jobs:
   build:
     defaults:
@@ -24,7 +24,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: echo ${{toJSON(github.event)}}
+    - run: echo ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
     - run: echo ${{env.MESSAGE}}
 #    - uses: Swatinem/rust-cache@v2
 #      with:
