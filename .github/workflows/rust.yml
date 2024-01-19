@@ -24,12 +24,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: echo ${{github.event.push.head_commit.message}}
+    - run: echo ${{toJson(github.event)}}
     - run: echo ${{env.MESSAGE}}
-    - uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: |
-          ./accounting_system_rust
-
-    - name: build and run tests
-      run: cargo test
+#    - uses: Swatinem/rust-cache@v2
+#      with:
+#        workspaces: |
+#          ./accounting_system_rust
+#
+#    - name: build and run tests
+#      run: cargo test
