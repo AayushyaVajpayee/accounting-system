@@ -12,8 +12,12 @@ on:
     branches: [ "main" ]
 
 env:
+  AWS_REGION: ap-south-1
   CARGO_TERM_COLOR: always
-  MESSAGE: ${{contains(github.event.head_commit.message,'#bld_img')}}
+  build_docker: ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
+permissions:
+  id-token: write
+  contents: read
 jobs:
   build:
     defaults:
@@ -24,7 +28,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: echo ${{contains(github.event.head_commit.message,'#bld_img')&& (github.event.ref=='refs/heads/main')}}
+    - run: echo ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
     - run: echo ${{env.MESSAGE}}
 #    - uses: Swatinem/rust-cache@v2
 #      with:
@@ -33,3 +37,14 @@ jobs:
 #
 #    - name: build and run tests
 #      run: cargo test
+    - name: configure aws credentials
+      if: {{env.build_docker}}
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{env.AWS_REGION}}
+        role-to-assume: arn:aws:iam::169296002015:role/ecr_automation_github
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+    - name: Login to Amazon ECR
+      id: login-ecr
+      if: {{env.build_docker}}
+      uses: aws-actions/amazon-ecr-login@v2
