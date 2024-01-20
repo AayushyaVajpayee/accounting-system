@@ -36,16 +36,19 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
       - name: Build and push
         uses: docker/build-push-action@v5
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REGISTRY_ALIAS: k0z0q3l8
           REPOSITORY: aws-kubectl-ubuntu
           IMAGE_TAG: latest
         with:
           context: ./kubectl_aws_ubuntu_image/
           push: true
-          tags: ${{env.REGISTRY}}/${{env.REPOSITORY}}:${{env.IMAGE_TAG}}
+          tags: ${{env.REGISTRY}}/${{env.REGISTRY_ALIAS}}/${{env.REPOSITORY}}:${{env.IMAGE_TAG}}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
