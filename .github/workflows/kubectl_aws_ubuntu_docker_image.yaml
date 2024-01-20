@@ -1,0 +1,51 @@
+name: docker_image_ubuntu_kubectl_aws
+
+on:
+  push:
+    paths:
+      - '.github/workflows/kubectl_aws_ubuntu_docker_image.yaml.yaml'
+      - 'kubectl_aws_ubuntu_image/**'
+    branches: [ "main" ]
+  pull_request:
+    paths:
+      - 'kubectl_aws_ubuntu_image/**'
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: us-east-1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  docker_image:
+    if: ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{env.AWS_REGION}}
+          role-to-assume: arn:aws:iam::169296002015:role/ecr_automation_github
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: aws-kubectl-ubuntu
+          IMAGE_TAG: latest
+        with:
+          context: ./kubectl_aws_ubuntu_image/
+          push: true
+          tags: ${{env.REGISTRY}}/${{env.REPOSITORY}}:${{env.IMAGE_TAG}}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
