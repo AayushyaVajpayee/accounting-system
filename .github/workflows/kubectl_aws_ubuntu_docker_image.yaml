@@ -3,7 +3,7 @@ name: docker_image_ubuntu_kubectl_aws
 on:
   push:
     paths:
-      - '.github/workflows/kubectl_aws_ubuntu_docker_image.yaml.yaml'
+      - '.github/workflows/kubectl_aws_ubuntu_docker_image.yaml'
       - 'kubectl_aws_ubuntu_image/**'
     branches: [ "main" ]
   pull_request:
