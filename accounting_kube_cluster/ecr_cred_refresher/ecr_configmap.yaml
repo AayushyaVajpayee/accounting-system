@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecr-registry-helper-cm
+  namespace: default
+data:
+  AWS_REGION: "ap-south-1" # Replace with your ECR region
+  DOCKER_SECRET_NAME: "docker-secret" # Replace with your desired ECR token secret name
