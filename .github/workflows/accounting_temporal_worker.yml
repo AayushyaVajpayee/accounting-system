@@ -33,6 +33,9 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+      - name: Set short sha
+        id: sha_short
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -48,9 +51,8 @@ jobs:
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: accounting_temporal_java_worker
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ steps.sha_short.outputs.sha_short }}
         run: |
-          docker load -i ./build/jib-image.tar
           docker tag accounting-temporal-java_worker:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
         working-directory: ./accounting_temporal_worker
