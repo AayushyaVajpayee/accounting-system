@@ -23,7 +23,8 @@ jib{
         image="eclipse-temurin:21-jre-jammy"
     }
     to{
-        image="accounting-temporal-java-worker:${System.getenv("IMAGE_TAG").ifEmpty { "latest" }}"
+        val tag=(System.getenv("IMAGE_TAG")?:"").ifEmpty{ "latest" }
+        image="accounting-temporal-java-worker:${tag}"
     }
     container{
         ports= listOf("8080")
