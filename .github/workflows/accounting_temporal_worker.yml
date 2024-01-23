@@ -37,6 +37,8 @@ jobs:
         id: sha_short
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - uses: actions/setup-java@v4
+        env:
+          IMAGE_TAG:${{steps.sha_short.outputs.sha_short}}
         with:
           distribution: 'zulu'
           java-version: '21'
@@ -53,6 +55,6 @@ jobs:
           REPOSITORY: accounting_temporal_java_worker
           IMAGE_TAG: ${{ steps.sha_short.outputs.sha_short }}
         run: |
-          docker tag accounting-temporal-java_worker:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker tag accounting-temporal-java-worker:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
         working-directory: ./accounting_temporal_worker

@@ -23,7 +23,7 @@ jib{
         image="eclipse-temurin:21-jre-jammy"
     }
     to{
-        image="accounting-temporal-java-worker:latest"
+        image="accounting-temporal-java-worker:${System.getenv("IMAGE_TAG").ifEmpty { "latest" }}"
     }
     container{
         ports= listOf("8080")
