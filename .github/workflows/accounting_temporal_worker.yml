@@ -41,7 +41,7 @@ jobs:
           cache-dependency-path: | # optional
             ./*.gradle*
             ./**/gradle-wrapper.properties
-      - run: ./gradlew buildImage --no-daemon
+      - run: ./gradlew jibDockerBuild --no-daemon
         working-directory: ./accounting_temporal_worker
 
       - name: Build, tag, and push docker image to Amazon ECR
