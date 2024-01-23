@@ -9,7 +9,7 @@ export db_name_prefix_helm="postgres-db"
 export POSTGRES_HOST="$db_name_prefix_helm-postgresql.default.svc.cluster.local"
 export NAMESPACE_NAME=default
 export DOCKER_SECRET_NAME=docker-secret
-
+export TEMPORAL_DEPLOYMENT_PREFIX="accounting"
 #export tem="create database $ACCOUNTING_POSTGRES_DB;
 #create database $TEMPORAL_DB;
 #create database $TEMPORAL_VISIBILITY_DB;"
@@ -39,7 +39,7 @@ kubectl create secret docker-registry $DOCKER_SECRET_NAME --dry-run=client --doc
 kubectl apply -f ./ecr_cred_refresher/
 
 
-helm upgrade --install accounting ./temporal_helm_chart/ --values ./temporal_helm_chart/values.my_custom.postgres.yaml \
+helm upgrade --install $TEMPORAL_DEPLOYMENT_PREFIX ./temporal_helm_chart/ --values ./temporal_helm_chart/values.my_custom.postgres.yaml \
  --set server.config.persistence.default.sql.host="$POSTGRES_HOST" \
  --set server.config.persistence.default.sql.port="$POSTGRES_PORT" \
  --set server.config.persistence.default.sql.database="$TEMPORAL_DB" \
@@ -50,3 +50,5 @@ helm upgrade --install accounting ./temporal_helm_chart/ --values ./temporal_hel
  --set server.config.persistence.visibility.sql.database="$TEMPORAL_VISIBILITY_DB" \
  --set server.config.persistence.visibility.sql.user="$POSTGRES_USER" \
  --set server.config.persistence.visibility.sql.password="$POSTGRES_USER_PASSWORD"
+
+name="$TEMPORAL_DEPLOYMENT_PREFIX-temporal-frontend" yq -i '.spec.template.spec.containers[0].env  +=  { "name": "TEMPORAL_FRONTEND_SERVICE_NAME", "value": strenv(name) } ' ./accounting_system_topology/accounting_system_temporal_worker/accounting_sytem_temporal_worker_deployment.yaml

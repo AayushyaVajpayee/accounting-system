@@ -11,27 +11,44 @@ import java.time.Duration
 
 object TemporalConfiguration {
 
-    val service by lazy{
-        WorkflowServiceStubs.newConnectedServiceStubs(WorkflowServiceStubsOptions.newBuilder()
-            .setChannel(ManagedChannelBuilder
-                .forAddress("accounting-temporal-frontend",7233)//todo take the service name as env variable through kubernetes instead of hardcoding here.
-                .usePlaintext().build())
-
-            .build(), Duration.ofSeconds(30))
+    val service by lazy {
+        val managedChannel =
+            if (System.getenv("IS_KUBERNETES_ENV") == "true") {
+                ManagedChannelBuilder
+                    .forAddress(
+                        System.getenv("TEMPORAL_FRONTEND_SERVICE_NAME"),
+                        7233
+                    )
+                    .usePlaintext()
+                    .build()
+            } else {
+                ManagedChannelBuilder
+                    .forAddress(
+                        "localhost",
+                        7233
+                    )
+                    .usePlaintext()
+                    .build()
+            }
+        WorkflowServiceStubs.newConnectedServiceStubs(
+            WorkflowServiceStubsOptions.newBuilder()
+                .setChannel(managedChannel)
+                .build(), Duration.ofSeconds(30)
+        )
     }
 
-    val client by lazy{
+    val client by lazy {
         WorkflowClient.newInstance(service)
     }
     val factory by lazy {
         WorkerFactory.newInstance(client)
     }
 
-    val worker by lazy{
+    val worker by lazy {
         factory.newWorker("d")
     }
 
-    fun start(){
+    fun start() {
         worker.registerWorkflowImplementationTypes(InvoiceCreationWorkflowImpl::class.java)
         worker.registerActivitiesImplementations(InvoiceCreationActivitiesImpl())
         factory.start()

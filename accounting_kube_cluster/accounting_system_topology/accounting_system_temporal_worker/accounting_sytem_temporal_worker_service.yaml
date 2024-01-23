@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: accounting-temporal-worker
+  name: accounting-temporal-java-worker
 spec:
   selector:
-    app: accounting-temporal-worker
+    app: accounting-temporal-java-worker
   ports:
     - protocol: TCP
       port: 80
