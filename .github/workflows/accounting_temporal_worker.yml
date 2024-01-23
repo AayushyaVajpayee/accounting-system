@@ -37,19 +37,20 @@ jobs:
         id: sha_short
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - uses: actions/setup-java@v4
-        env:
-          IMAGE_TAG: ${{steps.sha_short.outputs.sha_short}}
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '21'
           cache: 'gradle'
           cache-dependency-path: | # optional
             ./*.gradle*
             ./**/gradle-wrapper.properties
-      - run: ./gradlew jibDockerBuild --no-daemon
+      - name: build docker image
+        env:
+          IMAGE_TAG: ${{steps.sha_short.outputs.sha_short}}
+        run: ./gradlew jibDockerBuild --no-daemon
         working-directory: ./accounting_temporal_worker
 
-      - name: Build, tag, and push docker image to Amazon ECR
+      - name: tag, and push docker image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: accounting_temporal_java_worker
