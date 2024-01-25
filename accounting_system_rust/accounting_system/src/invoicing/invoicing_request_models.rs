@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateInvoiceRequest {
-    pub idempotency_key: Uuid,
+    pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
     pub invoice_number: InvoiceNumber,
     pub currency_id: Uuid,

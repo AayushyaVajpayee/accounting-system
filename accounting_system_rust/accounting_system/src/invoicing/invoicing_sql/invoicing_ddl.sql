@@ -2,7 +2,6 @@
 -- this can store invoice details, credit note details, delivery challan details
 
 
-
 create table invoice_templates
 (
     id                uuid primary key, --this id will be mapped in nodejs html
@@ -29,40 +28,59 @@ create table line_title
 );
 create table line_subtitle
 (
-    id uuid primary key,
+    id          uuid primary key,
     tenant_id   uuid references tenant (id),
     description varchar(80),
     xx_hash     bigint,
     created_at  bigint default extract(epoch from now()) * 1000000
 );
 
+create table payment_term
+(
+    id               uuid primary key,
+    tenant_id        uuid references tenant (id),
+    due_days         integer                       not null,
+    discount_days    integer,
+    discount_percent integer,
+    created_by       uuid references app_user (id) not null,
+    updated_by       uuid references app_user (id),
+    created_at       bigint default extract(epoch from now()) * 1000000,
+    updated_at       bigint default extract(epoch from now()) * 1000000
+);
 
 create table invoice
 (
-    id uuid primary key,
-    entity_version_id          integer default 0,
-    tenant_id                  uuid references tenant (id),
-    active                     bool,
-    approval_status            smallint                                            not null,
-    remarks                    varchar(70),
-    invoicing_counter_id uuid references invoicing_series_counter (id) not null,
-    invoice_number             varchar(20),
-    currency_id                uuid references currency_master (id)                not null,
-    service_invoice            bool                                                not null,
-    invoice_date_ms            bigint                                              not null,
-    e_invoicing_applicable     bool                                                not null,
-    supplier_business_entity   uuid references business_entity_invoice_detail (id) not null,
-    b2b_invoice                bool                                                not null,
-    billed_to_business_entity  uuid references business_entity (id),--only applicable in b2b invoices
-    shipped_to_business_entity uuid references business_entity (id),---only applicable in b2b invoices
-    purchase_order_number      varchar(35),
-    einvoice_json_s3_id        uuid,
-    total_taxable_amount       double precision,
-    total_tax_amount           double precision,
---     total_additional_charges_amount double precision,
---     round_off                       double precision,
-    total_payable_amount       double precision,
-    invoice_pdf_s3_id          uuid
+    id                              uuid primary key,
+    entity_version_id               integer default 0,
+    tenant_id                       uuid references tenant (id),
+    active                          bool,
+    approval_status                 smallint                                            not null,
+    remarks                         varchar(70),
+    invoicing_mst_id                uuid references invoicing_series_mst (id)           not null,
+    financial_year                  smallint                                            not null,
+    invoice_number                  varchar(20),
+    currency_id                     uuid references currency_master (id)                not null,
+    service_invoice                 bool                                                not null,
+    invoice_date_ms                 bigint                                              not null,
+    e_invoicing_applicable          bool                                                not null,
+    supplier_business_entity        uuid references business_entity_invoice_detail (id) not null,
+    b2b_invoice                     bool                                                not null,
+    billed_to_business_entity       uuid references business_entity (id),--only applicable in b2b invoices
+    shipped_to_business_entity      uuid references business_entity (id),---only applicable in b2b invoices
+    purchase_order_number           varchar(35),
+    einvoice_json_s3_id             uuid,
+    total_taxable_amount            double precision not null,
+    total_tax_amount                double precision not null,
+    total_additional_charges_amount double precision not null,
+    round_off                       double precision not null,
+    total_payable_amount            double precision not null,
+    invoice_pdf_s3_id               uuid,
+    invoice_template_id             uuid references invoice_templates                   not null,
+    payment_term_id                 uuid references payment_term,
+    created_by                      uuid references app_user (id)                       not null,
+    updated_by                      uuid references app_user (id),
+    created_at                      bigint  default extract(epoch from now()) * 1000000,
+    updated_at                      bigint  default extract(epoch from now()) * 1000000
 );
 
 
@@ -83,7 +101,7 @@ create table invoice_line
     discount_bps          integer                         not null,
     cess_bps              integer                         not null,
     line_number           smallint                        not null,
-    line_total            double precision                not null, --double precision because quantity is in double which can cause the line total to be in double
+    line_net_total        double precision                not null, --double precision because quantity is in double which can cause the line total to be in double
     mrp                   integer,
     batch                 varchar(15),
     expiry_date_ms        bigint,
@@ -97,15 +115,14 @@ create table invoice_line
 
 create table additional_charge
 (
-    id uuid primary key,
-    tenant_id     uuid references tenant (id),
-    invoice_id    uuid references invoice (id),
-    line_no       smallint                        not null,
-    line_title_id uuid references line_title (id) not null,
-    rate          integer                         not null,
-    created_by    uuid references app_user (id)   not null,
-    updated_by    uuid references app_user (id),
-    created_at    bigint default extract(epoch from now()) * 1000000,
-    updated_at    bigint default extract(epoch from now()) * 1000000
+    id               uuid primary key,
+    tenant_id        uuid references tenant (id),
+    invoice_table_id uuid references invoice (id),
+    line_no          smallint                        not null,
+    line_title_id    uuid references line_title (id) not null,
+    rate             integer                         not null,
+    created_by       uuid references app_user (id)   not null,
+    updated_by       uuid references app_user (id),
+    created_at       bigint default extract(epoch from now()) * 1000000,
+    updated_at       bigint default extract(epoch from now()) * 1000000
 );
-
