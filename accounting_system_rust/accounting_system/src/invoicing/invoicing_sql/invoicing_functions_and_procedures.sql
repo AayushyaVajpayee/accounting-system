@@ -1,30 +1,4 @@
-create type create_invoice_request as
-(
-    idempotence_key                 uuid,
-    tenant_id                       uuid,
-    invoice_template_id             uuid,
-    invoicing_series_mst_id         uuid,
-    invoice_date_ms                 bigint,
-    currency_id                     uuid,
-    service_invoice                 bool,
-    b2b_invoice                     bool,
-    e_invoicing_applicable          bool,
-    supplier_id                     uuid,
-    billed_to_customer_id           uuid,
-    shipped_to_customer_id          uuid,
-    order_number                    text,
-    order_date                      bigint,
-    payment_terms                   create_payment_terms_request,
-    invoice_lines                   create_invoice_line_request[],
-    additional_charges              create_additional_charge_request[],
-    financial_year                  smallint,
-    total_taxable_amount            double precision,
-    total_tax_amount                double precision,
-    total_additional_charges_amount double precision,
-    round_off                       double precision,
-    total_payable_amount            double precision,
-    created_by                      uuid
-);
+
 
 create type create_payment_terms_request as
 (
@@ -62,7 +36,33 @@ create type create_additional_charge_request as
     title_xx_hash bigint,
     rate          double precision
 );
-
+create type create_invoice_request as
+(
+    idempotence_key                 uuid,
+    tenant_id                       uuid,
+    invoice_template_id             uuid,
+    invoicing_series_mst_id         uuid,
+    invoice_date_ms                 bigint,
+    currency_id                     uuid,
+    service_invoice                 bool,
+    b2b_invoice                     bool,
+    e_invoicing_applicable          bool,
+    supplier_id                     uuid,
+    billed_to_customer_id           uuid,
+    shipped_to_customer_id          uuid,
+    order_number                    text,
+    order_date                      bigint,
+    payment_terms                   create_payment_terms_request,
+    invoice_lines                   create_invoice_line_request[],
+    additional_charges              create_additional_charge_request[],
+    financial_year                  smallint,
+    total_taxable_amount            double precision,
+    total_tax_amount                double precision,
+    total_additional_charges_amount double precision,
+    round_off                       double precision,
+    total_payable_amount            double precision,
+    created_by                      uuid
+);
 create or replace function create_invoice_number(invoicing_series_mst_id uuid, _financial_year smallint,
                                                  _tenant_id uuid) returns text as
 $$
