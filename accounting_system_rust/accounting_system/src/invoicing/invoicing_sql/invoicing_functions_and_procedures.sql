@@ -63,6 +63,25 @@ create type create_invoice_request as
     total_payable_amount            double precision,
     created_by                      uuid
 );
+
+create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter integer, zero_padding bool) returns text as
+$$
+DECLARE
+    invoice_number text;
+BEGIN
+    if zero_padding then
+        invoice_number := invoice_number_prefix ||
+                          LPAD(invoice_counter, 16 - (length(invoice_number_prefix) + length(invoice_counter)), '0');
+    else
+        invoice_number := invoice_number_prefix || invoice_counter;
+    end if;
+    return invoice_number;
+end
+$$
+    language plpgsql;
+
+
+
 create or replace function create_invoice_number(invoicing_series_mst_id uuid, _financial_year smallint,
                                                  _tenant_id uuid) returns text as
 $$
@@ -270,21 +289,3 @@ BEGIN
 end;
 
 $$ language plpgsql;
-
-create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter text, zero_padding bool) returns text as
-$$
-DECLARE
-    invoice_number text;
-BEGIN
-    if zero_padding then
-        invoice_number := invoice_number_prefix ||
-                          LPAD(invoice_counter, 16 - (length(invoice_number_prefix) + length(invoice_counter)), '0');
-    else
-        invoice_number := invoice_number_prefix || invoice_counter;
-    end if;
-    return invoice_number;
-end
-$$
-    language plpgsql
-
-

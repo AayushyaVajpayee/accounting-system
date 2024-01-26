@@ -9,7 +9,7 @@ const INVOICING_SERIES_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./invo
 const INVOICING_SERIES_MST_SEED_DATA:&str =include_str!("./invoicing_series_sql/invoicing_series_mst.csv");
 impl DbStructMapping for InvoicingSeriesMstDbMapping {
     fn table_name(&self) -> Option<&'static str> {
-        None
+        Some("invoicing_series_mst")
     }
 
     fn get_ddl_script(&self) -> &'static str {

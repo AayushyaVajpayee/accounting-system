@@ -7,7 +7,7 @@ const INVOICING_SERIES_COUNTER_SEED_DATA:&str = include_str!("./invoicing_series
 
 impl DbStructMapping for InvoicingSeriesCounterDbMapping {
     fn table_name(&self) -> Option<&'static str> {
-        Some("invoice_series_counter")
+        Some("invoicing_series_counter")
     }
 
     fn get_ddl_script(&self) -> &'static str {
