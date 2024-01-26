@@ -133,12 +133,16 @@ impl TryFrom<String> for InvoicingSeriesName {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
     use uuid::Uuid;
 
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::invoicing::invoicing_series::invoicing_series_models::{CreateInvoiceNumberSeriesRequest, CreateInvoiceNumberSeriesRequestBuilder, FinancialYear, InvoiceNumberPrefix, InvoicingSeriesName};
     use crate::tenant::tenant_models::SEED_TENANT_ID;
-
+    use lazy_static::lazy_static;
+    lazy_static! {
+        pub static ref SEED_INVOICING_SERIES_MST_ID:Uuid= Uuid::from_str("018d417d-e88a-732b-bdd9-db9aec8d3f78").unwrap();
+    }
     pub fn a_create_invoice_number_series_request(builder: CreateInvoiceNumberSeriesRequestBuilder) -> CreateInvoiceNumberSeriesRequest {
         CreateInvoiceNumberSeriesRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),

@@ -2,4 +2,5 @@ mod invoicing_series_models;
 mod invoicing_series_http_api;
 mod invoicing_series_service;
 mod invoicing_series_dao;
-pub mod invoicing_series_db_mapping;
+pub mod invoicing_series_mst_db_mapping;
+pub mod invoicing_series_counter_db_mapping;
