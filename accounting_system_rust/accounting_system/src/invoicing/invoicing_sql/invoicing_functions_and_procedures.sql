@@ -140,48 +140,6 @@ END
 $$ language plpgsql;
 
 
-create or replace function get_or_create_line_title(title text, title_xx_hash bigint,
-                                                    hsn_sac_code text, _tenant_id uuid) returns uuid as
-$$
-DECLARE
-    title_id uuid;
-BEGIN
-    select id
-    from line_title
-    where tenant_id = _tenant_id
-      and xx_hash = title_xx_hash
-    into title_id;
-    if title_id is null then
-        select uuid_generate_v7() into title_id;
-        insert into line_title (id, tenant_id, description, hsn_code, xx_hash, created_at)
-        values (title_id, _tenant_id, title, hsn_sac_code, title_xx_hash, default);
-    end if;
-    return title_id;
-end;
-$$ language plpgsql;
-
-create or replace function get_or_create_line_subtitle(subtitle text, _tenant_id uuid, subtitle_hash bigint)
-    returns uuid as
-$$
-DECLARE
-    subtitle_id uuid;
-BEGIN
-    if subtitle is not null then
-        select id
-        from line_subtitle
-        where line_subtitle.tenant_id = _tenant_id
-          and xx_hash = subtitle_hash
-        into subtitle_id;
-        if subtitle_id is null then
-            select uuid_generate_v7() into subtitle_id;
-            insert into line_subtitle (id, tenant_id, description, xx_hash, created_at)
-            values (subtitle_id, _tenant_id, subtitle, subtitle_hash, default);
-        end if;
-    else
-        subtitle_id := null;
-    end if;
-end;
-$$ language plpgsql;
 create or replace procedure persist_invoice_lines(req create_invoice_request, invoice_tab_id uuid) as
 $$
 DECLARE

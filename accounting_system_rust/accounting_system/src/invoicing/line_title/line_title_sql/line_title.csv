@@ -1,0 +1,3 @@
+id,tenant_id,description,hsn_code,xx_hash,created_at
+018d4b77-e86b-77f0-ace4-02c34a72399b,018b33d9-c862-7fde-a0cd-55504d75e5e9,some random line title,38220011,3052550896,1706368191990646
+018d4b7c-4529-7299-87a6-58517b2a43da,018b33d9-c862-7fde-a0cd-55504d75e5e9,line title without hsn,,130874,1706368492547770

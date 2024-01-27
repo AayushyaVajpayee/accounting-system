@@ -6,3 +6,5 @@ mod invoicing_domain_models;
 mod invoicing_transformers;
 mod invoicing_dao;
 pub mod payment_term;
+pub mod line_title;
+pub mod line_subtitle;
