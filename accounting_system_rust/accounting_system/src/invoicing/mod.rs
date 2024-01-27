@@ -5,3 +5,4 @@ mod invoicing_service;
 mod invoicing_domain_models;
 mod invoicing_transformers;
 mod invoicing_dao;
+pub mod payment_term;
