@@ -4,3 +4,4 @@ pub mod invoicing_db_mapping;
 mod invoicing_service;
 mod invoicing_domain_models;
 mod invoicing_transformers;
+mod invoicing_dao;
