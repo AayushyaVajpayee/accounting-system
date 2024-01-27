@@ -71,7 +71,7 @@ DECLARE
 BEGIN
     if zero_padding then
         invoice_number := invoice_number_prefix ||
-                          LPAD(invoice_counter, 16 - (length(invoice_number_prefix) + length(invoice_counter)), '0');
+                          LPAD(invoice_counter::text, 16 - (length(invoice_number_prefix) + length(invoice_counter::text))+1, '0');
     else
         invoice_number := invoice_number_prefix || invoice_counter;
     end if;
