@@ -25,16 +25,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-#    - run: echo ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
-#    - run: echo ${{env.MESSAGE}}
-#    - uses: Swatinem/rust-cache@v2
-#      with:
-#        workspaces: |
-#          ./accounting_system_rust
-#
-
-#    - name: build and run tests
-#      run: cargo test
+    - run: echo ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
+    - run: echo ${{env.MESSAGE}}
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ./accounting_system_rust
+    - name: build and run tests
+      run: cargo test
 
   docker_image:
     needs:
