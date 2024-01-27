@@ -34,6 +34,7 @@ jobs:
     - name: build and run tests
       run: cargo test
 
+
   docker_image:
     needs:
       - build
