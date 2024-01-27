@@ -19,6 +19,7 @@ use crate::common_utils::pagination::pagination_db_mapping::PaginationDataDbMapp
 use crate::invoicing::invoicing_db_mapping::InvoicingDbMapping;
 use crate::invoicing::invoicing_series::invoicing_series_counter_db_mapping::InvoicingSeriesCounterDbMapping;
 use crate::invoicing::invoicing_series::invoicing_series_mst_db_mapping::{ InvoicingSeriesMstDbMapping};
+use crate::invoicing::payment_term::payment_term_db_mapping::PaymentTermDbMapping;
 use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::masters::address_master::address_db_mapping::AddressDbMapping;
@@ -94,6 +95,7 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(CompanyMasterDbMapping{}),
         Box::new(CompanyUnitMasterDbMapping {}),
         Box::new(BusinessEntityDbMapping {}),
+        Box::new(PaymentTermDbMapping{}),
         Box::new(InvoicingSeriesMstDbMapping {}),
         Box::new(InvoicingSeriesCounterDbMapping{}),
         Box::new(InvoicingDbMapping {}),
