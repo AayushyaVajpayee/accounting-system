@@ -1,18 +1,16 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct BusinessEntityDbMapping {}
+pub struct BusinessEntityDetailDbMapping {}
 
-const BUSINESS_ENTITY_DDL_SQL: &str = include_str!("./business_entity_master_sql/business_entity_ddl.sql");
-const BUSINESS_ENTITY_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./business_entity_master_sql/business_entity_functions_and_procedures.sql");
-const BUSINESS_ENTITY_SEED_CSV: &str = include_str!("./business_entity_master_sql/business_entity.csv");
+const BUSINESS_ENTITY_DETAIL_SEED_CSV: &str = include_str!("./business_entity_master_sql/business_entity_invoice_detail.csv");
 
-impl DbStructMapping for BusinessEntityDbMapping {
+impl DbStructMapping for BusinessEntityDetailDbMapping {
     fn table_name(&self) -> Option<&'static str> {
-        Some("business_entity")
+        Some("business_entity_invoice_detail")
     }
 
     fn get_ddl_script(&self) -> &'static str {
-        BUSINESS_ENTITY_DDL_SQL
+        ""
     }
 
     fn get_index_creation_script(&self) -> &'static str {
@@ -20,11 +18,11 @@ impl DbStructMapping for BusinessEntityDbMapping {
     }
 
     fn get_functions_and_procedures_script(&self) -> &'static str {
-        BUSINESS_ENTITY_FUNCTIONS_AND_PROCEDURES_SQL
+        ""
     }
 
     fn get_seed_data_script(&self) -> &'static str {
-        BUSINESS_ENTITY_SEED_CSV
+        BUSINESS_ENTITY_DETAIL_SEED_CSV
     }
 
     fn get_migration_ddl_script(&self) -> String {

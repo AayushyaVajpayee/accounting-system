@@ -1,11 +1,4 @@
-create type create_additional_charge_request as
-(
-    line_id       uuid,
-    line_no       smallint,
-    line_title    text,
-    title_xx_hash bigint,
-    rate          double precision
-);
+
 create or replace procedure persist_additional_charge(req create_additional_charge_request[], invoice_tab_id uuid,_tenant_id uuid,_created_by uuid) as
 $$
 DECLARE

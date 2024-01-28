@@ -27,6 +27,7 @@ use crate::ledger::ledger_transfer_db_mapping::LedgerTransferDbMapping;
 use crate::ledger::ledgermaster::ledger_db_mapping::LedgerMasterDbMapping;
 use crate::masters::address_master::address_db_mapping::AddressDbMapping;
 use crate::masters::business_entity_master::business_entity_db_mapping::BusinessEntityDbMapping;
+use crate::masters::business_entity_master::business_entity_detail_db_mapping::BusinessEntityDetailDbMapping;
 use crate::masters::city_master::city_master_db_mapping::CityMasterDbMapping;
 use crate::masters::company_master::company_master_db_mapping::CompanyMasterDbMapping;
 use crate::masters::company_master::company_unit_master::company_unit_db_mapping::CompanyUnitMasterDbMapping;
@@ -98,13 +99,15 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(CompanyMasterDbMapping{}),
         Box::new(CompanyUnitMasterDbMapping {}),
         Box::new(BusinessEntityDbMapping {}),
+        Box::new(BusinessEntityDetailDbMapping{}),
         Box::new(PaymentTermDbMapping{}),
         Box::new(LineTitleDbMapping{}),
         Box::new(LineSubtitleDbMapping{}),
-        Box::new(AdditionalChargeDbMapping {}),
         Box::new(InvoicingSeriesMstDbMapping {}),
         Box::new(InvoicingSeriesCounterDbMapping{}),
         Box::new(InvoicingDbMapping {}),
+        Box::new(AdditionalChargeDbMapping {}),
+
     ];
     list
 }
