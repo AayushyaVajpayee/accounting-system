@@ -18,5 +18,6 @@ BEGIN
     else
         subtitle_id := null;
     end if;
+    return subtitle_id;
 end;
 $$ language plpgsql;
