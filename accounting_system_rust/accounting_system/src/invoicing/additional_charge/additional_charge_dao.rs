@@ -13,6 +13,7 @@ mod tests{
 
     #[tokio::test]
     async fn test(){
+
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
         // let mut hasher = xxh32::Xxh32::new(0);
