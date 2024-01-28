@@ -28,14 +28,7 @@ create type create_invoice_line_request as
     igst_applicable    bool
 );
 
-create type create_additional_charge_request as
-(
-    line_id       uuid,
-    line_no       smallint,
-    line_title    text,
-    title_xx_hash bigint,
-    rate          double precision
-);
+
 create type create_invoice_request as
 (
     idempotence_key                 uuid,
@@ -193,7 +186,7 @@ BEGIN
         end if;
         select create_invoice_table_entry(req, payment_term_id) into invoice_id;
         select persist_invoice_lines(req, invoice_id);
-        select persist_additional_charge(req, invoice_id);
+        select persist_additional_charge(req.additional_charges, invoice_id,req.tenant_id,req.created_by);
     else
         select response
         from idempotence_store
