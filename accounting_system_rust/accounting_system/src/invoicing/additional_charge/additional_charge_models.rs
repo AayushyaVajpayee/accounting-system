@@ -22,7 +22,7 @@ pub mod tests {
     use crate::invoicing::additional_charge::additional_charge_models::{CreateAdditionalChargeRequestDbModel, CreateAdditionalChargeRequestDbModelBuilder};
 
     lazy_static! {
-        pub static ref ADDITIONAL_CHARGE_SEED_ID:Uuid = Uuid::from_str("").unwrap();
+        pub static ref ADDITIONAL_CHARGE_SEED_ID:Uuid = Uuid::from_str("018d557f-4a97-78ef-9947-fcbcebc2be21").unwrap();
     }
 
 

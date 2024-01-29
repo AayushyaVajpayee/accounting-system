@@ -1,11 +1,14 @@
 #[cfg(test)]
 mod tests {
     use spectral::assert_that;
+    use spectral::prelude::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
     use xxhash_rust::xxh32;
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::invoicing::additional_charge::additional_charge_models::CreateAdditionalChargeRequestDbModel;
     use crate::invoicing::additional_charge::additional_charge_models::tests::a_create_additional_charge_request_db_model;
+    use crate::invoicing::invoicing_request_models::tests::SEED_INVOICE_ID;
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
 
@@ -24,33 +27,23 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port, None).await;
         let charges = vec![
             a_create_additional_charge_request_db_model(Default::default()),
-            a_create_additional_charge_request_db_model(Default::default())];
+       /*     a_create_additional_charge_request_db_model(Default::default())*/];
         let query_form = format!(r#"
         begin transaction;
-        select persist_additional_charge({},'{}','{}','{}');
+        call persist_additional_charge({},'{}','{}','{}');
         commit;
-        "#,convert_to_db_add_charge_input(&charges),,*SEED_TENANT_ID,*SEED_USER_ID);
-        // let mut hasher = xxh32::Xxh32::new(0);
-        // hasher.update("line subtitle".as_bytes());
-        // let xxhash = hasher.digest();
-        // let query_form = format!(r#"
-        //     begin transaction;
-        //     select persist_additional_charge('{}','{}',{});
-        //     commit;
-        // "#, "line subtitle",*SEED_TENANT_ID, xxhash);
-        // let p = postgres_client.get().await.unwrap()
-        //     .simple_query(&query_form).await.unwrap();
-        // let ak = p.get(1).unwrap();
-        // match ak {
-        //     SimpleQueryMessage::Row(a) => {
-        //         let p: Option<&str> = a.get(0);
-        //         assert_that!(p).is_some()
-        //             .matches(|a|**a == *crate::invoicing::line_subtitle::line_subtitle_models::tests::SEED_SUBTITLE_ID.to_string().as_str());
-        //     }
-        //     SimpleQueryMessage::CommandComplete(a) => {
-        //         unreachable!();
-        //     }
-        //     _ =>{unreachable!();}
-        // }
+        "#,convert_to_db_add_charge_input(&charges),*SEED_INVOICE_ID,*SEED_TENANT_ID,*SEED_USER_ID);
+        let a = postgres_client.get()
+            .await.unwrap()
+            .simple_query(&query_form)
+            .await.unwrap();
+        let id = charges.get(0).unwrap().line_id;
+        let asd = postgres_client.get()
+            .await.unwrap()
+            .query_opt("select * from additional_charge where id =$1",
+                       &[&id]).await.unwrap();
+
+        assert_that!(asd).is_some();
+
     }
 }
