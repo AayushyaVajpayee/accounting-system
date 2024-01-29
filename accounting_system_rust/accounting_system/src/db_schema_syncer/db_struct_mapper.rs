@@ -17,6 +17,7 @@ use crate::audit_table::audit_table_db_mapping::AuditTableDbMapping;
 use crate::common_utils::common_utils_db_mapping::CommonUtilsDbMapping;
 use crate::common_utils::pagination::pagination_db_mapping::PaginationDataDbMapping;
 use crate::invoicing::additional_charge::additional_charge_db_mapping::AdditionalChargeDbMapping;
+use crate::invoicing::invoice_template::invoice_template_db_mapping::InvoiceTemplateDbMapping;
 use crate::invoicing::invoicing_db_mapping::InvoicingDbMapping;
 use crate::invoicing::invoicing_series::invoicing_series_counter_db_mapping::InvoicingSeriesCounterDbMapping;
 use crate::invoicing::invoicing_series::invoicing_series_mst_db_mapping::{ InvoicingSeriesMstDbMapping};
@@ -105,6 +106,7 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(LineSubtitleDbMapping{}),
         Box::new(InvoicingSeriesMstDbMapping {}),
         Box::new(InvoicingSeriesCounterDbMapping{}),
+        Box::new(InvoiceTemplateDbMapping{}),
         Box::new(InvoicingDbMapping {}),
         Box::new(AdditionalChargeDbMapping {}),
 

@@ -2,21 +2,6 @@
 -- this can store invoice details, credit note details, delivery challan details
 
 
-create table invoice_templates
-(
-    id                uuid primary key, --this id will be mapped in nodejs html
-    entity_version_id integer default 0,
-    tenant_id         uuid references tenant (id),
-    active            bool,
-    approval_status   smallint                      not null,
-    remarks           varchar(70),
-    sample_doc_s3_id  varchar(60),
-    created_by        uuid references app_user (id) not null,
-    updated_by        uuid references app_user (id),
-    created_at        bigint  default extract(epoch from now()) * 1000000,
-    updated_at        bigint  default extract(epoch from now()) * 1000000
-);
-
 
 create table invoice
 (
@@ -45,7 +30,7 @@ create table invoice
     round_off                       double precision not null,
     total_payable_amount            double precision not null,
     invoice_pdf_s3_id               uuid,
-    invoice_template_id             uuid references invoice_templates                   not null,
+    invoice_template_id             uuid references invoice_template(id)                   not null,
     payment_term_id                 uuid references payment_term,
     created_by                      uuid references app_user (id)                       not null,
     updated_by                      uuid references app_user (id),

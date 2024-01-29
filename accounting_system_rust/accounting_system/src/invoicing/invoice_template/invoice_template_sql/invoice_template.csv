@@ -1,0 +1,2 @@
+id,entity_version_id,tenant_id,active,approval_status,remarks,sample_doc_s3_id,created_by,updated_by,created_at,updated_at
+018d5552-fb70-7d28-bbf6-7e726e5c15eb,0,018b33d9-c862-7fde-a0cd-55504d75e5e9,true,1,,,018b3444-dc75-7a3f-a4d9-02c41071d3bd,018b3444-dc75-7a3f-a4d9-02c41071d3bd,1706533557719924,1706533557719924
