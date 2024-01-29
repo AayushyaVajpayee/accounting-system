@@ -11,3 +11,11 @@ create table additional_charge
     created_at       bigint default extract(epoch from now()) * 1000000,
     updated_at       bigint default extract(epoch from now()) * 1000000
 );
+create type create_additional_charge_request as
+(
+    line_id       uuid,
+    line_no       smallint,
+    line_title    text,
+    title_xx_hash bigint,
+    rate          double precision
+);

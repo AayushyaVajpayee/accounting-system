@@ -1,0 +1,1 @@
+pub mod invoice_template_db_mapping;

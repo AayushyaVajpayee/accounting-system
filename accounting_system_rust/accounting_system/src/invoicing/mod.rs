@@ -9,3 +9,4 @@ pub mod payment_term;
 pub mod line_title;
 pub mod line_subtitle;
 pub mod additional_charge;
+pub mod invoice_template;
