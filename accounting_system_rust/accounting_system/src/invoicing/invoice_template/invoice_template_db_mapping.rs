@@ -1,5 +1,4 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
-use crate::invoicing::invoicing_db_mapping::InvoicingDbMapping;
 
 pub struct InvoiceTemplateDbMapping {}
 
