@@ -211,3 +211,13 @@ impl TryFrom<String> for ExpiryDateMs {
     }
 }
 
+#[cfg(test)]
+pub mod tests{
+    use std::str::FromStr;
+    use lazy_static::lazy_static;
+    use uuid::Uuid;
+    lazy_static!{
+        pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
+    }
+
+}
