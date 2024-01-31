@@ -126,7 +126,7 @@ impl TryFrom<i32> for DueDays {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct PurchaseOrderNo(String);
 
@@ -171,7 +171,7 @@ impl TryFrom<String> for PurchaseOrderDate {
 }
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct BatchNo(String);
 
@@ -192,7 +192,7 @@ impl TryFrom<String> for BatchNo {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct ExpiryDateMs(NaiveDate);
 
