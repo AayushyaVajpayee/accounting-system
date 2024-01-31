@@ -78,7 +78,6 @@ struct InvoiceTemplate {
 
 #[cfg(test)]
 pub mod tests {
-    use chrono::{Datelike, TimeZone, Utc};
     use uuid::Uuid;
 
     use invoice_doc_generator::invoice_line::line_number::LineNumber;
@@ -88,7 +87,7 @@ pub mod tests {
     use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
 
     use crate::accounting::currency::currency_models::{an_audit_metadata_base, SEED_CURRENCY_ID};
-    use crate::common_utils::utils::get_current_time_us;
+    use crate::common_utils::utils::{current_indian_financial_year, get_current_time_us};
     use crate::invoicing::invoicing_domain_models::{AdditionalCharge, AdditionalChargeBuilder, Invoice, InvoiceBuilder, InvoiceLine, InvoiceLineBuilder};
     use crate::invoicing::invoicing_request_models::tests::SEED_INVOICE_ID;
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
@@ -131,19 +130,6 @@ pub mod tests {
         }
     }
 
-    pub fn current_indian_financial_year() -> u16 {
-        let utc_now = Utc::now().naive_utc();
-        let current_date = chrono_tz::Asia::Kolkata.from_utc_datetime(&utc_now).date_naive();
-
-        let current_year = current_date.year();
-        let start_year = if current_date.month() < 4 {
-            current_year - 1
-        } else {
-            current_year
-        };
-
-        start_year as u16
-    }
     pub fn an_invoice(builder:InvoiceBuilder)->Invoice{
         Invoice{
             base_master_fields: builder.base_master_fields.unwrap_or_else(||a_base_master_field(Default::default())),
@@ -155,19 +141,19 @@ pub mod tests {
             invoice_date_ms: builder.invoice_date_ms.unwrap_or_else(||get_current_time_us().unwrap()/1000),
             e_invoicing_applicable: builder.e_invoicing_applicable.unwrap_or(false),
             supplier_business_entity_id: builder.supplier_business_entity_id.unwrap_or(*SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1),
-            b2b_invoice: false,
-            billed_to_business_entity_id: Some(*SEED_BUSINESS_ENTITY_ID2),
-            shipped_to_business_entity_id: Some(*SEED_BUSINESS_ENTITY_ID2),
-            purchase_order_number: None,
-            einvoice_json_s3_id: None,
-            total_taxable_amount: 5.0,
-            total_tax_amount: 1.0,
-            round_off: 0.0,
-            total_payable_amount: 6.0,
-            invoice_pdf_s3_id: None,
-            invoice_template_id: None,
-            payment_term_id: None,
-            audit_metadata: an_audit_metadata_base(Default::default()),
+            b2b_invoice: builder.b2b_invoice.unwrap_or(false),
+            billed_to_business_entity_id: builder.billed_to_business_entity_id.unwrap_or(Some(*SEED_BUSINESS_ENTITY_ID2)),
+            shipped_to_business_entity_id: builder.shipped_to_business_entity_id.unwrap_or( Some(*SEED_BUSINESS_ENTITY_ID2)),
+            purchase_order_number: builder.purchase_order_number.unwrap(),
+            einvoice_json_s3_id: builder.einvoice_json_s3_id.unwrap(),
+            total_taxable_amount:builder.total_taxable_amount.unwrap_or( 5.0),
+            total_tax_amount: builder.total_tax_amount.unwrap_or(1.0),
+            round_off: builder.round_off.unwrap_or(0.0),
+            total_payable_amount: builder.total_payable_amount.unwrap_or(6.0),
+            invoice_pdf_s3_id: builder.invoice_pdf_s3_id.unwrap(),
+            invoice_template_id: builder.invoice_template_id.unwrap(),
+            payment_term_id: builder.payment_term_id.unwrap(),
+            audit_metadata: builder.audit_metadata.unwrap_or(an_audit_metadata_base(Default::default())),
         }
     }
 }

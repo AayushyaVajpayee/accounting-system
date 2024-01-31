@@ -1,19 +1,20 @@
+use std::ops::Not;
+
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
-use std::ops::Not;
 use thiserror::Error;
 
 use crate::hsn_code_generated::HSN_SET;
 use crate::sac_code_generated::SAC_SET;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum GstItemCode {
     HsnCode(Hsn),
     SacCode(Sac),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct Hsn(String);
 
@@ -51,7 +52,7 @@ impl TryFrom<String> for Hsn {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct Sac(String);
 

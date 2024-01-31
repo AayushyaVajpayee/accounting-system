@@ -9,7 +9,7 @@ use crate::invoice_line::line_title::LineTitleError::{EmptyTitle, NoReadableChar
 lazy_static! {
     static ref NO_ALPHABET_REGEX: Regex = Regex::new(r"^(?:[^a-z^A-Z]+)$").unwrap();
 }
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct LineTitle(String);
 #[derive(Debug, Error)]

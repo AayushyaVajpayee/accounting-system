@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::invoice_line::line_subtitle::LineSubtitleError::Empty;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub struct LineSubtitle(String);
 #[derive(Debug, Error)]
