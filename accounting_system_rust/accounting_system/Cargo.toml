@@ -36,7 +36,7 @@ tokio = { version = "1.32.0", features = ["full"] }
 config = "0.13.3"
 gstin_validator = {path="../gstin_validator"}
 invoicing_calculations={path="../invoicing_calculations"}
-invoice_doc_generator = { path = "../invoice_doc_generator" }
+invoice_doc_generator = { path = "../invoice_doc_generator"}
 const_format = "0.2.31"
 moka = {version="0.12.0",features = ["future"]}
 lazy_static = "1.4.0"
@@ -47,9 +47,10 @@ itertools = "0.12.0"
 maplit = "1.0.2"
 xxhash-rust = { version = "0.8.7", features = ["xxh32"] }
 validator = { version = "0.16.1", features = ["derive"] }
-derive_builder = "0.12.0"
+derive_builder = "0.13.0"
 actix-web-lab = "0.20.1"
 [dev-dependencies]
+invoice_doc_generator = { path = "../invoice_doc_generator",features = ["test_utils"] }
 testcontainers = "0.15.0"
 rstest = "0.18.2"
 spectral = "0.6.0"
