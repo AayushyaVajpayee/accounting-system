@@ -1,10 +1,11 @@
 use anyhow::Context;
+use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::invoice_line::unit_price::UnitPriceError::Negative;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "f64")]
 pub struct Price(f64);
 #[derive(Debug, Error)]

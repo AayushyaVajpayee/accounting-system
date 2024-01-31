@@ -1,7 +1,7 @@
 use anyhow::ensure;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "i32")]
 pub struct LineNumber(u16);
 

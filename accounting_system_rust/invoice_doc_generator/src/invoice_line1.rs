@@ -16,7 +16,7 @@ use crate::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, 
 
 //length at most 50 char per line and max 2 lines
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
 pub enum UOM {
     MilliLitre,

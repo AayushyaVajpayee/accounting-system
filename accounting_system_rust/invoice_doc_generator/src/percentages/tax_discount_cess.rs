@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::percentages::tax_discount_cess::TaxPercentageError::NotInBounds;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "i32")]
 pub struct GSTPercentage(u16);
 
@@ -66,7 +66,7 @@ mod tax_percentage_tests {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "f64")]
 pub struct CessPercentage(f64);
 
@@ -117,7 +117,7 @@ mod cess_percentage_tests {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "f64")]
 pub struct DiscountPercentage(f64);
 

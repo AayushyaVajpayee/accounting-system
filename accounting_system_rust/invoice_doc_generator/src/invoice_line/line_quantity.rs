@@ -1,4 +1,5 @@
 use anyhow::bail;
+use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -11,7 +12,7 @@ pub struct LineQuantityRaw {
     uom: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Builder,Clone)]
 #[serde(try_from = "LineQuantityRaw")]
 pub struct LineQuantity {
     quantity: f64,
@@ -75,6 +76,19 @@ mod line_quantity_tests {
             assert_that!(q).is_ok();
         } else {
             assert_that!(q).is_err();
+        }
+    }
+}
+
+#[cfg(feature = "test_utils")]
+pub mod test_utils {
+    use crate::invoice_line1::UOM;
+    use crate::invoice_line::line_quantity::{LineQuantity, LineQuantityBuilder};
+
+    pub fn a_line_quantity(builder: LineQuantityBuilder) -> LineQuantity {
+        LineQuantity {
+            quantity: builder.quantity.unwrap_or(1.0),
+            uom: builder.uom.unwrap_or(UOM::Piece),
         }
     }
 }
