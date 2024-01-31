@@ -1,5 +1,6 @@
 use anyhow::bail;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use chrono::{Datelike, TimeZone, Utc};
 use thiserror::Error;
 use tokio_postgres::SimpleQueryMessage;
 use tracing::error;
@@ -23,6 +24,20 @@ pub fn get_current_time_us() -> Result<i64, TimeError> {
             TimeError::ForwardTime(a.duration())
         })?.as_micros() as i64;
     Ok(current_time)
+}
+
+pub fn current_indian_financial_year() -> u32 {
+    let utc_now = Utc::now().naive_utc();
+    let current_date = chrono_tz::Asia::Kolkata.from_utc_datetime(&utc_now).date_naive();
+
+    let current_year = current_date.year();
+    let start_year = if current_date.month() < 4 {
+        current_year - 1
+    } else {
+        current_year
+    };
+
+    start_year as u32
 }
 
 pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessage]) -> Result<Uuid, DaoError> {
