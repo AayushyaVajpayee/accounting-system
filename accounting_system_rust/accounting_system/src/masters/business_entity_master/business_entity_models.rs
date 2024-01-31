@@ -162,12 +162,26 @@ impl Default for BusinessEntityType {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, BusinessEntityMasterBuilder, CreateBusinessEntityRequest, CreateBusinessEntityRequestBuilder};
     use crate::tenant::tenant_models::SEED_TENANT_ID;
 
+    lazy_static!{
+        pub static ref SEED_BUSINESS_ENTITY_ID1:Uuid = Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap();
+    }
+    lazy_static!{
+        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1:Uuid =Uuid::from_str("018d503d-acef-795b-89ae-dfb0b7feda60").unwrap();
+    }
+    lazy_static!{
+        pub static ref SEED_BUSINESS_ENTITY_ID2:Uuid = Uuid::from_str("018d5efd-009f-7e36-9d4f-8ad30460cada").unwrap();
+    }
+    lazy_static!{
+        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2:Uuid =Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap();
+    }
     pub fn a_business_entity_master(b: BusinessEntityMasterBuilder) -> BusinessEntityMaster {
         BusinessEntityMaster {
             base_master_fields: b.base_master_fields.unwrap_or_default(),
