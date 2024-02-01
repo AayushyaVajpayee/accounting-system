@@ -37,6 +37,9 @@ impl LineQuantity {
         }
         Ok(Self { quantity, uom })
     }
+    pub fn get_quantity(&self)->f64{
+        self.quantity
+    }
 }
 
 impl TryFrom<LineQuantityRaw> for LineQuantity {

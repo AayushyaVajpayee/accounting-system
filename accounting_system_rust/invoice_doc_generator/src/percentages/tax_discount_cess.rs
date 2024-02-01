@@ -15,6 +15,10 @@ impl GSTPercentage {
             _ => { bail!("gst tax ({})% not supported",value) }
         }
     }
+
+    pub fn inner(&self)->u16{
+        self.0
+    }
 }
 
 impl TryFrom<i32> for GSTPercentage {
@@ -83,6 +87,9 @@ impl CessPercentage {
         }
         Ok(Self(cess_percentage))
     }
+    pub fn inner(&self)->f64{
+        self.0
+    }
 }
 
 impl TryFrom<f64> for CessPercentage {
@@ -133,6 +140,10 @@ impl DiscountPercentage {
             return Err(DiscountPercentageError::NotInBounds(discount_percentage));
         }
         Ok(DiscountPercentage(discount_percentage))
+    }
+
+    pub fn inner(&self)->f64{
+        self.0
     }
 }
 

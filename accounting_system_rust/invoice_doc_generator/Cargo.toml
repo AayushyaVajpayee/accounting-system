@@ -10,11 +10,11 @@ test_utils=[]
 derive_builder = "0.13.0"
 csv = "1.2.2"
 lazy_static = "1.4.0"
-thiserror = "1.0.40"
+thiserror = "1.0.56"
 gstin_validator = {path="../gstin_validator"}
 regex="1.9.1"
 serde = { version = "1.0.193", features = ["derive"] }
-anyhow = "1.0.75"
+anyhow = "1.0.79"
 [dev-dependencies]
 rstest = "0.18.2"
 spectral = "0.6.0"

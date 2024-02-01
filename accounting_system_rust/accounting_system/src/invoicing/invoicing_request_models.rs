@@ -16,12 +16,12 @@ use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, Disc
 pub struct CreateInvoiceRequest {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
-    pub invoice_template_id:Uuid,
+    pub invoice_template_id: Uuid,
     pub invoicing_series_mst_id: Uuid,
     pub currency_id: Uuid,
     pub service_invoice: bool,
-    pub einvoicing_applicable:bool,
-    pub b2b_invoice:bool,
+    pub einvoicing_applicable: bool,
+    pub b2b_invoice: bool,
     pub supplier_id: Uuid,
     //if its not registered, go register first
     pub billed_to_customer_id: Option<Uuid>,
@@ -70,9 +70,9 @@ struct PaymentTerms {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "PaymentTerms")]
 pub struct PaymentTermsValidated {
-   pub due_days: DueDays,
-   pub discount_days: Option<DiscountDays>,
-   pub discount_percent: Option<DiscountPercentage>,
+    pub due_days: DueDays,
+    pub discount_days: Option<DiscountDays>,
+    pub discount_percent: Option<DiscountPercentage>,
 }
 
 impl TryFrom<PaymentTerms> for PaymentTermsValidated {
@@ -240,15 +240,15 @@ pub mod tests {
         pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
     }
 
-    fn a_create_invoice_request(builder: CreateInvoiceRequestBuilder) -> CreateInvoiceRequest {
+    pub fn a_create_invoice_request(builder: CreateInvoiceRequestBuilder) -> CreateInvoiceRequest {
         CreateInvoiceRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
-            invoice_template_id:builder.invoice_template_id.unwrap_or(*SEED_INVOICE_TEMPLATE_ID),
+            invoice_template_id: builder.invoice_template_id.unwrap_or(*SEED_INVOICE_TEMPLATE_ID),
             invoicing_series_mst_id: builder.invoicing_series_mst_id.unwrap_or(*SEED_INVOICING_SERIES_MST_ID),
             currency_id: builder.currency_id.unwrap_or(*SEED_CURRENCY_ID),
-            einvoicing_applicable:builder.einvoicing_applicable.unwrap_or(false),
-            b2b_invoice:builder.b2b_invoice.unwrap_or(true),
+            einvoicing_applicable: builder.einvoicing_applicable.unwrap_or(false),
+            b2b_invoice: builder.b2b_invoice.unwrap_or(true),
             service_invoice: builder.service_invoice.unwrap_or(false),
             supplier_id: builder.supplier_id.unwrap_or(*SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1),
             billed_to_customer_id: builder.billed_to_customer_id.unwrap_or(Some(*SEED_BUSINESS_ENTITY_ID2)),
@@ -265,7 +265,7 @@ pub mod tests {
         }
     }
 
-    fn a_create_additional_charge_request(builder: CreateAdditionalChargeRequestBuilder) -> CreateAdditionalChargeRequest {
+    pub fn a_create_additional_charge_request(builder: CreateAdditionalChargeRequestBuilder) -> CreateAdditionalChargeRequest {
         CreateAdditionalChargeRequest {
             line_no: builder.line_no.unwrap_or(Some(LineNumber::new(1).unwrap())),
             line_title: builder.line_title.unwrap_or(LineTitle::new("some line title".to_string()).unwrap()),
@@ -273,20 +273,20 @@ pub mod tests {
         }
     }
 
-    fn a_create_invoice_line_request(builder: CreateInvoiceLineRequestBuilder) -> CreateInvoiceLineRequest {
+    pub fn a_create_invoice_line_request(builder: CreateInvoiceLineRequestBuilder) -> CreateInvoiceLineRequest {
         CreateInvoiceLineRequest {
             line_no: builder.line_no.unwrap_or(Some(LineNumber::new(1).unwrap())),
             gst_item_code: builder.gst_item_code.unwrap_or(GstItemCode::HsnCode(Hsn::new("38220011".to_string()).unwrap())),
             line_title: builder.line_title.unwrap_or(LineTitle::new("some random line title".to_string()).unwrap()),
-            line_subtitle: builder.line_subtitle.unwrap(),
+            line_subtitle: builder.line_subtitle.flatten(),
             quantity: builder.quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
             unit_price: builder.unit_price.unwrap_or_else(|| Price::new(10.0).unwrap()),
             tax_rate_percentage: builder.tax_rate_percentage.unwrap_or_else(|| GSTPercentage::new(28).unwrap()),
             discount_percentage: builder.discount_percentage.unwrap_or_else(|| DiscountPercentage::new(0.0).unwrap()),
             cess_percentage: builder.cess_percentage.unwrap_or_else(|| CessPercentage::new(0.0).unwrap()),
-            mrp: builder.mrp.unwrap(),
-            batch_no: builder.batch_no.unwrap(),
-            expiry_date: builder.expiry_date.unwrap(),
+            mrp: builder.mrp.flatten(),
+            batch_no: builder.batch_no.flatten(),
+            expiry_date: builder.expiry_date.flatten(),
         }
     }
 }

@@ -1,4 +1,7 @@
+use std::fmt::{Display, Formatter};
 use std::ops::Not;
+
+use anyhow::anyhow;
 use thiserror::Error;
 
 use crate::invoice_line::InvoiceLineError::{
@@ -14,6 +17,9 @@ pub struct InvoiceLine {
     tax_percentage: f64,
     cess_percentage: f64,
 }
+
+
+
 #[derive(Debug, Error)]
 pub enum InvoiceLineError {
     #[error("quantity cannot be negative")]
@@ -33,6 +39,17 @@ pub enum InvoiceLineError {
     #[error("discount percentage cannot be less than 0 or greater than100")]
     DiscountPercentageNotInBounds,
 }
+#[derive(Debug)]
+struct ErrorList( Vec<InvoiceLineError>);
+impl Display for ErrorList{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for (index, error) in self.0.iter().enumerate() {
+            writeln!(f, "{}: {}", index + 1, error)?;
+        }
+        Ok(())
+    }
+}
+
 impl InvoiceLine {
     pub fn new(
         quantity: f64,
@@ -40,7 +57,7 @@ impl InvoiceLine {
         discount_percentage: f64,
         tax_percentage: f64,
         cess_percentage: f64,
-    ) -> Result<Self, Vec<InvoiceLineError>> {
+    ) -> anyhow::Result<Self> {
         let mut vec: Vec<InvoiceLineError> = Vec::new();
         if quantity < 0.0 {
             vec.push(QuantityNegative);
@@ -64,7 +81,7 @@ impl InvoiceLine {
             vec.push(CessPercentageTooLarge(500.00))
         }
         if vec.is_empty().not() {
-            Err(vec)
+            Err(anyhow!(ErrorList(vec).to_string()))
         } else {
             Ok(Self {
                 quantity,
@@ -106,59 +123,62 @@ mod tests {
     use crate::invoice_line::{compute_cess_amount, compute_discount_amount, compute_line_total_amount, compute_tax_amount, compute_taxable_amount, InvoiceLine};
 
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(1.0, 100.0, 10.0, 0.0, 0.0).unwrap(),10.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 10.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(100.0, 100.0, 10.0, 0.0, 0.0).unwrap(),1000.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 100.0, 10.0, 0.0, 0.0).unwrap(), 10.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 10.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(100.0, 100.0, 10.0, 0.0, 0.0).unwrap(), 1000.0)]
     #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 10.0, 0.0, 0.0).unwrap()
-    ,100_000_000_000_000_000.0)]
+    , 100_000_000_000_000_000.0)]
     fn test_compute_discount_amount(#[case] line: InvoiceLine, #[case] discount: f64) {
         let p = compute_discount_amount(&line);
         assert_that!(p).is_equal_to(discount);
     }
+
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 0.0).unwrap(),1.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 1.0, 0.0, 0.0).unwrap(),0.99)]
-    #[case(InvoiceLine::new(1.0, 0.0, 1.0, 0.0, 0.0).unwrap(),0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 0.0).unwrap(), 1.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 1.0, 0.0, 0.0).unwrap(), 0.99)]
+    #[case(InvoiceLine::new(1.0, 0.0, 1.0, 0.0, 0.0).unwrap(), 0.0)]
     #[case(InvoiceLine::new(1_000_000_000.00
-    , 1_000_000_000.00, 1.0, 0.0, 0.0).unwrap(),990_000_000_000_000_000.00)]
-    fn test_compute_taxable_amount(#[case] line:InvoiceLine,#[case] taxable_amount:f64){
+    , 1_000_000_000.00, 1.0, 0.0, 0.0).unwrap(), 990_000_000_000_000_000.00)]
+    fn test_compute_taxable_amount(#[case] line: InvoiceLine, #[case] taxable_amount: f64) {
         let p = compute_taxable_amount(&line);
         assert_that!(p).is_equal_to(taxable_amount);
     }
+
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 10.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 10.0, 0.0).unwrap(),0.1)]
-    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 10.0, 0.0).unwrap(),1_000_000_000_000_000_00.0)]
-    fn test_compute_tax_amount(#[case] line:InvoiceLine,#[case] tax_amount:f64){
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 10.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 10.0, 0.0).unwrap(), 0.1)]
+    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 10.0, 0.0).unwrap(), 1_000_000_000_000_000_00.0)]
+    fn test_compute_tax_amount(#[case] line: InvoiceLine, #[case] tax_amount: f64) {
         let p = compute_tax_amount(&line);
         assert_that!(p).is_equal_to(tax_amount);
     }
+
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 10.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 10.0).unwrap(),0.1)]
-    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 0.0, 10.0).unwrap(),1_000_000_000_000_000_00.0)]
-    fn test_compute_cess_amount(#[case] line:InvoiceLine,#[case] cess_amount:f64){
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 10.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 10.0).unwrap(), 0.1)]
+    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 0.0, 10.0).unwrap(), 1_000_000_000_000_000_00.0)]
+    fn test_compute_cess_amount(#[case] line: InvoiceLine, #[case] cess_amount: f64) {
         let p = compute_cess_amount(&line);
         assert_that!(p).is_equal_to(cess_amount);
     }
+
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 01.0, 01.0, 01.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(100.0, 0.0, 01.0, 01.0, 01.0).unwrap(),0.0)]
-    #[case(InvoiceLine::new(100.0, 1.0, 01.0, 01.0, 01.0).unwrap(),100.98)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 01.0, 01.0, 01.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(100.0, 0.0, 01.0, 01.0, 01.0).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(100.0, 1.0, 01.0, 01.0, 01.0).unwrap(), 100.98)]
     #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 40.0, 300.0).unwrap()
-    ,4_400_000_000_000_000_000.00)]
-    fn test_line_total_amount(#[case] line:InvoiceLine,#[case] total_amount:f64){
+    , 4_400_000_000_000_000_000.00)]
+    fn test_line_total_amount(#[case] line: InvoiceLine, #[case] total_amount: f64) {
         let p = compute_line_total_amount(&line);
         assert_that!(p).
-            is_close_to(total_amount,0.0000000000001);
+            is_close_to(total_amount, 0.0000000000001);
     }
-
 }
 
 

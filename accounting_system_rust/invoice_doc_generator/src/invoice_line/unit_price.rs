@@ -26,6 +26,10 @@ impl Price {
         }
         Ok(Self(unit_price))
     }
+
+    pub fn inner(&self)->f64{
+        self.0
+    }
 }
 
 impl TryFrom<f64> for Price {
