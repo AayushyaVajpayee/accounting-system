@@ -16,9 +16,12 @@ use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, Disc
 pub struct CreateInvoiceRequest {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
+    pub invoice_template_id:Uuid,
     pub invoicing_series_mst_id: Uuid,
     pub currency_id: Uuid,
     pub service_invoice: bool,
+    pub einvoicing_applicable:bool,
+    pub b2b_invoice:bool,
     pub supplier_id: Uuid,
     //if its not registered, go register first
     pub billed_to_customer_id: Option<Uuid>,
@@ -34,42 +37,42 @@ pub struct CreateInvoiceRequest {
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateAdditionalChargeRequest {
-    line_no: Option<LineNumber>,
-    line_title: LineTitle,
-    rate: Price,
+    pub line_no: Option<LineNumber>,
+    pub line_title: LineTitle,
+    pub rate: Price,
 }
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateInvoiceLineRequest {
-    line_no: Option<LineNumber>,
+    pub line_no: Option<LineNumber>,
     #[serde(flatten)]
-    gst_item_code: GstItemCode,
-    line_title: LineTitle,
-    line_subtitle: Option<LineSubtitle>,
-    quantity: LineQuantity,
-    unit_price: Price,
-    tax_rate_percentage: GSTPercentage,
-    discount_percentage: DiscountPercentage,
-    cess_percentage: CessPercentage,
-    mrp: Option<Price>,
-    batch_no: Option<BatchNo>,
-    expiry_date: Option<ExpiryDateMs>,
+    pub gst_item_code: GstItemCode,
+    pub line_title: LineTitle,
+    pub line_subtitle: Option<LineSubtitle>,
+    pub quantity: LineQuantity,
+    pub unit_price: Price,
+    pub tax_rate_percentage: GSTPercentage,
+    pub discount_percentage: DiscountPercentage,
+    pub cess_percentage: CessPercentage,
+    pub mrp: Option<Price>,
+    pub batch_no: Option<BatchNo>,
+    pub expiry_date: Option<ExpiryDateMs>,
 }
 
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PaymentTerms {
-    due_days: DueDays,
-    discount_days: Option<DiscountDays>,
-    discount_percent: Option<DiscountPercentage>,
+    pub due_days: DueDays,
+    pub discount_days: Option<DiscountDays>,
+    pub discount_percent: Option<DiscountPercentage>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "PaymentTerms")]
 pub struct PaymentTermsValidated {
-    due_days: DueDays,
-    discount_days: Option<DiscountDays>,
-    discount_percent: Option<DiscountPercentage>,
+   pub due_days: DueDays,
+   pub discount_days: Option<DiscountDays>,
+   pub discount_percent: Option<DiscountPercentage>,
 }
 
 impl TryFrom<PaymentTerms> for PaymentTermsValidated {
@@ -227,6 +230,7 @@ pub mod tests {
     use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
 
     use crate::accounting::currency::currency_models::SEED_CURRENCY_ID;
+    use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
     use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
@@ -240,8 +244,11 @@ pub mod tests {
         CreateInvoiceRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
+            invoice_template_id:builder.invoice_template_id.unwrap_or(*SEED_INVOICE_TEMPLATE_ID),
             invoicing_series_mst_id: builder.invoicing_series_mst_id.unwrap_or(*SEED_INVOICING_SERIES_MST_ID),
             currency_id: builder.currency_id.unwrap_or(*SEED_CURRENCY_ID),
+            einvoicing_applicable:builder.einvoicing_applicable.unwrap_or(false),
+            b2b_invoice:builder.b2b_invoice.unwrap_or(true),
             service_invoice: builder.service_invoice.unwrap_or(false),
             supplier_id: builder.supplier_id.unwrap_or(*SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1),
             billed_to_customer_id: builder.billed_to_customer_id.unwrap_or(Some(*SEED_BUSINESS_ENTITY_ID2)),
