@@ -9,9 +9,10 @@ use crate::invoice_line::line_title::LineTitleError::{EmptyTitle, NoReadableChar
 lazy_static! {
     static ref NO_ALPHABET_REGEX: Regex = Regex::new(r"^(?:[^a-z^A-Z]+)$").unwrap();
 }
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "String")]
 pub struct LineTitle(String);
+
 #[derive(Debug, Error)]
 pub enum LineTitleError {
     #[error("line title cannot be empty")]
@@ -44,6 +45,9 @@ impl LineTitle {
 
         Ok(Self(title.to_string()))
     }
+    pub fn inner(&self) -> &str {
+        self.0.as_str()
+    }
 }
 
 impl TryFrom<String> for LineTitle {
@@ -52,6 +56,7 @@ impl TryFrom<String> for LineTitle {
         LineTitle::new(value).context("")
     }
 }
+
 #[cfg(test)]
 mod line_title_tests {
     use rstest::rstest;
@@ -63,8 +68,8 @@ mod line_title_tests {
     #[rstest]
     #[case("", false)]
     #[case(
-        "fdjlajfljldjfaldjfladjflakdjlfkajlfjlajflakjlkasdjlfkdjalkjafldjaljfaljfdlajfdlakjfdal",
-        false
+    "fdjlajfljldjfaldjfladjflakdjlfkajlfjlajflakjlkasdjlfkdjalkjafldjaljfaljfdlajfdlakjfdal",
+    false
     )]
     #[case("\n\n\n\n\n\n", false)]
     #[case("                ", false)]
