@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use invoice_doc_generator::hsc_sac::GstItemCode;
-use invoice_doc_generator::invoice_line::line_number::LineNumber;
 use invoice_doc_generator::invoice_line::line_quantity::LineQuantity;
 use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
@@ -24,10 +23,7 @@ pub struct CreateInvoiceRequest {
     pub b2b_invoice: bool,
     pub supplier_id: Uuid,
     //if its not registered, go register first
-    pub billed_to_customer_id: Option<Uuid>,
-    //there is id for generic customer too, go use that
-    pub shipped_to_customer_id: Option<Uuid>,
-    //there is id for generic customer too, go use that
+    pub bill_ship_detail: Option<BillShipDetail>,
     pub order_number: Option<PurchaseOrderNo>,
     pub order_date: Option<PurchaseOrderDate>,
     pub payment_terms: Option<PaymentTermsValidated>,
@@ -35,16 +31,20 @@ pub struct CreateInvoiceRequest {
     pub additional_charges: Vec<CreateAdditionalChargeRequest>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Builder)]
+pub struct BillShipDetail {
+    pub billed_to_customer_id: Uuid,
+    pub shipped_to_customer_id: Uuid,
+}
+
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateAdditionalChargeRequest {
-    pub line_no: Option<LineNumber>,
     pub line_title: LineTitle,
     pub rate: Price,
 }
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateInvoiceLineRequest {
-    pub line_no: Option<LineNumber>,
     #[serde(flatten)]
     pub gst_item_code: GstItemCode,
     pub line_title: LineTitle,
@@ -162,8 +162,17 @@ pub struct PurchaseOrderDate(NaiveDate);
 
 impl PurchaseOrderDate {
     pub fn new(value: String) -> anyhow::Result<Self> {
-        let p = NaiveDate::parse_from_str(value.as_str(), "%Y-%m-%d").context("")?;
-        Ok(PurchaseOrderDate(p))
+        PurchaseOrderDate::from_str(value.as_str())
+    }
+    pub fn from_str(value: &str) -> anyhow::Result<Self> {
+        let p = NaiveDate::parse_from_str(value, "%Y-%m-%d").context("")?;
+        PurchaseOrderDate::from_date(p)
+    }
+    pub fn from_date(date: NaiveDate) -> anyhow::Result<Self> {
+        Ok(PurchaseOrderDate(date))
+    }
+    pub fn get_date(&self) -> &NaiveDate {
+        &self.0
     }
 }
 
@@ -223,7 +232,6 @@ pub mod tests {
     use uuid::Uuid;
 
     use invoice_doc_generator::hsc_sac::{GstItemCode, Hsn};
-    use invoice_doc_generator::invoice_line::line_number::LineNumber;
     use invoice_doc_generator::invoice_line::line_quantity::test_utils::a_line_quantity;
     use invoice_doc_generator::invoice_line::line_title::LineTitle;
     use invoice_doc_generator::invoice_line::unit_price::Price;
@@ -231,7 +239,7 @@ pub mod tests {
 
     use crate::accounting::currency::currency_models::SEED_CURRENCY_ID;
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
-    use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
+    use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
     use crate::tenant::tenant_models::SEED_TENANT_ID;
@@ -251,11 +259,10 @@ pub mod tests {
             b2b_invoice: builder.b2b_invoice.unwrap_or(true),
             service_invoice: builder.service_invoice.unwrap_or(false),
             supplier_id: builder.supplier_id.unwrap_or(*SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1),
-            billed_to_customer_id: builder.billed_to_customer_id.unwrap_or(Some(*SEED_BUSINESS_ENTITY_ID2)),
-            shipped_to_customer_id: builder.shipped_to_customer_id.unwrap_or(Some(*SEED_BUSINESS_ENTITY_ID2)),
-            order_number: builder.order_number.unwrap(),
-            order_date: builder.order_date.unwrap(),
-            payment_terms: builder.payment_terms.unwrap(),
+            bill_ship_detail: builder.bill_ship_detail.unwrap_or_else(|| Some(a_bill_ship_detail(Default::default()))),
+            order_number: builder.order_number.flatten(),
+            order_date: builder.order_date.flatten(),
+            payment_terms: builder.payment_terms.flatten(),
             invoice_lines: builder.invoice_lines
                 .unwrap_or_else(||
                     vec![a_create_invoice_line_request(Default::default())]),
@@ -265,9 +272,15 @@ pub mod tests {
         }
     }
 
+    pub fn a_bill_ship_detail(builder: BillShipDetailBuilder) -> BillShipDetail {
+        BillShipDetail {
+            billed_to_customer_id: builder.billed_to_customer_id.unwrap_or(*SEED_BUSINESS_ENTITY_ID2),
+            shipped_to_customer_id: builder.shipped_to_customer_id.unwrap_or(*SEED_BUSINESS_ENTITY_ID2),
+        }
+    }
+
     pub fn a_create_additional_charge_request(builder: CreateAdditionalChargeRequestBuilder) -> CreateAdditionalChargeRequest {
         CreateAdditionalChargeRequest {
-            line_no: builder.line_no.unwrap_or(Some(LineNumber::new(1).unwrap())),
             line_title: builder.line_title.unwrap_or(LineTitle::new("some line title".to_string()).unwrap()),
             rate: builder.rate.unwrap_or_else(|| Price::new(0.0).unwrap()),
         }
@@ -275,7 +288,6 @@ pub mod tests {
 
     pub fn a_create_invoice_line_request(builder: CreateInvoiceLineRequestBuilder) -> CreateInvoiceLineRequest {
         CreateInvoiceLineRequest {
-            line_no: builder.line_no.unwrap_or(Some(LineNumber::new(1).unwrap())),
             gst_item_code: builder.gst_item_code.unwrap_or(GstItemCode::HsnCode(Hsn::new("38220011".to_string()).unwrap())),
             line_title: builder.line_title.unwrap_or(LineTitle::new("some random line title".to_string()).unwrap()),
             line_subtitle: builder.line_subtitle.flatten(),
