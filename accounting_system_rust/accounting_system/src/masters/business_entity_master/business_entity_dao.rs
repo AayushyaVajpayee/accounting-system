@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::{GenericClient, Pool};
 use std::sync::Arc;
+use actix_web::web::get;
 use tokio_postgres::Row;
 use uuid::Uuid;
 
@@ -17,6 +18,7 @@ pub trait BusinessEntityDao: Send + Sync {
     async fn create_business_entity(&self, request: &CreateBusinessEntityRequest) -> Result<Uuid, DaoError>;
 
     async fn get_business_entity(&self, id: &Uuid, tenant_id: &Uuid) -> Result<Option<BusinessEntityMaster>, DaoError>;
+    async fn is_business_entity_exist(&self, id: &Uuid, tenant_id: &Uuid) -> Result<bool, DaoError>;
 }
 
 const TABLE_NAME: &str = "business_entity";
@@ -123,6 +125,14 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
             .transpose()?;
         Ok(en)
     }
+
+    async fn is_business_entity_exist(&self, id: &Uuid, tenant_id: &Uuid) -> Result<bool, DaoError> {
+        let row = self.postgres_client.get().await?
+            .query_one("select exists (select 1 from business_entity where id=$1 and tenant_id=$2)", &[id, tenant_id])
+            .await?;
+        let exists: bool = row.get(0);
+        Ok(exists)
+    }
 }
 
 
@@ -130,10 +140,23 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
 mod tests {
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
+    use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, BusinessEntityDaoImpl};
-    use crate::masters::business_entity_master::business_entity_models::tests::a_create_business_entity_request;
+    use crate::masters::business_entity_master::business_entity_models::tests::{a_create_business_entity_request, SEED_BUSINESS_ENTITY_ID2};
+    use crate::tenant::tenant_models::SEED_TENANT_ID;
+
+    #[tokio::test]
+    async fn test_is_business_entity_exist() {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let dao = BusinessEntityDaoImpl { postgres_client: postgres_client.clone() };
+        let exist = dao.is_business_entity_exist(&SEED_BUSINESS_ENTITY_ID2, &SEED_TENANT_ID).await.unwrap();
+        let not_exist = dao.is_business_entity_exist(&Uuid::now_v7(), &SEED_TENANT_ID).await.unwrap();
+        assert!(exist);
+        assert!(!not_exist);
+    }
 
     #[tokio::test]
     async fn test_create_and_get_dao() {
