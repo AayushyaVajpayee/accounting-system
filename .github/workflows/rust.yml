@@ -32,7 +32,7 @@ jobs:
         workspaces: |
           ./accounting_system_rust
     - name: build and run tests
-      run: cargo test
+      run: cargo test --locked --frozen
 
 
   docker_image:
