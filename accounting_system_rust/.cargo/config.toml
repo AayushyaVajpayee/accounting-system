@@ -1,6 +1,8 @@
 [build]
 rustflags = ["--cfg", "uuid_unstable"]
-
+#[target.stable-x86_64-apple-darwin]
+#linker = "clang"
+#rustflags = ["-C", "link-arg=-fuse-ld=/usr/lcoal/bin/mold"]
 [env]
 POSTGRES_PORT = "5432"
 POSTGRES_USER = "postgres"
