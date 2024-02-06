@@ -1,5 +1,8 @@
+use std::str::FromStr;
 use anyhow::bail;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use actix_web::{HttpRequest, ResponseError};
+use actix_web::http::StatusCode;
 use chrono::{Datelike, NaiveDate, TimeZone, Utc};
 use thiserror::Error;
 use tokio_postgres::SimpleQueryMessage;
@@ -44,6 +47,27 @@ pub fn current_indian_date() -> NaiveDate {
     let utc_now = Utc::now().naive_utc();
     let current_date = chrono_tz::Asia::Kolkata.from_utc_datetime(&utc_now).date_naive();
     current_date
+}
+#[derive(Debug,Error)]
+pub enum TenantHeaderError{
+    #[error("x-tenant-id header not present in request")]
+    NotPresent,
+    #[error("x-tenant-id header does not have a valid uuid")]
+    NotUuid
+}
+impl ResponseError for TenantHeaderError {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::BAD_REQUEST
+    }
+}
+
+pub fn extract_tenant_id_from_header(request:&HttpRequest)->Result<Uuid,TenantHeaderError>{
+    let p = request.headers()
+        .get("x-tenant-id")
+        .ok_or(TenantHeaderError::NotPresent)?;
+    let tenant_id_str = p.to_str().map_err(|a| TenantHeaderError::NotUuid)?;
+    let tenant_uuid = Uuid::from_str(tenant_id_str).map_err(|a| TenantHeaderError::NotUuid)?;
+    Ok(tenant_uuid)
 }
 
 pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessage]) -> Result<Uuid, DaoError> {

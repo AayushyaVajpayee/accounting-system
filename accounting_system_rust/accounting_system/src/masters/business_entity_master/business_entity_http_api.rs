@@ -1,11 +1,13 @@
+use std::fmt::Display;
+use std::str::FromStr;
+use std::sync::Arc;
+
 use actix_web::{HttpRequest, HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
-use std::str::FromStr;
-use std::sync::Arc;
-use thiserror::Error;
 use uuid::Uuid;
 
+use crate::common_utils::utils::extract_tenant_id_from_header;
 use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequest;
 use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, BusinessEntityServiceError};
 use crate::setup_routes;
@@ -18,32 +20,14 @@ impl ResponseError for BusinessEntityServiceError {
     }
 }
 
-impl ResponseError for TenantHeaderError {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::BAD_REQUEST
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum TenantHeaderError {
-    #[error("x-tenant-id header not present in request")]
-    NotPresent,
-    #[error("x-tenant-id header does not have a valid uuid")]
-    NotUuid,
-}
-
 async fn create_business_entity_master(data: Data<Arc<dyn BusinessEntityService>>, request: web::Json<CreateBusinessEntityRequest>) -> actix_web::Result<impl Responder> {
     let ap = data.create_business_entity(&request).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
 async fn get_business_entity_master_by_id(data: Data<Arc<dyn BusinessEntityService>>, business_entity_id: Path<Uuid>, req: HttpRequest) -> actix_web::Result<impl Responder> {
-    let p = req.headers()
-        .get("x-tenant-id")
-        .ok_or(TenantHeaderError::NotPresent)?;
-    let tenant_id_str = p.to_str().map_err(|a| TenantHeaderError::NotUuid)?;
-    let tenant_uuid = Uuid::from_str(tenant_id_str).map_err(|a| TenantHeaderError::NotUuid)?;
-    let pd = data.get_business_entity_by_id(&business_entity_id, &tenant_uuid).await?;
+    let tenant_id =extract_tenant_id_from_header(&req)?;
+    let pd = data.get_business_entity_by_id(&business_entity_id, &tenant_id).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(pd))
 }
 setup_routes!(BusinessEntityService,"/business-entity",
