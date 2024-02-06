@@ -2,6 +2,7 @@ use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
 use std::sync::Arc;
+use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -20,11 +21,13 @@ pub enum InvoicingSeriesServiceError {
 pub trait InvoicingSeriesService: Send + Sync {
     async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest) -> Result<Uuid, InvoicingSeriesServiceError>;
 
-    async fn get_invoicing_series_by_id(&self, invoicing_series_id: &Uuid) -> Result<Option<InvoicingSeriesMaster>, InvoicingSeriesServiceError>;
+    async fn get_invoicing_series_by_id(&self, invoicing_series_id: Uuid,tenant_id:Uuid) -> Result<Option<InvoicingSeriesMaster>, InvoicingSeriesServiceError>;
+    async fn is_valid_invoicing_series_id(&self,invoicing_series_id:Uuid,tenant_id:Uuid)->Result<bool,InvoicingSeriesServiceError>;
 }
 
 struct InvoicingSeriesServiceImpl {
     dao: Arc<dyn InvoicingSeriesDao>,
+    cache:Cache<(Uuid,Uuid),Arc<InvoicingSeriesMaster>>
 }
 
 
@@ -35,9 +38,13 @@ impl InvoicingSeriesService for InvoicingSeriesServiceImpl {
         Ok(d)
     }
 
-    async fn get_invoicing_series_by_id(&self, invoicing_series_id: &Uuid) -> Result<Option<InvoicingSeriesMaster>, InvoicingSeriesServiceError> {
-        let opt_in_ser = self.dao.get_invoicing_series_by_id(invoicing_series_id).await?;
+    async fn get_invoicing_series_by_id(&self, invoicing_series_id: Uuid,tenant_id:Uuid) -> Result<Option<InvoicingSeriesMaster>, InvoicingSeriesServiceError> {
+        let opt_in_ser = self.dao.get_invoicing_series_by_id(invoicing_series_id,tenant_id).await?;
         Ok(opt_in_ser)
+    }
+
+    async fn is_valid_invoicing_series_id(&self, invoicing_series_id: Uuid, tenant_id: Uuid) -> Result<bool, InvoicingSeriesServiceError> {
+        todo!()
     }
 }
 
