@@ -19,7 +19,8 @@ type TemplateEntityOpt = Option<Arc<InvoiceTemplateMaster>>;
 
 #[async_trait]
 pub trait InvoiceTemplateService {
-    async fn get_template_by_id(&self, id: &Uuid, tenant_id: &Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError>;
+    async fn get_template_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError>;
+    async fn is_valid_template_id(&self, id: Uuid, tenant_id: Uuid) -> Result<bool, InvoiceTemplateServiceError>;
 }
 
 struct InvoiceTemplateServiceImpl {
@@ -30,12 +31,12 @@ struct InvoiceTemplateServiceImpl {
 
 #[async_trait]
 impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
-    async fn get_template_by_id(&self, id: &Uuid, tenant_id: &Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError> {
-        let key = (*tenant_id, *id);
+    async fn get_template_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError> {
+        let key = (tenant_id, id);
         if let Some(entity) = self.cache_by_tenant_id_and_id.get(&key).await {
             return Ok(Some(entity));
         }
-        let p = self.dao.get_invoice_template_by_id(id, tenant_id).await?;
+        let p = self.dao.get_invoice_template_by_id(&id, &tenant_id).await?;
         if let Some(entity) = p {
             let k = Arc::new(entity);
             self.cache_by_tenant_id_and_id.insert(key, k.clone()).await;
@@ -43,6 +44,11 @@ impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
         } else {
             Ok(None)
         }
+    }
+
+    async fn is_valid_template_id(&self, id: Uuid, tenant_id: Uuid) -> Result<bool, InvoiceTemplateServiceError> {
+        let k = self.get_template_by_id(id, tenant_id).await?;
+        Ok(k.is_some())
     }
 }
 
