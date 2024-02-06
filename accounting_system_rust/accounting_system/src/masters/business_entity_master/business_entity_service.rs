@@ -1,6 +1,8 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
 use moka::future::Cache;
@@ -8,7 +10,7 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::common_utils::dao_error::DaoError;
-use crate::masters::business_entity_master::business_entity_dao::BusinessEntityDao;
+use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, get_business_entity_dao};
 use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, CreateBusinessEntityRequest};
 
 #[derive(Debug, Error)]
@@ -35,6 +37,21 @@ struct BusinessEntityServiceImpl {
     //tenant_id, business_entity_id
     //lets keep the size to be 1000 and ttl to be 5 minutes
     cache_id: Cache<(Uuid, Uuid), Arc<BusinessEntityMaster>>,
+}
+
+
+pub fn get_business_entity_master(arc:Arc<Pool>) ->Arc<dyn BusinessEntityService>{
+    let dao = get_business_entity_dao(arc);
+    let cache:Cache<(Uuid,Uuid),Arc<BusinessEntityMaster>> = Cache::builder()
+        .max_capacity(1000)
+        .time_to_live(Duration::from_secs(300))
+        .build();
+    let service = BusinessEntityServiceImpl{
+        dao,
+        cache_id: cache,
+    };
+    Arc::new(service)
+
 }
 
 

@@ -1,10 +1,12 @@
 use std::sync::Arc;
+use std::time::Duration;
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
 use crate::common_utils::dao_error::DaoError;
-use crate::invoicing::invoice_template::invoice_template_dao::InvoiceTemplateDao;
+use crate::invoicing::invoice_template::invoice_template_dao::{get_invoice_template_dao, InvoiceTemplateDao};
 use crate::invoicing::invoice_template::invoice_template_models::InvoiceTemplateMaster;
 
 #[derive(Debug, Error)]
@@ -25,6 +27,7 @@ struct InvoiceTemplateServiceImpl {
     //(tenant_id,id)
     cache_by_tenant_id_and_id: Cache<(Uuid, Uuid), Arc<InvoiceTemplateMaster>>,
 }
+
 #[async_trait]
 impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
     async fn get_template_by_id(&self, id: &Uuid, tenant_id: &Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError> {
@@ -41,6 +44,20 @@ impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
             Ok(None)
         }
     }
+}
+
+pub fn get_invoice_template_master_service(arc: Arc<Pool>) -> Arc<dyn InvoiceTemplateService> {
+    let dao = get_invoice_template_dao(arc);
+    let cache: Cache<(Uuid, Uuid), Arc<InvoiceTemplateMaster>> =
+        Cache::builder()
+            .time_to_live(Duration::from_secs(300))
+            .max_capacity(1000)
+            .build();
+    let service = InvoiceTemplateServiceImpl {
+        dao,
+        cache_by_tenant_id_and_id: cache,
+    };
+    Arc::new(service)
 }
 
 
