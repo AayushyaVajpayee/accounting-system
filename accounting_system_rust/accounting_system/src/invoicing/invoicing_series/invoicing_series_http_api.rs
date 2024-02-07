@@ -49,7 +49,7 @@ mod tests {
     use crate::invoicing::invoicing_series::invoicing_series_models::InvoicingSeriesMaster;
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::a_create_invoice_number_series_request;
     use crate::invoicing::invoicing_series::invoicing_series_service::{InvoicingSeriesService, MockInvoicingSeriesService};
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_get_and_create_api() {

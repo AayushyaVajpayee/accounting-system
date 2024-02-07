@@ -168,7 +168,7 @@ mod tests {
     use crate::masters::company_master::dao::dao_trait::CompanyMasterDao;
     use crate::masters::company_master::dao::dao_trait_impl::CompanyMasterDaoPostgresImpl;
     use crate::masters::company_master::dao::queries_and_constants::TABLE_NAME;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_paginated_get_all_companies_for_tenant() {

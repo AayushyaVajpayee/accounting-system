@@ -1,14 +1,10 @@
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use derive_builder::Builder;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-lazy_static!{
-    pub static ref SEED_TENANT_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
-}
+
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq,Builder)]
 pub struct Tenant {
     pub id: Uuid,
@@ -34,8 +30,14 @@ pub struct CreateTenantRequest {
 
 #[cfg(test)]
 pub mod tests{
+    use std::str::FromStr;
+    use lazy_static::lazy_static;
     use uuid::Uuid;
-    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, SEED_TENANT_ID, Tenant, TenantBuilder};
+    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, Tenant, TenantBuilder};
+
+    lazy_static!{
+    pub static ref SEED_TENANT_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
+}
     pub fn a_create_tenant_request(builder:CreateTenantRequestBuilder)->CreateTenantRequest{
         CreateTenantRequest{
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),

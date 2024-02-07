@@ -95,7 +95,7 @@ pub mod tests {
     use crate::invoicing::line_title::line_title_models::tests::SEED_LINE_TITLE_HSN_ID;
     use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
     use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     pub fn an_invoice_line(builder: InvoiceLineBuilder) -> InvoiceLine {
         InvoiceLine {

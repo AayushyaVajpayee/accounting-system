@@ -168,7 +168,7 @@ pub mod tests {
 
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, BusinessEntityMasterBuilder, CreateBusinessEntityRequest, CreateBusinessEntityRequestBuilder};
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static!{
         pub static ref SEED_BUSINESS_ENTITY_ID1:Uuid = Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap();

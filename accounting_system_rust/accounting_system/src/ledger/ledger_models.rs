@@ -1,7 +1,6 @@
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::tenant::tenant_models::SEED_TENANT_ID;
 
 #[derive(Debug, Deserialize)]
 pub struct TransferCreationDbResponse {
@@ -88,7 +87,7 @@ pub mod tests {
     use crate::accounting::account::account_models::tests::{SEED_CREDIT_ACCOUNT_ID, SEED_DEBIT_ACCOUNT_ID};
     use crate::ledger::ledger_models::{Transfer, TransferBuilder};
     use crate::ledger::ledgermaster::ledger_master_models::SEED_LEDGER_MASTER_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     pub fn a_transfer(builder: TransferBuilder) -> Transfer {
         Transfer {

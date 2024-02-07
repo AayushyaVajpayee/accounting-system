@@ -145,7 +145,7 @@ mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, BusinessEntityDaoImpl};
     use crate::masters::business_entity_master::business_entity_models::tests::{a_create_business_entity_request, SEED_BUSINESS_ENTITY_ID2};
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_is_business_entity_exist() {

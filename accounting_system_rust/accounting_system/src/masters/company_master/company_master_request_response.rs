@@ -17,7 +17,7 @@ pub mod tests {
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::company_master::company_master_models::company_identification_number::cin_tests::generate_random_company_identification_number;
     use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[derive(Debug, Default)]
     pub struct CreateCompanyRequestBuilder {

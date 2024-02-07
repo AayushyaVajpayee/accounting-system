@@ -59,7 +59,7 @@ mod tests{
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::invoicing::invoice_template::invoice_template_dao::{InvoiceTemplateDao, InvoiceTemplateDaoImpl};
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_get_invoice_template(){

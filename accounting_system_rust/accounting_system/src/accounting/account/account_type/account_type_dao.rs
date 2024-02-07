@@ -174,7 +174,7 @@ mod account_type_tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
     };
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn tests() {

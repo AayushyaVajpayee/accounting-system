@@ -17,7 +17,7 @@ mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::invoicing::invoicing_dao::InvoicingDaoImpl;
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[rstest]
     #[case::without_padding(false,"TES1","inv_num1")]

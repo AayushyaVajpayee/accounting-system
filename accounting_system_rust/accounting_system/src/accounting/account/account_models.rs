@@ -45,7 +45,7 @@ pub mod tests {
     use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::SEED_LEDGER_MASTER_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
         pub static ref SEED_DEBIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap();

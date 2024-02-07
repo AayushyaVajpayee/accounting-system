@@ -133,7 +133,7 @@ mod tests {
     use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::common_utils::utils::get_current_time_us;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     // const ADJACENCY_LIST_STR: &str = r"(\d+)(\[)(((\d*)|(\d+,))*)(])";
     const ADJACENCY_LIST_STR: &str = r"(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})+)(\[)(((([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})*)|(([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})+,))*)(])";

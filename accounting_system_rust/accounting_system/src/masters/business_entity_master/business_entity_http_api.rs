@@ -43,7 +43,7 @@ mod tests {
     use crate::masters::business_entity_master::business_entity_models::BusinessEntityMaster;
     use crate::masters::business_entity_master::business_entity_models::tests::a_create_business_entity_request;
     use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, MockBusinessEntityService};
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_create_and_get_business_entity() {

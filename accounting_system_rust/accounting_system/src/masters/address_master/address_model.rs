@@ -100,7 +100,7 @@ pub mod tests {
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
     use crate::masters::pincode_master::pincode_models::tests::SEED_PINCODE_ID;
     use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
         pub static ref SEED_ADDRESS_ID:Uuid = Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap();

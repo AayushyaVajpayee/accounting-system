@@ -38,7 +38,7 @@ pub mod tests {
 
     use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
     use crate::accounting::user::user_models::{CreateUserRequest, User};
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[derive(Default)]
     pub struct UserTestDataBuilder{

@@ -91,7 +91,7 @@ mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::invoicing::invoicing_series::invoicing_series_dao::{InvoicingSeriesDao, InvoicingSeriesDaoImpl};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::a_create_invoice_number_series_request;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_insert_invoicing_series() {

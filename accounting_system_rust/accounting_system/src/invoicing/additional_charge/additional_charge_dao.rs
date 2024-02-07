@@ -2,15 +2,13 @@
 mod tests {
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
-    use tokio_postgres::SimpleQueryMessage;
-    use xxhash_rust::xxh32;
+
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::invoicing::additional_charge::additional_charge_models::CreateAdditionalChargeRequestDbModel;
     use crate::invoicing::additional_charge::additional_charge_models::tests::a_create_additional_charge_request_db_model;
     use crate::invoicing::invoicing_request_models::tests::SEED_INVOICE_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
-
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     fn convert_to_db_add_charge_input(charges: &Vec<CreateAdditionalChargeRequestDbModel>) -> String {
         let mut k: Vec<String> = Vec::new();

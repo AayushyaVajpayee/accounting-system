@@ -23,7 +23,7 @@ pub mod tests {
     use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
     use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum::Approved;
     use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[derive(Debug, Default)]
     pub struct BaseMasterFieldsTestDataBuilder {

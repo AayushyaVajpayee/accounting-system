@@ -10,7 +10,7 @@ mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::invoicing::payment_term::payment_term_models::tests::SEED_PAYMENT_TERM_ID;
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_retrieve_existing_get_or_create_payment_term() {

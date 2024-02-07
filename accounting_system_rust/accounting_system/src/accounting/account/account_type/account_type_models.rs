@@ -4,7 +4,8 @@ use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
-use crate::tenant::tenant_models::SEED_TENANT_ID;
+#[cfg(test)]
+use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
 lazy_static! {
     pub static ref SEED_ACCOUNT_TYPE_ID:Uuid = Uuid::from_str("7d7ac3ba-ca98-7fac-9881-60f838ea0cd5").unwrap();//todo

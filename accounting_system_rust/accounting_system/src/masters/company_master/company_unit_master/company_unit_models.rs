@@ -105,7 +105,7 @@ pub mod tests {
     use crate::masters::company_master::company_master_models::company_master::tests::SEED_COMPANY_MASTER_ID;
     use crate::masters::company_master::company_master_models::gstin_no::gstin_no_tests::generate_random_gstin_no;
     use crate::masters::company_master::company_unit_master::company_unit_models::{CompanyUnitAddressRequest, CreateCompanyUnitRequest, CreateCompanyUnitRequestBuilder, CreateNewCompanyAddressRequest};
-    use crate::tenant::tenant_models::SEED_TENANT_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     impl From<CreateAddressRequest> for CreateNewCompanyAddressRequest {
         fn from(r: CreateAddressRequest) -> Self {

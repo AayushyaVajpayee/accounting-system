@@ -74,8 +74,8 @@ mod tests {
 
     use crate::get_and_create_api_test;
     use crate::tenant::tenant_http_api::map_endpoints_to_functions;
-    use crate::tenant::tenant_models::{ SEED_TENANT_ID, Tenant};
-    use crate::tenant::tenant_models::tests::a_create_tenant_request;
+    use crate::tenant::tenant_models::Tenant;
+    use crate::tenant::tenant_models::tests::{a_create_tenant_request, SEED_TENANT_ID};
     use crate::tenant::tenant_service::{MockTenantService, TenantService};
 
     #[tokio::test]
