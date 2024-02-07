@@ -6,9 +6,6 @@ use uuid::Uuid;
 
 use crate::accounting::user::user_models::SEED_USER_ID;
 
-lazy_static! {
-    pub static ref SEED_CURRENCY_ID:Uuid= Uuid::from_str("018c0bff-4036-7ef8-8383-ae8a38c8ecf1").unwrap();
-}
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 pub struct AuditMetadataBase {
     pub created_by: Uuid,
@@ -86,10 +83,15 @@ struct CurrencyAmount {
 
 #[cfg(test)]
 pub mod tests{
+    use std::str::FromStr;
+    use lazy_static::lazy_static;
     use uuid::Uuid;
     use crate::accounting::currency::currency_models::{an_audit_metadata_base, CreateCurrencyMasterRequest, CreateCurrencyMasterRequestTestBuilder, CurrencyMaster, CurrencyMasterBuilder};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
+    lazy_static! {
+    pub static ref SEED_CURRENCY_ID:Uuid= Uuid::from_str("018c0bff-4036-7ef8-8383-ae8a38c8ecf1").unwrap();
+}
     pub fn a_currency_master(builder: CurrencyMasterBuilder) -> CurrencyMaster {
         CurrencyMaster {
             id: builder.id.unwrap_or(Uuid::now_v7()),

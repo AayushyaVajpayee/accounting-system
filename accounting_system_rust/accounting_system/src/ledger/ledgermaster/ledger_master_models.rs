@@ -26,7 +26,7 @@ pub mod tests{
     use std::str::FromStr;
     use lazy_static::lazy_static;
     use uuid::Uuid;
-    use crate::accounting::currency::currency_models::SEED_CURRENCY_ID;
+    use crate::accounting::currency::currency_models::tests::SEED_CURRENCY_ID;
     use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryRequest, CreateLedgerMasterEntryRequestBuilder};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
     lazy_static! {

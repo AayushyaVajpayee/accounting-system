@@ -237,7 +237,7 @@ pub mod tests {
     use invoice_doc_generator::invoice_line::unit_price::Price;
     use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
 
-    use crate::accounting::currency::currency_models::SEED_CURRENCY_ID;
+    use crate::accounting::currency::currency_models::tests::SEED_CURRENCY_ID;
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
     use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
