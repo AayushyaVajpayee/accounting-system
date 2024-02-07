@@ -182,7 +182,7 @@ mod tests {
     use crate::ledger::ledger_models::{Transfer, TransferBuilder};
     use crate::ledger::ledger_models::tests::a_transfer;
     use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
-    use crate::ledger::ledgermaster::ledger_master_models::{a_create_ledger_master_entry_request, CreateLedgerMasterEntryRequestTestBuilder, SEED_LEDGER_MASTER_ID};
+    use crate::ledger::ledgermaster::ledger_master_models::tests::{a_create_ledger_master_entry_request, SEED_LEDGER_MASTER_ID};
     use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service_for_test;
 
     /// need this so that every test case can act on different set of accounts and we can
@@ -226,7 +226,7 @@ mod tests {
         use crate::ledger::ledger_models::Transfer;
         use crate::ledger::ledger_transfer_dao::{LedgerTransferDao, LedgerTransferDaoPostgresImpl};
         use crate::ledger::ledger_transfer_dao::tests::{create_two_accounts_for_transfer, generate_random_transfers};
-        use crate::ledger::ledgermaster::ledger_master_models::SEED_LEDGER_MASTER_ID;
+        use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
 
         #[rstest]
         #[trace]
@@ -821,9 +821,7 @@ mod tests {
         let led_trf_dao = LedgerTransferDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let ledger_master_service = get_ledger_master_service_for_test(
             get_postgres_conn_pool(port, None).await);
-        let led_mst_req = a_create_ledger_master_entry_request(CreateLedgerMasterEntryRequestTestBuilder {
-            ..Default::default()
-        });
+        let led_mst_req = a_create_ledger_master_entry_request(Default::default());
         let account_master_service = get_account_service_for_test(get_postgres_conn_pool(port, None).await);
         let id = Uuid::now_v7();
         let id2 = Uuid::now_v7();

@@ -108,7 +108,7 @@ impl LedgerMasterDao for LedgerMasterPostgresDaoImpl {
 mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::ledger::ledgermaster::ledger_master_dao::{LedgerMasterDao, LedgerMasterPostgresDaoImpl};
-    use crate::ledger::ledgermaster::ledger_master_models::a_create_ledger_master_entry_request;
+    use crate::ledger::ledgermaster::ledger_master_models::tests::a_create_ledger_master_entry_request;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_ledger_master() {
