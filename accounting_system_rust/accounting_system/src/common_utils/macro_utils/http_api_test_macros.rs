@@ -61,6 +61,7 @@ macro_rules! get_and_create_api_test_v2 {
         assert_eq!(res, $expected);
         let request = test::TestRequest::post()
             .uri($create_uri)
+            .insert_header(("x-tenant-id",$tenant_id.to_string()))
             .set_json($create_request)
             .to_request();
         let _: uuid::Uuid = test::call_and_read_body_json(&app_service, request).await;

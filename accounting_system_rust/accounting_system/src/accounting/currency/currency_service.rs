@@ -20,8 +20,8 @@ pub enum CurrencyServiceError {
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CurrencyService: Send + Sync {
-    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest) -> Result<Uuid, CurrencyServiceError>;
-    async fn get_currency_entry(&self, id: &Uuid) -> Result<Option<CurrencyMaster>, CurrencyServiceError>;
+    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest,tenant_id:Uuid) -> Result<Uuid, CurrencyServiceError>;
+    async fn get_currency_entry(&self, id: Uuid,tenant_id:Uuid) -> Result<Option<CurrencyMaster>, CurrencyServiceError>;
 }
 
 struct CurrencyServiceImpl {
@@ -47,10 +47,10 @@ pub fn get_currency_service_for_test(postgres_client: Arc<Pool>) -> Arc<dyn Curr
 
 #[async_trait]
 impl CurrencyService for CurrencyServiceImpl {
-    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest) -> Result<Uuid, CurrencyServiceError> {
-        self.currency_dao.create_currency_entry(request).await.map_err(|a| a.into())
+    async fn create_currency_entry(&self, request: &CreateCurrencyMasterRequest,tenant_id:Uuid) -> Result<Uuid, CurrencyServiceError> {
+        self.currency_dao.create_currency_entry(request,tenant_id).await.map_err(|a| a.into())
     }
-    async fn get_currency_entry(&self, id: &Uuid) -> Result<Option<CurrencyMaster>, CurrencyServiceError> {
-        self.currency_dao.get_currency_entry_by_id(id).await.map_err(|a| a.into())
+    async fn get_currency_entry(&self, id:Uuid,tenant_id:Uuid) -> Result<Option<CurrencyMaster>, CurrencyServiceError> {
+        self.currency_dao.get_currency_entry_by_id(id,tenant_id).await.map_err(|a| a.into())
     }
 }
