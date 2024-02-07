@@ -182,7 +182,7 @@ pub mod tests {
     };
     use crate::masters::company_master::dao::dao_trait::MockCompanyMasterDao;
     use crate::masters::company_master::dao::dao_trait_impl::get_company_master_dao;
-    use crate::tenant::tenant_models::a_tenant;
+    use crate::tenant::tenant_models::tests::a_tenant;
     use crate::tenant::tenant_service::{get_tenant_service, MockTenantService, TenantService};
 
     pub async fn get_company_master_service_for_tests() -> Arc<dyn CompanyMasterService> {

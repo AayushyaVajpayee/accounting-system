@@ -41,25 +41,30 @@ pub struct CreateTenantTestBuilder{
     pub audit_metadata: Option<AuditMetadataBase>,
 }
 
-#[cfg(test)]
-pub fn a_create_tenant_request(builder:CreateTenantTestBuilder)->CreateTenantRequest{
-    CreateTenantRequest{
-        idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
-        display_name: builder.display_name.unwrap_or("".to_string()),
-        audit_metadata: builder.audit_metadata.unwrap_or_else(||
-            crate::accounting::currency::currency_models::
-            an_audit_metadata_base(Default::default())),
-    }
-}
 
-#[allow(dead_code)]
+
+
+
 #[cfg(test)]
-pub fn a_tenant(builder: TenantTestBuilder) -> Tenant {
-    Tenant {
-        id: builder.id.unwrap_or(*SEED_TENANT_ID),
-        display_name: builder.display_name.unwrap_or("".to_string()),
-        audit_metadata: builder.audit_metadata.unwrap_or_else(||
-            crate::accounting::currency::currency_models::
-            an_audit_metadata_base(Default::default())),
+pub mod tests{
+    use uuid::Uuid;
+    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantTestBuilder, SEED_TENANT_ID, Tenant, TenantTestBuilder};
+    pub fn a_create_tenant_request(builder:CreateTenantTestBuilder)->CreateTenantRequest{
+        CreateTenantRequest{
+            idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
+            display_name: builder.display_name.unwrap_or("".to_string()),
+            audit_metadata: builder.audit_metadata.unwrap_or_else(||
+                crate::accounting::currency::currency_models::
+                an_audit_metadata_base(Default::default())),
+        }
+    }
+    pub fn a_tenant(builder: TenantTestBuilder) -> Tenant {
+        Tenant {
+            id: builder.id.unwrap_or(*SEED_TENANT_ID),
+            display_name: builder.display_name.unwrap_or("".to_string()),
+            audit_metadata: builder.audit_metadata.unwrap_or_else(||
+                crate::accounting::currency::currency_models::
+                an_audit_metadata_base(Default::default())),
+        }
     }
 }

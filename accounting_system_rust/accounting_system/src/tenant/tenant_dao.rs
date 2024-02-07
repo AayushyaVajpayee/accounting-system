@@ -104,7 +104,8 @@ mod tests {
         get_postgres_conn_pool, get_postgres_image_port,
     };
     use crate::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
-    use crate::tenant::tenant_models::{a_create_tenant_request, CreateTenantTestBuilder};
+    use crate::tenant::tenant_models::{ CreateTenantTestBuilder};
+    use crate::tenant::tenant_models::tests::a_create_tenant_request;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_tenant() {

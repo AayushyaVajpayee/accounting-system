@@ -1,8 +1,9 @@
-use actix_web::{HttpResponse, Responder, ResponseError, Scope, web};
+use std::sync::Arc;
+
+use actix_web::{HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use uuid::Uuid;
 use web::{Data, Path};
 
@@ -67,13 +68,14 @@ setup_routes!(TenantService,
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{App, test};
     use std::sync::Arc;
-    use uuid::Uuid;
+
+    use actix_web::test;
 
     use crate::get_and_create_api_test;
     use crate::tenant::tenant_http_api::map_endpoints_to_functions;
-    use crate::tenant::tenant_models::{a_create_tenant_request, CreateTenantTestBuilder, SEED_TENANT_ID, Tenant};
+    use crate::tenant::tenant_models::{CreateTenantTestBuilder, SEED_TENANT_ID, Tenant};
+    use crate::tenant::tenant_models::tests::a_create_tenant_request;
     use crate::tenant::tenant_service::{MockTenantService, TenantService};
 
     #[tokio::test]
