@@ -74,7 +74,7 @@ mod tests {
 
     use crate::get_and_create_api_test;
     use crate::tenant::tenant_http_api::map_endpoints_to_functions;
-    use crate::tenant::tenant_models::{CreateTenantTestBuilder, SEED_TENANT_ID, Tenant};
+    use crate::tenant::tenant_models::{ SEED_TENANT_ID, Tenant};
     use crate::tenant::tenant_models::tests::a_create_tenant_request;
     use crate::tenant::tenant_service::{MockTenantService, TenantService};
 
@@ -92,6 +92,6 @@ mod tests {
         let tenant_expected:Tenant = Default::default();
         get_and_create_api_test!(Tenant,TenantService,closure,
             get_uri,"/tenant/create",
-            a_create_tenant_request(CreateTenantTestBuilder { ..Default::default() }),tenant_expected);
+            a_create_tenant_request(Default::default()),tenant_expected);
     }
 }

@@ -104,7 +104,7 @@ mod tests {
         get_postgres_conn_pool, get_postgres_image_port,
     };
     use crate::tenant::tenant_dao::{TenantDao, TenantDaoImpl};
-    use crate::tenant::tenant_models::{ CreateTenantTestBuilder};
+    use crate::tenant::tenant_models::CreateTenantRequestBuilder;
     use crate::tenant::tenant_models::tests::a_create_tenant_request;
 
     #[tokio::test]
@@ -138,10 +138,9 @@ mod tests {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
         let name = "tsting";
-        let tenant_request = a_create_tenant_request(CreateTenantTestBuilder {
-            display_name: Some(name.to_string()),
-            ..Default::default()
-        });
+        let mut builder = CreateTenantRequestBuilder::default();
+        builder.display_name(name.to_string());
+        let tenant_request = a_create_tenant_request(builder);
         let tenant_dao = TenantDaoImpl { postgres_client: postgres_client.clone() };
         let id = tenant_dao.create_tenant(&tenant_request).await.unwrap();
         let id1 = tenant_dao.create_tenant(&tenant_request).await.unwrap();

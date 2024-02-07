@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use derive_builder::Builder;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -16,7 +17,7 @@ pub struct Tenant {
 }
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize,Builder)]
 pub struct CreateTenantRequest {
     //todo on what basis to uniquely identify tenant?
     // there has to be some business identifier
@@ -33,13 +34,6 @@ pub struct TenantTestBuilder {
     pub display_name: Option<String>,
     pub audit_metadata: Option<AuditMetadataBase>,
 }
-#[cfg(test)]
-#[derive(Default)]
-pub struct CreateTenantTestBuilder{
-    pub idempotence_key:Option<Uuid>,
-    pub display_name: Option<String>,
-    pub audit_metadata: Option<AuditMetadataBase>,
-}
 
 
 
@@ -48,8 +42,8 @@ pub struct CreateTenantTestBuilder{
 #[cfg(test)]
 pub mod tests{
     use uuid::Uuid;
-    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantTestBuilder, SEED_TENANT_ID, Tenant, TenantTestBuilder};
-    pub fn a_create_tenant_request(builder:CreateTenantTestBuilder)->CreateTenantRequest{
+    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, SEED_TENANT_ID, Tenant, TenantTestBuilder};
+    pub fn a_create_tenant_request(builder:CreateTenantRequestBuilder)->CreateTenantRequest{
         CreateTenantRequest{
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             display_name: builder.display_name.unwrap_or("".to_string()),
