@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use derive_builder::Builder;
 use uuid::Uuid;
+use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default,Builder)]
@@ -10,16 +11,9 @@ pub struct AuditMetadataBase {
     pub created_at: i64,
     pub updated_at: i64,
 }
-
-
-
-
-
-
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone,Builder)]
 pub struct CurrencyMaster {
-    pub id: Uuid,
-    pub tenant_id: Uuid,
+    pub base_master_fields:BaseMasterFields,
     pub scale: i16,
     ///16 char
     pub display_name: String,
@@ -30,7 +24,7 @@ pub struct CurrencyMaster {
 
 
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default,Builder)]
 pub struct CreateCurrencyMasterRequest {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
@@ -40,16 +34,7 @@ pub struct CreateCurrencyMasterRequest {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[cfg(test)]
-#[derive(Debug, Default)]
-pub struct CreateCurrencyMasterRequestTestBuilder {
-    pub idempotence_key: Option<Uuid>,
-    pub tenant_id: Option<Uuid>,
-    pub scale: Option<i16>,
-    pub display_name: Option<String>,
-    pub description: Option<String>,
-    pub audit_metadata: Option<AuditMetadataBase>,
-}
+
 
 
 
@@ -67,8 +52,9 @@ pub mod tests{
     use std::str::FromStr;
     use lazy_static::lazy_static;
     use uuid::Uuid;
-    use crate::accounting::currency::currency_models::{ AuditMetadataBase, AuditMetadataBaseBuilder, CreateCurrencyMasterRequest, CreateCurrencyMasterRequestTestBuilder, CurrencyMaster, CurrencyMasterBuilder};
+    use crate::accounting::currency::currency_models::{AuditMetadataBase, AuditMetadataBaseBuilder, CreateCurrencyMasterRequest, CreateCurrencyMasterRequestBuilder, CurrencyMaster, CurrencyMasterBuilder};
     use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
@@ -86,8 +72,7 @@ pub mod tests{
     }
     pub fn a_currency_master(builder: CurrencyMasterBuilder) -> CurrencyMaster {
         CurrencyMaster {
-            id: builder.id.unwrap_or(Uuid::now_v7()),
-            tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
+            base_master_fields:builder.base_master_fields.unwrap_or_else(||a_base_master_field(Default::default())),
             scale: builder.scale.unwrap_or(0),
             display_name: builder.display_name.unwrap_or("".to_string()),
             description: builder.description.unwrap_or("".to_string()),
@@ -96,7 +81,7 @@ pub mod tests{
     }
 
     pub fn a_create_currency_master_request(builder:
-                                            CreateCurrencyMasterRequestTestBuilder)
+                                            CreateCurrencyMasterRequestBuilder)
                                             -> CreateCurrencyMasterRequest {
         CreateCurrencyMasterRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),

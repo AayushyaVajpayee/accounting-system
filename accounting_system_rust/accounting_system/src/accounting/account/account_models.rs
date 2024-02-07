@@ -43,6 +43,7 @@ pub mod tests {
     use crate::accounting::account::account_models::CreateAccountRequest;
     use crate::accounting::account::account_type::account_type_models::tests::SEED_ACCOUNT_TYPE_ID;
     use crate::accounting::currency::currency_models::AuditMetadataBase;
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
@@ -80,7 +81,7 @@ pub mod tests {
             ledger_master_id: builder.ledger_master_id.unwrap_or(*SEED_LEDGER_MASTER_ID),
             user_id: builder.user_id.unwrap_or(*SEED_USER_ID),
             audit_metadata: builder.audit_metadata.unwrap_or_else(||
-                crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),
+                an_audit_metadata_base(Default::default())),
         }
     }
 }

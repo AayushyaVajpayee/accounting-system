@@ -11,9 +11,8 @@ BEGIN
     get diagnostics impacted_rows= row_count;
     if impacted_rows != 0 then
         select uuid_generate_v7() into currency_id;
-        insert into currency_master (id, tenant_id, scale, display_name, description, created_by, updated_by,
-                                     created_at, updated_at)
-        values (currency_id, req.tenant_id, req.scale, req.display_name, req.description, req.created_by,
+        insert into currency_master (id, entity_version_id, tenant_id, active, approval_status, remarks, scale, display_name, description, created_by, updated_by, created_at, updated_at)
+        values (currency_id,0, req.tenant_id,true,1,null, req.scale, req.display_name, req.description, req.created_by,
                 req.updated_by, req.created_at, req.updated_at);
         update idempotence_store
         set response=json_build_object('id', currency_id)

@@ -1,16 +1,18 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
 use futures_util::TryFutureExt;
-use std::sync::Arc;
 use tokio_postgres::Row;
 use uuid::Uuid;
 
-use crate::accounting::currency::currency_models::{AuditMetadataBase, CreateCurrencyMasterRequest, CurrencyMaster};
+use crate::accounting::currency::currency_models::{CreateCurrencyMasterRequest, CurrencyMaster};
 use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::db_row_conversion_utils::{convert_row_to_audit_metadata_base, convert_row_to_base_master_fields};
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
 
-const SELECT_FIELDS: &str = "id,tenant_id,scale,display_name,description,\
+const SELECT_FIELDS: &str = "id,entity_version_id,tenant_id,active,approval_status,remarks,scale,display_name,description,\
 created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "currency_master";
 
@@ -32,18 +34,13 @@ impl TryFrom<&Row> for CurrencyMaster {
     type Error = DaoError;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
+        let (base_master_fields,next_ind) =  convert_row_to_base_master_fields(row)?;
         Ok(CurrencyMaster {
-            id: row.get(0),
-            tenant_id: row.get(1),
-            scale: row.get(2),
-            display_name: row.get(3),
-            description: row.get(4),
-            audit_metadata: AuditMetadataBase {
-                created_by: row.get(5),
-                updated_by: row.get(6),
-                created_at: row.get(7),
-                updated_at: row.get(8),
-            },
+           base_master_fields,
+            scale: row.get(next_ind),
+            display_name: row.get(next_ind+1),
+            description: row.get(next_ind+2),
+            audit_metadata: convert_row_to_audit_metadata_base(next_ind+3,row)?,
         })
     }
 }
@@ -93,25 +90,19 @@ mod tests {
     use spectral::prelude::OptionAssertions;
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
-    use crate::accounting::currency::currency_models::{ CreateCurrencyMasterRequestTestBuilder};
+    use crate::accounting::currency::currency_models::CreateCurrencyMasterRequestBuilder;
     use crate::accounting::currency::currency_models::tests::a_create_currency_master_request;
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
-    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_currency() {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
-        let currency_master = a_create_currency_master_request(
-            CreateCurrencyMasterRequestTestBuilder {
-                tenant_id: Some(*SEED_TENANT_ID),
-                ..Default::default()
-            }
-        );
+        let currency_master = a_create_currency_master_request(Default::default());
         let currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let curr_id = currency_dao.create_currency_entry(&currency_master).await.unwrap();
         let fetched_curr = currency_dao.get_currency_entry_by_id(&curr_id).await.unwrap().unwrap();
-        assert_eq!(curr_id, fetched_curr.id)
+        assert_eq!(curr_id, fetched_curr.base_master_fields.id)
     }
 
 
@@ -131,12 +122,10 @@ mod tests {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
         let name = "tsting";
+        let mut builder = CreateCurrencyMasterRequestBuilder::default();
+        builder.display_name(name.to_string());
         let currency_request =
-            a_create_currency_master_request(
-                CreateCurrencyMasterRequestTestBuilder {
-                    display_name: Some(name.to_string()),
-                    ..Default::default()
-                });
+            a_create_currency_master_request(builder);
         let currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = currency_dao.create_currency_entry(&currency_request).await.unwrap();
         let id2 = currency_dao.create_currency_entry(&currency_request).await.unwrap();

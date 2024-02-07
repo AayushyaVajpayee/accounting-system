@@ -32,6 +32,7 @@ pub mod tests{
     use lazy_static::lazy_static;
     use uuid::Uuid;
     use crate::accounting::account::account_type::account_type_models::{CreateAccountTypeMasterRequest, CreateAccountTypeMasterRequestBuilder};
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
     lazy_static! {
     pub static ref SEED_ACCOUNT_TYPE_ID:Uuid = Uuid::from_str("7d7ac3ba-ca98-7fac-9881-60f838ea0cd5").unwrap();//todo
@@ -44,7 +45,7 @@ pub mod tests{
             parent_id: builder.parent_id.flatten(),
             account_code: builder.account_code.flatten(),
             display_name: builder.display_name.unwrap_or("".to_string()),
-            audit_metadata: builder.audit_metadata.unwrap_or_else(|| crate::accounting::currency::currency_models::an_audit_metadata_base(Default::default())),
+            audit_metadata: builder.audit_metadata.unwrap_or_else(|| an_audit_metadata_base(Default::default())),
         }
     }
 }
