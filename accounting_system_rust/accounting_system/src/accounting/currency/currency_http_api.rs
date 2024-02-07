@@ -53,8 +53,9 @@ mod tests {
 
     use crate::accounting::currency::currency_http_api::map_endpoints_to_functions;
     use crate::accounting::currency::currency_models::{
-        a_currency_master, CreateCurrencyMasterRequest, CurrencyMaster,
+         CreateCurrencyMasterRequest, CurrencyMaster,
     };
+    use crate::accounting::currency::currency_models::tests::a_currency_master;
     use crate::accounting::currency::currency_service::{CurrencyService, MockCurrencyService};
     use crate::get_and_create_api_test;
 
