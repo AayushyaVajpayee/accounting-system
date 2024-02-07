@@ -9,7 +9,7 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 lazy_static!{
     pub static ref SEED_TENANT_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
 }
-#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq,Builder)]
 pub struct Tenant {
     pub id: Uuid,
     pub display_name: String,
@@ -27,13 +27,6 @@ pub struct CreateTenantRequest {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[cfg(test)]
-#[derive(Default)]
-pub struct TenantTestBuilder {
-    pub id: Option<Uuid>,
-    pub display_name: Option<String>,
-    pub audit_metadata: Option<AuditMetadataBase>,
-}
 
 
 
@@ -42,7 +35,7 @@ pub struct TenantTestBuilder {
 #[cfg(test)]
 pub mod tests{
     use uuid::Uuid;
-    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, SEED_TENANT_ID, Tenant, TenantTestBuilder};
+    use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, SEED_TENANT_ID, Tenant, TenantBuilder};
     pub fn a_create_tenant_request(builder:CreateTenantRequestBuilder)->CreateTenantRequest{
         CreateTenantRequest{
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
@@ -52,7 +45,7 @@ pub mod tests{
                 an_audit_metadata_base(Default::default())),
         }
     }
-    pub fn a_tenant(builder: TenantTestBuilder) -> Tenant {
+    pub fn a_tenant(builder: TenantBuilder) -> Tenant {
         Tenant {
             id: builder.id.unwrap_or(*SEED_TENANT_ID),
             display_name: builder.display_name.unwrap_or("".to_string()),
