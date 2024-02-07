@@ -170,7 +170,8 @@ mod account_type_tests {
     use crate::accounting::account::account_type::account_type_dao::{
         AccountTypeDao, AccountTypeDaoPostgresImpl,
     };
-    use crate::accounting::account::account_type::account_type_models::{a_create_account_type_master_request, CreateAccountTypeMasterRequest, CreateAccountTypeMasterRequestTestBuilder};
+    use crate::accounting::account::account_type::account_type_models::CreateAccountTypeMasterRequestBuilder;
+    use crate::accounting::account::account_type::account_type_models::tests::a_create_account_type_master_request;
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
     };
@@ -183,10 +184,7 @@ mod account_type_tests {
             postgres_client: get_postgres_conn_pool(port, None).await,
         };
         let an_account_type =
-            a_create_account_type_master_request(CreateAccountTypeMasterRequestTestBuilder {
-                tenant_id: Some(*SEED_TENANT_ID),
-                ..Default::default()
-            });
+            a_create_account_type_master_request(Default::default());
         let account_type_id = account_type_dao.create_account_type(&an_account_type).await.unwrap();
         let _ = account_type_dao
             .get_account_type_by_id(&account_type_id)
@@ -214,12 +212,11 @@ mod account_type_tests {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
         let name = "tsting";
+        let mut builder = CreateAccountTypeMasterRequestBuilder::default();
+        builder.display_name(name.to_string());
         let account_type_mst_request =
             a_create_account_type_master_request(
-                CreateAccountTypeMasterRequestTestBuilder {
-                    display_name: Some(name.to_string()),
-                    ..Default::default()
-                });
+                builder);
         let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         let id2 = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();

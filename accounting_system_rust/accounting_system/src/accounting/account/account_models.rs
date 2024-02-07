@@ -41,7 +41,7 @@ pub mod tests {
     use uuid::Uuid;
 
     use crate::accounting::account::account_models::CreateAccountRequest;
-    use crate::accounting::account::account_type::account_type_models::SEED_ACCOUNT_TYPE_ID;
+    use crate::accounting::account::account_type::account_type_models::tests::SEED_ACCOUNT_TYPE_ID;
     use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
