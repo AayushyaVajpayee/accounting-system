@@ -33,6 +33,7 @@ pub mod tests{
     use std::str::FromStr;
     use lazy_static::lazy_static;
     use uuid::Uuid;
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
     use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, Tenant, TenantBuilder};
 
     lazy_static!{
@@ -43,7 +44,6 @@ pub mod tests{
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             display_name: builder.display_name.unwrap_or("".to_string()),
             audit_metadata: builder.audit_metadata.unwrap_or_else(||
-                crate::accounting::currency::currency_models::
                 an_audit_metadata_base(Default::default())),
         }
     }
@@ -52,7 +52,6 @@ pub mod tests{
             id: builder.id.unwrap_or(*SEED_TENANT_ID),
             display_name: builder.display_name.unwrap_or("".to_string()),
             audit_metadata: builder.audit_metadata.unwrap_or_else(||
-                crate::accounting::currency::currency_models::
                 an_audit_metadata_base(Default::default())),
         }
     }

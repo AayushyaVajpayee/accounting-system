@@ -91,7 +91,8 @@ pub mod tests {
     use std::str::FromStr;
     use uuid::Uuid;
 
-    use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
+    use crate::accounting::currency::currency_models:: AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::address_master::address_model::{Address, AddressLine, CreateAddressRequest, CreateAddressRequestBuilder};
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;

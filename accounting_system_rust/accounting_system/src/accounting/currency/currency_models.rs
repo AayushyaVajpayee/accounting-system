@@ -1,12 +1,9 @@
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use derive_builder::Builder;
 use uuid::Uuid;
 
-use crate::accounting::user::user_models::SEED_USER_ID;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default,Builder)]
 pub struct AuditMetadataBase {
     pub created_by: Uuid,
     pub updated_by: Uuid,
@@ -14,26 +11,10 @@ pub struct AuditMetadataBase {
     pub updated_at: i64,
 }
 
-#[cfg(test)]
-#[derive(Default)]
-pub struct AuditMetadataBaseTestBuilder {
-    pub created_by: Option<Uuid>,
-    pub updated_by: Option<Uuid>,
-    pub created_at: Option<i64>,
-    pub updated_at: Option<i64>,
-}
 
 
-#[cfg(test)]
-pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseTestBuilder) -> AuditMetadataBase {
 
-    AuditMetadataBase {
-        created_by: test_builder.created_by.unwrap_or(*SEED_USER_ID),
-        updated_by: test_builder.updated_by.unwrap_or(*SEED_USER_ID),
-        created_at: test_builder.created_at.unwrap_or(0),
-        updated_at: test_builder.updated_at.unwrap_or(0),
-    }
-}
+
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone,Builder)]
 pub struct CurrencyMaster {
@@ -86,12 +67,23 @@ pub mod tests{
     use std::str::FromStr;
     use lazy_static::lazy_static;
     use uuid::Uuid;
-    use crate::accounting::currency::currency_models::{an_audit_metadata_base, CreateCurrencyMasterRequest, CreateCurrencyMasterRequestTestBuilder, CurrencyMaster, CurrencyMasterBuilder};
+    use crate::accounting::currency::currency_models::{ AuditMetadataBase, AuditMetadataBaseBuilder, CreateCurrencyMasterRequest, CreateCurrencyMasterRequestTestBuilder, CurrencyMaster, CurrencyMasterBuilder};
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
     pub static ref SEED_CURRENCY_ID:Uuid= Uuid::from_str("018c0bff-4036-7ef8-8383-ae8a38c8ecf1").unwrap();
 }
+
+    pub fn an_audit_metadata_base(test_builder: AuditMetadataBaseBuilder) -> AuditMetadataBase {
+
+        AuditMetadataBase {
+            created_by: test_builder.created_by.unwrap_or(*SEED_USER_ID),
+            updated_by: test_builder.updated_by.unwrap_or(*SEED_USER_ID),
+            created_at: test_builder.created_at.unwrap_or(0),
+            updated_at: test_builder.updated_at.unwrap_or(0),
+        }
+    }
     pub fn a_currency_master(builder: CurrencyMasterBuilder) -> CurrencyMaster {
         CurrencyMaster {
             id: builder.id.unwrap_or(Uuid::now_v7()),

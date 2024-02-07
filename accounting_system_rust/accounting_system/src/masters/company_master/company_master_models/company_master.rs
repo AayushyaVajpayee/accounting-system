@@ -19,8 +19,9 @@ pub mod tests {
     use lazy_static::lazy_static;
     use std::str::FromStr;
     use uuid::Uuid;
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
 
-    use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+    use crate::accounting::currency::currency_models::{ AuditMetadataBase};
     use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
     use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
     use crate::masters::company_master::company_master_models::company_identification_number::cin_tests::generate_random_company_identification_number;

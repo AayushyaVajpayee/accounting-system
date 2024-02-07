@@ -36,12 +36,13 @@ pub struct CreateUserRequest {
 pub mod tests {
     use uuid::Uuid;
 
-    use crate::accounting::currency::currency_models::{an_audit_metadata_base, AuditMetadataBase};
+    use crate::accounting::currency::currency_models::{AuditMetadataBase};
     use crate::accounting::user::user_models::{CreateUserRequest, User};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
 
     #[derive(Default)]
-    pub struct UserTestDataBuilder{
+    pub struct UserTestDataBuilder {
         pub id: Option<Uuid>,
         pub tenant_id: Option<Uuid>,
         pub first_name: Option<String>,
@@ -63,8 +64,8 @@ pub mod tests {
         pub audit_metadata: Option<AuditMetadataBase>,
     }
 
-    pub fn a_user(builder:UserTestDataBuilder)->User{
-        User{
+    pub fn a_user(builder: UserTestDataBuilder) -> User {
+        User {
             id: builder.id.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             first_name: "some user".to_string(),
@@ -74,6 +75,7 @@ pub mod tests {
             audit_metadata: an_audit_metadata_base(Default::default()),
         }
     }
+
     pub fn a_create_user_request(builder: CreateUserRequestTestBuilder) -> CreateUserRequest {
         CreateUserRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
@@ -84,13 +86,8 @@ pub mod tests {
                 .email_id
                 .or(Some("testemail@t1dno.com".to_string().clone())),
             mobile_number: builder.mobile_number,
-            audit_metadata: builder.audit_metadata.unwrap_or(
-                crate::accounting::currency::currency_models::an_audit_metadata_base(
-                    Default::default(),
-                ),
-            ),
+            audit_metadata: builder.audit_metadata
+                .unwrap_or(an_audit_metadata_base(Default::default())),
         }
     }
-
-
 }

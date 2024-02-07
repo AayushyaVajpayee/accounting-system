@@ -86,7 +86,7 @@ pub mod tests {
     use invoice_doc_generator::invoice_number::InvoiceNumber;
     use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
     use crate::accounting::currency::currency_models::tests::SEED_CURRENCY_ID;
-    use crate::accounting::currency::currency_models::{an_audit_metadata_base};
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
     use crate::common_utils::utils::{current_indian_financial_year, get_current_time_us};
     use crate::invoicing::invoicing_domain_models::{AdditionalCharge, AdditionalChargeBuilder, Invoice, InvoiceBuilder, InvoiceLine, InvoiceLineBuilder};
     use crate::invoicing::invoicing_request_models::tests::SEED_INVOICE_ID;
