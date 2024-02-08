@@ -5,6 +5,7 @@ use deadpool_postgres::Pool;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
+use crate::common_utils::cache_utils::get_or_fetch_entity;
 use crate::common_utils::dao_error::DaoError;
 use crate::invoicing::invoice_template::invoice_template_dao::{get_invoice_template_dao, InvoiceTemplateDao};
 use crate::invoicing::invoice_template::invoice_template_models::InvoiceTemplateMaster;
@@ -32,18 +33,11 @@ struct InvoiceTemplateServiceImpl {
 #[async_trait]
 impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
     async fn get_template_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError> {
-        let key = (tenant_id, id);
-        if let Some(entity) = self.cache_by_tenant_id_and_id.get(&key).await {
-            return Ok(Some(entity));
-        }
-        let p = self.dao.get_invoice_template_by_id(&id, &tenant_id).await?;
-        if let Some(entity) = p {
-            let k = Arc::new(entity);
-            self.cache_by_tenant_id_and_id.insert(key, k.clone()).await;
-            Ok(Some(k))
-        } else {
-            Ok(None)
-        }
+        let fetch_block = async{
+            let p = self.dao.get_invoice_template_by_id(&id, &tenant_id).await?;
+            Ok(p)
+        };
+        get_or_fetch_entity(tenant_id, id, &self.cache_by_tenant_id_and_id, fetch_block).await
     }
 
     async fn is_valid_template_id(&self, id: Uuid, tenant_id: Uuid) -> Result<bool, InvoiceTemplateServiceError> {
