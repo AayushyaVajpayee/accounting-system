@@ -19,8 +19,10 @@ use crate::tenant::tenant_service::TenantService;
 
 #[derive(Debug, Error)]
 pub enum InvoicingServiceError {
+    #[error("validation failures \n {}", .0.join("\n"))]
+    Validation(Vec<String>),
     #[error("{0}")]
-    Other(#[from] anyhow::Error)
+    Other(#[from] anyhow::Error),
 }
 
 #[async_trait]
@@ -38,14 +40,18 @@ struct InvoicingServiceImpl {
 }
 
 impl InvoicingServiceImpl {
-    async fn validate_create_invoice_request(&self,req: &CreateInvoiceRequest) -> Result<Vec<String>, InvoicingServiceError> {
+    async fn validate_create_invoice_request(&self, req: &CreateInvoiceRequest) -> Result<(), InvoicingServiceError> {
         let mut errors: Vec<String> = vec![];
         Self::validate_invoice_lines(req, &mut errors);
         Self::validate_order_date(req, &mut errors);
         Self::validate_invoice_bill_ship_detail(req, &mut errors);
         Self::validate_invoice_lines_gst_codes(req, &mut errors);
-        self.validate_ids(req,&mut errors).await?;
-        Ok(errors)
+        self.validate_ids(req, &mut errors).await?;
+        if !errors.is_empty() {
+            Err(InvoicingServiceError::Validation(errors))
+        } else {
+            Ok(())
+        }
     }
     fn validate_invoice_lines_gst_codes(req: &CreateInvoiceRequest, errors: &mut Vec<String>) {
         req.invoice_lines.iter().for_each(|a| {
@@ -96,7 +102,7 @@ impl InvoicingServiceImpl {
         }
     }
 
-    async fn validate_ids(&self,req: &CreateInvoiceRequest,
+    async fn validate_ids(&self, req: &CreateInvoiceRequest,
                           errors: &mut Vec<String>)
                           -> Result<(), InvoicingServiceError> {
         async fn wrap<T: Error + Send + Sync + 'static>(fetch_block: impl Future<Output=Result<bool, T>>, err_msg: &str, errors: &mut Vec<String>) -> anyhow::Result<()> {
@@ -133,8 +139,8 @@ impl InvoicingServiceImpl {
         }
         wrap(
             self.invoice_template_service
-                 .is_valid_template_id(req.invoice_template_id, req.tenant_id),
-             "invoice template id does not exists for this tenant id", errors
+                .is_valid_template_id(req.invoice_template_id, req.tenant_id),
+            "invoice template id does not exists for this tenant id", errors,
         ).await?;
         Ok(())
     }
