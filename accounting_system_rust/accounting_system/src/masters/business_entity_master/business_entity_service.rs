@@ -8,6 +8,7 @@ use mockall::automock;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
+use crate::common_utils::cache_utils::get_or_fetch_entity;
 
 use crate::common_utils::dao_error::DaoError;
 use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, get_business_entity_dao};
@@ -40,41 +41,34 @@ struct BusinessEntityServiceImpl {
 }
 
 
-pub fn get_business_entity_master(arc:Arc<Pool>) ->Arc<dyn BusinessEntityService>{
+pub fn get_business_entity_master(arc: Arc<Pool>) -> Arc<dyn BusinessEntityService> {
     let dao = get_business_entity_dao(arc);
-    let cache:Cache<(Uuid,Uuid),Arc<BusinessEntityMaster>> = Cache::builder()
+    let cache: Cache<(Uuid, Uuid), Arc<BusinessEntityMaster>> = Cache::builder()
         .max_capacity(1000)
         .time_to_live(Duration::from_secs(300))
         .build();
-    let service = BusinessEntityServiceImpl{
+    let service = BusinessEntityServiceImpl {
         dao,
         cache_id: cache,
     };
     Arc::new(service)
-
 }
 
 
 #[async_trait]
 impl BusinessEntityService for BusinessEntityServiceImpl {
     async fn get_business_entity_by_id(&self, id: &Uuid, tenant_id: &Uuid) -> Result<Option<Arc<BusinessEntityMaster>>, BusinessEntityServiceError> {
-        let key = (*id, *tenant_id);
-        if let Some(entity) = self.cache_id.get(&key).await {
-            return Ok(Some(entity));
-        }
-        let kk = self.dao.get_business_entity(id, tenant_id).await?;
-        if let Some(en) = kk {
-            let k = Arc::new(en);
-            self.cache_id.insert(key, k.clone()).await;
-            Ok(Some(k))
-        } else {
-            Ok(None)
-        }
+        get_or_fetch_entity(*tenant_id, *id,
+                            &self.cache_id,
+                            async {
+                                let p = self.dao.get_business_entity(id, tenant_id).await?;
+                                Ok(p)
+                            }).await
     }
 
     async fn is_valid_business_entity_id(&self, id: &Uuid, tenant_id: &Uuid) -> Result<bool, BusinessEntityServiceError> {
         let entity = self.get_business_entity_by_id(id, tenant_id).await?;
-        return Ok(entity.is_some())
+        return Ok(entity.is_some());
     }
 
     async fn create_business_entity(&self, request: &CreateBusinessEntityRequest) -> Result<Uuid, BusinessEntityServiceError> {
