@@ -68,7 +68,7 @@ mod tests {
     #[tokio::test]
     async fn test_api() {
         let p = a_currency_master(Default::default());
-        let p1=p.clone();
+        let p1=Arc::new(p.clone());
         let closure = || {
             let mut currency_mock = MockCurrencyService::new();
             currency_mock
