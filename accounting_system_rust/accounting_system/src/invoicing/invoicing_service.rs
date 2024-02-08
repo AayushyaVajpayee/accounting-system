@@ -1,11 +1,27 @@
 use std::cmp::Ordering;
+use std::error::Error;
+use std::future::Future;
+use std::sync::Arc;
 
+use anyhow::Context;
 use async_trait::async_trait;
+use thiserror::Error;
 
 use invoice_doc_generator::hsc_sac::GstItemCode::{HsnCode, SacCode};
 
+use crate::accounting::currency::currency_service::CurrencyService;
 use crate::common_utils::utils::current_indian_date;
+use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
 use crate::invoicing::invoicing_request_models::CreateInvoiceRequest;
+use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
+use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
+use crate::tenant::tenant_service::TenantService;
+
+#[derive(Debug, Error)]
+pub enum InvoicingServiceError {
+    #[error("{0}")]
+    Other(#[from] anyhow::Error)
+}
 
 #[async_trait]
 pub trait InvoicingService {
@@ -13,20 +29,23 @@ pub trait InvoicingService {
 }
 
 
-struct InvoicingServiceImpl {}
+struct InvoicingServiceImpl {
+    tenant_service: Arc<dyn TenantService>,
+    currency_service: Arc<dyn CurrencyService>,
+    invoicing_series_service: Arc<dyn InvoicingSeriesService>,
+    business_entity_service: Arc<dyn BusinessEntityService>,
+    invoice_template_service: Arc<dyn InvoiceTemplateService>,
+}
 
 impl InvoicingServiceImpl {
-    fn validate_create_invoice_request(req: &CreateInvoiceRequest) -> Result<(), Vec<String>> {
+    async fn validate_create_invoice_request(&self,req: &CreateInvoiceRequest) -> Result<Vec<String>, InvoicingServiceError> {
         let mut errors: Vec<String> = vec![];
-        InvoicingServiceImpl::validate_invoice_lines(req, &mut errors);
-        InvoicingServiceImpl::validate_order_date(req, &mut errors);
-        InvoicingServiceImpl::validate_invoice_bill_ship_detail(req, &mut errors);
-        InvoicingServiceImpl::validate_invoice_lines_gst_codes(req, &mut errors);
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
-        }
+        Self::validate_invoice_lines(req, &mut errors);
+        Self::validate_order_date(req, &mut errors);
+        Self::validate_invoice_bill_ship_detail(req, &mut errors);
+        Self::validate_invoice_lines_gst_codes(req, &mut errors);
+        self.validate_ids(req,&mut errors).await?;
+        Ok(errors)
     }
     fn validate_invoice_lines_gst_codes(req: &CreateInvoiceRequest, errors: &mut Vec<String>) {
         req.invoice_lines.iter().for_each(|a| {
@@ -75,6 +94,49 @@ impl InvoicingServiceImpl {
                 errors.push("purchase order date cannot be of future while generating invoice".to_string())
             }
         }
+    }
+
+    async fn validate_ids(&self,req: &CreateInvoiceRequest,
+                          errors: &mut Vec<String>)
+                          -> Result<(), InvoicingServiceError> {
+        async fn wrap<T: Error + Send + Sync + 'static>(fetch_block: impl Future<Output=Result<bool, T>>, err_msg: &str, errors: &mut Vec<String>) -> anyhow::Result<()> {
+            let valid = fetch_block.await.context("error during id validation")?;
+            if !valid {
+                errors.push(err_msg.to_string())
+            }
+            Ok(())
+        }
+        wrap(async {
+            self
+                .tenant_service.get_tenant_by_id(req.tenant_id).await
+                .map(|a| a.is_some())
+        }, "tenant id is not valid", errors).await?;
+        wrap(async {
+            self.currency_service
+                .get_currency_entry(req.currency_id, req.tenant_id).await
+                .map(|a| a.is_some())
+        }, "currency id does not exists for this tenant id", errors).await?;
+        wrap(
+            self.business_entity_service
+                .is_valid_business_entity_id(&req.supplier_id, &req.tenant_id)
+            , "supplier id does not exists for this tenant id", errors).await?;
+
+        if let Some(bill_ship) = req.bill_ship_detail.as_ref() {
+            wrap(self.business_entity_service
+                     .is_valid_business_entity_id(&bill_ship.billed_to_customer_id, &req.tenant_id),
+                 "bill_to_id does not exists for this tenant id", errors).await?;
+            wrap(
+                self.business_entity_service
+                    .is_valid_business_entity_id(&bill_ship.shipped_to_customer_id, &req.tenant_id),
+                "ship_to_id does not exists for this tenant id", errors,
+            ).await?;
+        }
+        wrap(
+            self.invoice_template_service
+                 .is_valid_template_id(req.invoice_template_id, req.tenant_id),
+             "invoice template id does not exists for this tenant id", errors
+        ).await?;
+        Ok(())
     }
 }
 
@@ -131,7 +193,7 @@ mod tests {
         assert_that!(errors).has_length(1);
         assert_that!(errors[0]).
             is_equal_to("atleast one invoice line is required".to_string());
-        let  req = a_create_invoice_request(Default::default());
+        let req = a_create_invoice_request(Default::default());
         let mut errors: Vec<String> = vec![];
         InvoicingServiceImpl::validate_invoice_lines(&req, &mut errors);
         assert_that!(errors).is_empty();
@@ -159,29 +221,29 @@ mod tests {
         line.gst_item_code = SacCode(Sac::new("995425".to_string()).unwrap());
         req.invoice_lines = vec![line];
         req.service_invoice = true;
-        errors=vec![];
+        errors = vec![];
         InvoicingServiceImpl::validate_invoice_lines_gst_codes(&req, &mut errors);
         assert_that!(errors).is_empty();
         req.service_invoice = false;
-        errors=vec![];
+        errors = vec![];
         InvoicingServiceImpl::validate_invoice_lines_gst_codes(&req, &mut errors);
         assert_that!(errors).has_length(1);
         assert_that!(errors[0]).is_equal_to("sac code found for non service invoice.Use hsn code instead.Line title: some random line title".to_string())
     }
+
     #[tokio::test]
-    async fn test_validate_bill_ship_detail(){
+    async fn test_validate_bill_ship_detail() {
         let mut req = a_create_invoice_request(Default::default());
-        req.bill_ship_detail.as_mut().unwrap().billed_to_customer_id=req.supplier_id;
-        let mut errors:Vec<String> = vec![];
+        req.bill_ship_detail.as_mut().unwrap().billed_to_customer_id = req.supplier_id;
+        let mut errors: Vec<String> = vec![];
         InvoicingServiceImpl::validate_invoice_bill_ship_detail(&req, &mut errors);
         assert_that!(errors).has_length(1);
         assert_that!(errors[0]).is_equal_to("supplier id and billed_to_customer_id cannot be same".to_string());
         let mut req = a_create_invoice_request(Default::default());
-        req.bill_ship_detail.as_mut().unwrap().shipped_to_customer_id=req.supplier_id;
-        let mut errors:Vec<String> = vec![];
+        req.bill_ship_detail.as_mut().unwrap().shipped_to_customer_id = req.supplier_id;
+        let mut errors: Vec<String> = vec![];
         InvoicingServiceImpl::validate_invoice_bill_ship_detail(&req, &mut errors);
         assert_that!(errors).has_length(1);
         assert_that!(errors[0]).is_equal_to("supplier id and shipped_to_customer_id cannot be same".to_string());
-
     }
 }
