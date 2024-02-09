@@ -1,11 +1,23 @@
 use std::sync::Arc;
+use async_trait::async_trait;
 
 use deadpool_postgres::Pool;
+use uuid::Uuid;
+use crate::common_utils::dao_error::DaoError;
 
 struct InvoicingDaoImpl {
     postgres_client: Arc<Pool>,
 }
-
+#[async_trait]
+pub trait InvoicingDao:Send+Sync{
+    async fn create_invoice(&self)->Result<Uuid,DaoError>;
+}
+#[async_trait]
+impl InvoicingDao for InvoicingDaoImpl{
+    async fn create_invoice(&self) -> Result<Uuid, DaoError> {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {

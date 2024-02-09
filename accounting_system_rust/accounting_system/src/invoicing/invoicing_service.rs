@@ -6,12 +6,15 @@ use std::sync::Arc;
 use anyhow::Context;
 use async_trait::async_trait;
 use thiserror::Error;
+use uuid::Uuid;
 
 use invoice_doc_generator::hsc_sac::GstItemCode::{HsnCode, SacCode};
 
 use crate::accounting::currency::currency_service::CurrencyService;
+use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::current_indian_date;
 use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
+use crate::invoicing::invoicing_dao::InvoicingDao;
 use crate::invoicing::invoicing_request_models::CreateInvoiceRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
@@ -19,6 +22,8 @@ use crate::tenant::tenant_service::TenantService;
 
 #[derive(Debug, Error)]
 pub enum InvoicingServiceError {
+    #[error("error in db {}", 0)]
+    Db(#[from]DaoError),
     #[error("validation failures \n {}", .0.join("\n"))]
     Validation(Vec<String>),
     #[error("{0}")]
@@ -27,11 +32,12 @@ pub enum InvoicingServiceError {
 
 #[async_trait]
 pub trait InvoicingService {
-    fn create_invoice(req: &CreateInvoiceRequest);
+   async fn create_invoice(&self,req: &CreateInvoiceRequest)->Result<Uuid,InvoicingServiceError>;
 }
 
 
 struct InvoicingServiceImpl {
+    dao:Arc<dyn InvoicingDao>,
     tenant_service: Arc<dyn TenantService>,
     currency_service: Arc<dyn CurrencyService>,
     invoicing_series_service: Arc<dyn InvoicingSeriesService>,
@@ -145,9 +151,12 @@ impl InvoicingServiceImpl {
         Ok(())
     }
 }
-
+#[async_trait]
 impl InvoicingService for InvoicingServiceImpl {
-    fn create_invoice(req: &CreateInvoiceRequest) {
+    async fn create_invoice(&self,req: &CreateInvoiceRequest)->Result<Uuid,InvoicingServiceError> {
+        self.validate_create_invoice_request(req).await?;
+        self.dao.create_invoice().await?;
+        todo!()
         // req.
         //validate
         //calculate invoice fields
