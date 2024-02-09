@@ -11,7 +11,7 @@ impl CreateInvoiceLineRequest {
         let line = InvoiceLine::new(self.quantity.get_quantity(),
                                     self.unit_price.inner(),
                                     self.discount_percentage.inner(),
-                                    self.tax_rate_percentage.inner() as f64,
+                                    self.tax_rate_percentage.inner() ,
                                     self.cess_percentage.inner())
             .context("error while calculating line taxable amount")?;
         Ok(compute_taxable_amount(&line))
@@ -21,7 +21,7 @@ impl CreateInvoiceLineRequest {
         let line = InvoiceLine::new(self.quantity.get_quantity(),
                                     self.unit_price.inner(),
                                     self.discount_percentage.inner(),
-                                    self.tax_rate_percentage.inner() as f64,
+                                    self.tax_rate_percentage.inner(),
                                     self.cess_percentage.inner())
             .context("error while calculating line tax amount")?;
         Ok(compute_tax_amount(&line))
@@ -30,7 +30,7 @@ impl CreateInvoiceLineRequest {
         let line = InvoiceLine::new(self.quantity.get_quantity(),
                                     self.unit_price.inner(),
                                     self.discount_percentage.inner(),
-                                    self.tax_rate_percentage.inner() as f64,
+                                    self.tax_rate_percentage.inner(),
                                     self.cess_percentage.inner())
             .context("error while calculating line cess amount")?;
 //todo multiple cess calculation implementations.
@@ -41,7 +41,7 @@ impl CreateInvoiceLineRequest {
         let line = InvoiceLine::new(self.quantity.get_quantity(),
                                     self.unit_price.inner(),
                                     self.discount_percentage.inner(),
-                                    self.tax_rate_percentage.inner() as f64,
+                                    self.tax_rate_percentage.inner(),
                                     self.cess_percentage.inner())
             .context("error while calculating net line total amount")?;
         Ok(compute_line_total_amount(&line))
@@ -51,7 +51,7 @@ impl CreateInvoiceLineRequest {
         let line = InvoiceLine::new(self.quantity.get_quantity(),
                                     self.unit_price.inner(),
                                     self.discount_percentage.inner(),
-                                    self.tax_rate_percentage.inner() as f64,
+                                    self.tax_rate_percentage.inner() ,
                                     self.cess_percentage.inner())
             .context("error while calculating line discount amount")?;
         Ok(compute_discount_amount(&line))

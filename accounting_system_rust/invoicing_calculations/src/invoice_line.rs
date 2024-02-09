@@ -13,9 +13,9 @@ use crate::invoice_line::InvoiceLineError::{
 pub struct InvoiceLine {
     quantity: f64,
     unit_price: f64,
-    discount_percentage: f64,
-    tax_percentage: f64,
-    cess_percentage: f64,
+    discount_percentage: f32,
+    tax_percentage: f32,
+    cess_percentage: f32,
 }
 
 
@@ -54,9 +54,9 @@ impl InvoiceLine {
     pub fn new(
         quantity: f64,
         unit_price: f64,
-        discount_percentage: f64,
-        tax_percentage: f64,
-        cess_percentage: f64,
+        discount_percentage: f32,
+        tax_percentage: f32,
+        cess_percentage: f32,
     ) -> anyhow::Result<Self> {
         let mut vec: Vec<InvoiceLineError> = Vec::new();
         if quantity < 0.0 {
@@ -95,19 +95,19 @@ impl InvoiceLine {
 }
 
 pub fn compute_discount_amount(line: &InvoiceLine) -> f64 {
-    line.quantity * line.unit_price * line.discount_percentage / 100.00
+    line.quantity * line.unit_price * (line.discount_percentage as f64) / 100.00
 }
 
 pub fn compute_taxable_amount(line: &InvoiceLine) -> f64 {
-    line.quantity * line.unit_price * (100.0 - line.discount_percentage) / 100.00
+    line.quantity * line.unit_price * (100.0 - line.discount_percentage as f64) / 100.00
 }
 
 pub fn compute_tax_amount(line: &InvoiceLine) -> f64 {
-    compute_taxable_amount(line) * line.tax_percentage / 100.0
+    compute_taxable_amount(line) * (line.tax_percentage as f64) / 100.0
 }
 
 pub fn compute_cess_amount(line: &InvoiceLine) -> f64 {
-    compute_taxable_amount(line) * line.cess_percentage / 100.00
+    compute_taxable_amount(line) * (line.cess_percentage as f64) / 100.00
 }
 
 pub fn compute_line_total_amount(line: &InvoiceLine) -> f64 {
