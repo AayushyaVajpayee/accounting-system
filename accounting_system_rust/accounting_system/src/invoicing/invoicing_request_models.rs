@@ -101,6 +101,9 @@ impl DiscountDays {
         ensure!(value>=0,"discount days cannot be less than 0");
         Ok(DiscountDays(value as u16))
     }
+    pub fn inner(&self) -> u16 {
+        self.0
+    }
 }
 
 impl TryFrom<i32> for DiscountDays {
@@ -120,6 +123,9 @@ impl DueDays {
         ensure!(value>=0,"due days cannot be less than 0");
         ensure!(value<=400,"due days cannot be more than 400");
         Ok(DueDays(value as u16))
+    }
+    pub fn inner(&self) -> u16 {
+        self.0
     }
 }
 
