@@ -11,3 +11,4 @@ pub mod line_subtitle;
 pub mod additional_charge;
 pub mod invoice_template;
 mod calculations;
+mod invoicing_dao_models;
