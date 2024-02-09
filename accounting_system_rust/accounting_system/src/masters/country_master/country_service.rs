@@ -4,9 +4,8 @@ use moka::future::Cache;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::country_master::country_dao::{CountryMasterDao, get_country_master_dao};
-use crate::masters::country_master::country_model::{CountryEnum, CountryMaster, INDIA_COUNTRY_ID};
+use crate::masters::country_master::country_model::{ CountryMaster};
 
 const CACHE_ALL_KEY: i32 = 1;
 

@@ -3,7 +3,7 @@ use const_format::concatcp;
 use deadpool_postgres::Pool;
 use itertools::Itertools;
 use std::sync::Arc;
-use tokio_postgres::{Row, SimpleQueryMessage};
+use tokio_postgres::{Row};
 use uuid::Uuid;
 
 use crate::accounting::account::account_type::account_type_models::{

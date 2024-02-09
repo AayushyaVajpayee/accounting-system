@@ -65,8 +65,8 @@ pub fn extract_tenant_id_from_header(request:&HttpRequest)->Result<Uuid,TenantHe
     let p = request.headers()
         .get("x-tenant-id")
         .ok_or(TenantHeaderError::NotPresent)?;
-    let tenant_id_str = p.to_str().map_err(|a| TenantHeaderError::NotUuid)?;
-    let tenant_uuid = Uuid::from_str(tenant_id_str).map_err(|a| TenantHeaderError::NotUuid)?;
+    let tenant_id_str = p.to_str().map_err(|_| TenantHeaderError::NotUuid)?;
+    let tenant_uuid = Uuid::from_str(tenant_id_str).map_err(|_| TenantHeaderError::NotUuid)?;
     Ok(tenant_uuid)
 }
 
@@ -81,7 +81,7 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessa
                     "should have returned a result but was none".to_string(),
                 )
             })?;
-            Uuid::parse_str(uuid_str).map_err(|a| {
+            Uuid::parse_str(uuid_str).map_err(|_| {
                 DaoError::PostgresQueryError("unable to convert str to uuid".to_string())
             })
         }

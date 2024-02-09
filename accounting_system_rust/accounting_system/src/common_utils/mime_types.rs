@@ -49,7 +49,7 @@ impl MimeType {
 }
 
 impl<'a> FromSql<'a> for MimeType {
-    fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+    fn from_sql(_ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
         let k = String::from_utf8_lossy(raw);
         match MimeType::from_text(k.as_ref()){
             Ok(a) => {Ok(a)}

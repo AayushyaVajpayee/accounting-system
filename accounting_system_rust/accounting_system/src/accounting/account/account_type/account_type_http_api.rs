@@ -1,6 +1,5 @@
-use actix_web::{Scope, web};
+use actix_web::{ web};
 use actix_web::web::Data;
-use std::sync::Arc;
 
 use crate::accounting::account::account_type::account_type_service::AccountTypeService;
 use crate::setup_routes;

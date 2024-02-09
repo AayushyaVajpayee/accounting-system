@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::{GenericClient, Pool};
 use std::sync::Arc;
-use actix_web::web::get;
 use tokio_postgres::Row;
 use uuid::Uuid;
 

@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, Responder, ResponseError, Scope, web};
+use actix_web::{HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};

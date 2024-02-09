@@ -4,7 +4,6 @@ use moka::future::Cache;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::pincode_master::pincode_master_dao::{get_pincode_master_dao, PincodeMasterDao};
 use crate::masters::pincode_master::pincode_models::PincodeMaster;
 

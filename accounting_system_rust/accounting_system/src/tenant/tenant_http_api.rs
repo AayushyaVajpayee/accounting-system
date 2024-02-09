@@ -54,7 +54,7 @@ impl ResponseError for TenantServiceError {
                 let err_list = vec![errs.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            TenantServiceError::Other(a) => {
+            TenantServiceError::Other(_) => {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }

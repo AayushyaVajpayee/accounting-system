@@ -1,7 +1,6 @@
 use anyhow::Context;
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
-use itertools::Itertools;
 use std::sync::Arc;
 use tracing::instrument;
 use uuid::Uuid;

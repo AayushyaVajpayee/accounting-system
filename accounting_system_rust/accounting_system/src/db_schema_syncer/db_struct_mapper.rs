@@ -5,7 +5,6 @@ use deadpool_postgres::{GenericClient, Pool};
 use futures_util::{SinkExt, stream};
 use itertools::Itertools;
 use pin_utils::pin_mut;
-use postgres::fallible_iterator::FallibleIterator;
 use tokio::pin;
 use tokio_postgres::Error;
 
@@ -60,7 +59,7 @@ async fn execute_db_struct_mapping(structs: Vec<Box<dyn DbStructMapping>>,pool:A
     let constraints_and_indexes = structs.iter().map(|s| s.get_index_creation_script())
         .join(";");
     let whole_scrip = format!("{};{};{}", master_ddl, fn_and_procs, constraints_and_indexes);
-    let mut txn = conn.transaction().await.unwrap();
+    let  txn = conn.transaction().await.unwrap();
     txn.simple_query(whole_scrip.as_str()).await.unwrap();
 
     for table in structs {

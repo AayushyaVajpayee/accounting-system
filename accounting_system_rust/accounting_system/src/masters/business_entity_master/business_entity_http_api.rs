@@ -1,5 +1,3 @@
-use std::fmt::Display;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use actix_web::{HttpRequest, HttpResponseBuilder, Responder, ResponseError, web};

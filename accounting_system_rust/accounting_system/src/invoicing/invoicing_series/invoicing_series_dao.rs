@@ -1,4 +1,3 @@
-use actix_web::ResponseError;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;

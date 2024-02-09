@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
 use std::sync::Arc;
-use tokio_postgres::{Row, SimpleQueryMessage};
+use tokio_postgres::{Row};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;

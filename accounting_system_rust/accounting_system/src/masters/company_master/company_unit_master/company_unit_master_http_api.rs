@@ -1,7 +1,6 @@
-use actix_web::{HttpResponseBuilder, Responder, ResponseError, Scope, web};
+use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, Query};
-use std::fmt::Display;
 use std::sync::Arc;
 use uuid::Uuid;
 

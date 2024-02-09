@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, Scope, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use std::sync::Arc;

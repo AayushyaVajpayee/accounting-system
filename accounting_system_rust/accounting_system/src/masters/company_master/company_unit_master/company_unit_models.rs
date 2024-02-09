@@ -68,7 +68,7 @@ pub struct CreateNewCompanyAddressRequest {
 impl From<CreateCompanyUnitRequest> for Option<CreateAddressRequest> {
     fn from(value: CreateCompanyUnitRequest) -> Self {
         match value.address {
-            CompanyUnitAddressRequest::ExistingAddress { id } => {
+            CompanyUnitAddressRequest::ExistingAddress { .. } => {
                 None
             }
             CompanyUnitAddressRequest::NewAddress { request } => {

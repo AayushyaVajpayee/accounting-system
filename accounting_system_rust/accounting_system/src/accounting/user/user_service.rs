@@ -6,7 +6,6 @@ use std::sync::Arc;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::accounting::user::user_dao::{get_user_dao, UserDao};
 use crate::accounting::user::user_models::{CreateUserRequest, User};
 use crate::common_utils::dao_error::DaoError;

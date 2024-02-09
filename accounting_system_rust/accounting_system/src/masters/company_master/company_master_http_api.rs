@@ -1,8 +1,8 @@
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder, Scope, web};
+use actix_web::{HttpResponse, HttpResponseBuilder, Responder, web};
 use actix_web::body::BoxBody;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::web::{Data, Path, Query, ServiceConfig};
+use actix_web::web::{Data, Path, Query};
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use std::sync::Arc;
@@ -73,7 +73,7 @@ impl ResponseError for ServiceError {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            ServiceError::AnyhowError(a) => {
+            ServiceError::AnyhowError(_) => {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
