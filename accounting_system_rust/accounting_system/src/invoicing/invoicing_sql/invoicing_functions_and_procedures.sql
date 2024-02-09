@@ -1,31 +1,29 @@
-
-
 create type create_payment_terms_request as
 (
     due_days         integer,
     discount_days    integer,
-    discount_percent integer
+    discount_percent real
 );
 create type create_invoice_line_request as
 (
-    line_id            uuid,
-    line_no            text,
-    hsn_sac_code       text,
-    line_title         text,
-    title_hsn_sac_hash bigint,
-    line_subtitle      text,
-    subtitle_hash      bigint,
-    quantity           double precision,
-    uqc                text,
-    unit_price         integer,
-    tax_rate_bps       integer,
-    discount_bps       integer,
-    cess_bps           integer,
-    mrp                integer,
-    batch_no           text,
-    expiry_date_ms     bigint,
-    line_net_total     double precision,
-    igst_applicable    bool
+    line_id             uuid,
+    line_no             text,
+    hsn_sac_code        text,
+    line_title          text,
+    title_hsn_sac_hash  bigint,
+    line_subtitle       text,
+    subtitle_hash       bigint,
+    quantity            double precision,
+    uqc                 text,
+    unit_price          double precision,
+    tax_percentage      real,
+    discount_percentage real,
+    cess_percentage     real,
+    mrp                 real,
+    batch_no            text,
+    expiry_date_ms      bigint,
+    line_net_total      double precision,
+    igst_applicable     bool
 );
 
 
@@ -57,14 +55,16 @@ create type create_invoice_request as
     created_by                      uuid
 );
 
-create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter integer, zero_padding bool) returns text as
+create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter integer,
+                                              zero_padding bool) returns text as
 $$
 DECLARE
     invoice_number text;
 BEGIN
     if zero_padding then
         invoice_number := invoice_number_prefix ||
-                          LPAD(invoice_counter::text, 16 - (length(invoice_number_prefix) + length(invoice_counter::text))+1, '0');
+                          LPAD(invoice_counter::text,
+                               16 - (length(invoice_number_prefix) + length(invoice_counter::text)) + 1, '0');
     else
         invoice_number := invoice_number_prefix || invoice_counter;
     end if;
@@ -186,7 +186,7 @@ BEGIN
         end if;
         select create_invoice_table_entry(req, payment_term_id) into invoice_id;
         select persist_invoice_lines(req, invoice_id);
-        select persist_additional_charge(req.additional_charges, invoice_id,req.tenant_id,req.created_by);
+        select persist_additional_charge(req.additional_charges, invoice_id, req.tenant_id, req.created_by);
     else
         select response
         from idempotence_store
