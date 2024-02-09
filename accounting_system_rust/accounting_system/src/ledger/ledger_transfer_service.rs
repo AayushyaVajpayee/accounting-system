@@ -26,15 +26,15 @@ pub fn get_ledger_transfer_service(arc: Arc<Pool>) -> Arc<dyn LedgerTransferServ
 }
 #[async_trait]
 impl LedgerTransferService for LedgerTransferServiceImpl{
-    async fn create_transfers(&self, request: CreateTransfersRequest) {
+    async fn create_transfers(&self, _request: CreateTransfersRequest) {
         todo!()
     }
 
-    async fn get_transfers_by_id(&self, request: GetTransferByIdRequest) {
+    async fn get_transfers_by_id(&self, _request: GetTransferByIdRequest) {
         todo!()
     }
 
-    async fn get_transfers_for_account_for_interval(&self, request: GetTransfersForAccountForInterval) {
+    async fn get_transfers_for_account_for_interval(&self, _request: GetTransfersForAccountForInterval) {
         todo!()
     }
 }

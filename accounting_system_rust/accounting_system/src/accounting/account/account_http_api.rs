@@ -44,7 +44,6 @@ setup_routes!(AccountService,
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{ test};
 
     use uuid::Uuid;
 
