@@ -19,7 +19,7 @@ pub enum InvoiceTemplateServiceError {
 type TemplateEntityOpt = Option<Arc<InvoiceTemplateMaster>>;
 
 #[async_trait]
-pub trait InvoiceTemplateService {
+pub trait InvoiceTemplateService:Send+Sync {
     async fn get_template_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<TemplateEntityOpt, InvoiceTemplateServiceError>;
     async fn is_valid_template_id(&self, id: Uuid, tenant_id: Uuid) -> Result<bool, InvoiceTemplateServiceError>;
 }
