@@ -2,7 +2,6 @@
 -- this can store invoice details, credit note details, delivery challan details
 
 
-
 create table invoice
 (
     id                              uuid primary key,
@@ -24,13 +23,13 @@ create table invoice
     shipped_to_business_entity      uuid references business_entity (id),---only applicable in b2b invoices
     purchase_order_number           varchar(35),
     einvoice_json_s3_id             uuid,
-    total_taxable_amount            double precision not null,
-    total_tax_amount                double precision not null,
-    total_additional_charges_amount double precision not null,
-    round_off                       double precision not null,
-    total_payable_amount            double precision not null,
+    total_taxable_amount            double precision                                    not null,
+    total_tax_amount                double precision                                    not null,
+    total_additional_charges_amount double precision                                    not null,
+    round_off                       double precision                                    not null,
+    total_payable_amount            double precision                                    not null,
     invoice_pdf_s3_id               uuid,
-    invoice_template_id             uuid references invoice_template(id)                   not null,
+    invoice_template_id             uuid references invoice_template (id)               not null,
     payment_term_id                 uuid references payment_term,
     created_by                      uuid references app_user (id)                       not null,
     updated_by                      uuid references app_user (id),
@@ -51,13 +50,13 @@ create table invoice_line
     line_title_hsn_sac_id uuid references line_title (id) not null,
     line_subtitle_id      uuid references line_subtitle (id),
     quantity              double precision                not null,
-    unit_price            integer                         not null,
-    tax_rate_bps          integer                         not null,
-    discount_bps          integer                         not null,
-    cess_bps              integer                         not null,
+    unit_price            real                            not null,
+    tax_rate_bps          real                            not null,
+    discount_bps          real                            not null,
+    cess_bps              real                            not null,
     line_number           smallint                        not null,
     line_net_total        double precision                not null, --double precision because quantity is in double which can cause the line total to be in double
-    mrp                   integer,
+    mrp                   real,
     batch                 varchar(15),
     expiry_date_ms        bigint,
     uqc                   varchar(15),
