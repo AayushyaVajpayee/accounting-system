@@ -51,9 +51,9 @@ create table invoice_line
     line_subtitle_id      uuid references line_subtitle (id),
     quantity              double precision                not null,
     unit_price            real                            not null,
-    tax_rate_bps          real                            not null,
-    discount_bps          real                            not null,
-    cess_bps              real                            not null,
+    tax_rate_percentage          real                            not null,
+    discount_percentage          real                            not null,
+    cess_percentage              real                            not null,
     line_number           smallint                        not null,
     line_net_total        double precision                not null, --double precision because quantity is in double which can cause the line total to be in double
     mrp                   real,
