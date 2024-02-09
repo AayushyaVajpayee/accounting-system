@@ -20,7 +20,7 @@ struct CountryMasterServiceImpl {
     cache_by_id: Cache<Uuid, Arc<CountryMaster>>,
     cache_all: Cache<i32, Arc<Vec<Arc<CountryMaster>>>>,
 }
-
+#[allow(dead_code)]
 pub fn get_country_master_service(arc: Arc<Pool>) -> Arc<dyn CountryMasterService> {
     let country_master_dao = get_country_master_dao(arc);
     let country_master_service = CountryMasterServiceImpl {

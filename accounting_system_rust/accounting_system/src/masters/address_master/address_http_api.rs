@@ -34,7 +34,7 @@ setup_routes!(AddressService,"/address",
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{App, test};
+    use actix_web::{ test};
     use uuid::Uuid;
 
     use crate::get_and_create_api_test;

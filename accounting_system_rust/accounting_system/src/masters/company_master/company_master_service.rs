@@ -160,11 +160,9 @@ pub mod tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::{ResultAssertions, VecAssertions};
-    use std::error::Error;
     use std::mem::discriminant;
     use std::sync::Arc;
     use tracing_test::traced_test;
-    use validator::Validate;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_postgres_conn_pool, get_postgres_image_port,
@@ -227,7 +225,7 @@ pub mod tests {
             .expect_get_user_by_id()
             .returning(|_a| Ok(Some(a_user(Default::default()))))
             .once();
-        let mut company_service = CompanyMasterServiceImpl {
+        let  company_service = CompanyMasterServiceImpl {
             dao: Arc::new(dao),
             tenant_service: Arc::new(tenant_service),
             user_service: Arc::new(user_service),

@@ -32,7 +32,7 @@ struct InvoicingSeriesServiceImpl {
     dao: Arc<dyn InvoicingSeriesDao>,
     cache:Cache<(Uuid,Uuid),Arc<InvoicingSeriesMaster>>
 }
-
+#[allow(dead_code)]
 async fn get_invoicing_series_service(pool:Arc<Pool>)->Arc<dyn InvoicingSeriesService>{
     let invoicing_series_dao=get_invoicing_series_dao(pool);
     let cache:Cache<(Uuid,Uuid),Arc<InvoicingSeriesMaster>> = Cache::builder()

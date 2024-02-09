@@ -30,7 +30,7 @@ pub trait InvoicingService {
     fn create_invoice(req: &CreateInvoiceRequest);
 }
 
-
+#[allow(dead_code)]
 struct InvoicingServiceImpl {
     tenant_service: Arc<dyn TenantService>,
     currency_service: Arc<dyn CurrencyService>,

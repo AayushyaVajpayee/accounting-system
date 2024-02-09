@@ -42,7 +42,7 @@ impl TryFrom<Row> for Address {
     }
 }
 
-
+#[allow(dead_code)]
 pub fn get_address_dao(client: Arc<Pool>) -> Arc<dyn AddressDao> {
     let ad = AddressDaoImpl {
         postgres_client: client

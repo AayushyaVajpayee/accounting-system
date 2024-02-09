@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::common_utils::dao_error::DaoError;
 use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
 use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
-
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum TenantServiceError {
     #[error("validation failures \n {}",.0.join("\n"))]

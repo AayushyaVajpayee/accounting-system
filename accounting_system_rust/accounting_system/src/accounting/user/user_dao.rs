@@ -13,7 +13,6 @@ use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid
 const SELECT_FIELDS: &str = "id,tenant_id,first_name,last_name,email_id,mobile_number,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "app_user";
 const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
-const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_FIELDS,")"," values  ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id");
 
 
 #[async_trait]

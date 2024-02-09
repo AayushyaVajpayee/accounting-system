@@ -24,7 +24,7 @@ struct CompanyUnitDaoImpl {
     postgres_client: Arc<Pool>,
 }
 
-
+#[allow(dead_code)]
 pub fn get_company_master_unit_dao(pool: Arc<Pool>) -> Arc<dyn CompanyUnitDao> {
     let dao = CompanyUnitDaoImpl {
         postgres_client: pool,
@@ -169,7 +169,7 @@ mod tests {
             pg_pool.get().await.unwrap().simple_query("delete from company_unit_master").await.unwrap();
         }
         let company_master_dao = CompanyUnitDaoImpl { postgres_client: pg_pool };
-        for i in 0..20 {
+        for _i in 0..20 {
             let k = a_create_company_unit_request(Default::default());
             company_master_dao.create_company_unit(&k).await.unwrap();//todo create batch api
         }

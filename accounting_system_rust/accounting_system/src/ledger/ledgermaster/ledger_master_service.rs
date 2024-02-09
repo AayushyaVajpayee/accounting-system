@@ -27,7 +27,7 @@ impl LedgerMasterService for LedgerMasterServiceImpl {
     }
 }
 
-
+#[allow(dead_code)]
 pub fn get_ledger_master_service(arc: Arc<Pool>) -> Arc<dyn LedgerMasterService> {
     let dao = get_ledger_master_dao(arc);
     let service = LedgerMasterServiceImpl{

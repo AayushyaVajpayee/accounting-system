@@ -94,7 +94,6 @@ mod tests {
     use actix_web::{App, test};
     use actix_web::middleware::Logger;
     use anyhow::anyhow;
-    use bytes::Buf;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::VecAssertions;
@@ -146,7 +145,6 @@ mod tests {
         // std::env::set_var(env"RUST_LOG", "debug");
         // env_logger::init();
         let mut mocked = MockCompanyMasterService::new();
-        let uuid = Uuid::now_v7();
         mocked
             .expect_create_new_company_for_tenant()
             .return_once(move |_a| Err(err));

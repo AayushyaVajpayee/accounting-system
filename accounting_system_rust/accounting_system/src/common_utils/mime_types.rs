@@ -16,6 +16,7 @@ pub enum MimeType {
 }
 
 impl MimeType {
+    #[allow(dead_code)]
     pub fn get_mime_type(&self) -> &'static str {
         match &self {
             Csv => "text/csv",

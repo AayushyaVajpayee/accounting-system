@@ -20,7 +20,7 @@ struct CityMasterServiceImpl {
     cache_all: Cache<i32, Arc<Vec<Arc<CityMaster>>>>,
     cache_by_id: Cache<Uuid, Arc<CityMaster>>,
 }
-
+#[allow(dead_code)]
 pub fn get_city_master_service(arc: Arc<Pool>) -> Arc<dyn CityMasterService> {
     let city_master_dao = get_city_master_dao(arc);
     let cache: Cache<i32, Arc<Vec<Arc<CityMaster>>>> = Cache::new(733);

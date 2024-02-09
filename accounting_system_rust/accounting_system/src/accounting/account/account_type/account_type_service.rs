@@ -28,7 +28,7 @@ impl AccountTypeService for AccountTypeServiceImpl {
         AccountTypeServiceImpl::create_hierarchy(&all_accounts)
     }
 }
-
+#[allow(dead_code)]
 pub fn get_account_type_master_service(arc: Arc<Pool>) -> Arc<dyn AccountTypeService> {
     let dao = get_account_type_dao(arc);
     let service =AccountTypeServiceImpl{
@@ -270,9 +270,7 @@ mod tests {
             .map(|a| a.parse::<i16>().unwrap())
             .collect::<Vec<i16>>();
         println!("{:?}", range);
-        let total_accounts_count = if range.len() == 2 {
-            Some(range.get(1).unwrap() - range.first().unwrap() + 1)
-        } else { None };
+       
         let mut map: HashMap<char, String> = HashMap::new();
         for n in range[0]..=range[1] {
             let timestmp = Timestamp::from_unix(NoContext, (get_current_time_us().unwrap() as u64) + (n as u64) * 1000, 0);//to generate sortable uuids
@@ -291,7 +289,7 @@ mod tests {
         println!("account_tree: {}", account_tree);
         let accounts = parse_account_tree(&account_tree_clone);
         let mut p = AccountTypeServiceImpl::create_hierarchy(&accounts).unwrap();
-        let pp = serde_json::to_string(&p).unwrap();
+       
         let k = p.iter_mut()
             .map(serialise_account_hierarchy)
             .inspect(|a| println!("{}", a))

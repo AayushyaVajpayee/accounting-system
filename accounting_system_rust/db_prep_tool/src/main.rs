@@ -2,7 +2,7 @@ use accounting_system::init_db_with_seed;
 use clap::{Parser, Subcommand};
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
 use postgres::NoTls;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc};
 use std::time::Duration;
 use tokio_postgres::Config;
 

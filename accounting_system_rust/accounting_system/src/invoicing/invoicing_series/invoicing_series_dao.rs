@@ -41,7 +41,7 @@ impl TryFrom<Row> for InvoicingSeriesMaster {
 struct InvoicingSeriesDaoImpl {
     postgres_client: Arc<Pool>,
 }
-
+#[allow(dead_code)]
 pub fn get_invoicing_series_dao(client: Arc<Pool>) -> Arc<dyn InvoicingSeriesDao> {
     let ad = InvoicingSeriesDaoImpl {
         postgres_client: client

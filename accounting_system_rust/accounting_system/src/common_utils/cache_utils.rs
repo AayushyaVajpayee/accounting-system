@@ -53,7 +53,7 @@ mod tests {
         let id = Uuid::now_v7();
         let cache: Cache<(Uuid, Uuid), Arc<E>> = Cache::new(1);
         cache.insert((tenant_id, id), Arc::new(E {})).await;
-        let p =
+        let _p =
             get_or_fetch_entity(tenant_id, id, &cache,
                                 async {
                                     mock.fetch().await
@@ -71,7 +71,7 @@ mod tests {
             .once()
             .return_once(||Ok(Some(e)));
         assert!(cache.get(&(tenant_id,id)).await.is_none());
-        let p =
+        let _p =
             get_or_fetch_entity(tenant_id, id, &cache,
                                 async {
                                     mock.fetch().await

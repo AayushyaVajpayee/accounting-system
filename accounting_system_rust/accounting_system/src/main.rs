@@ -1,6 +1,4 @@
-use actix_web::{App, HttpResponseBuilder, HttpServer, Responder, ResponseError, web};
-use actix_web::body::MessageBody;
-use actix_web::dev::Service;
+use actix_web::{App, HttpResponseBuilder, HttpServer, Responder, web};
 use actix_web::http::StatusCode;
 use actix_web::middleware::Logger;
 use actix_web_lab::middleware::from_fn;

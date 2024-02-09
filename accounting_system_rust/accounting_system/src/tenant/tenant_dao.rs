@@ -26,7 +26,7 @@ pub trait TenantDao: Send + Sync {
     // async fn update_tenant(&self, tenant: &CreateTenantRequest) -> i64;
     // async fn delete_tenant(&self, tenant_id: &str) -> i64;
 }
-
+#[allow(dead_code)]
 pub fn get_tenant_dao(client: Arc<Pool>) -> Arc<dyn TenantDao> {
     let td = TenantDaoImpl {
         postgres_client: client,
@@ -96,7 +96,6 @@ impl TenantDao for TenantDaoImpl {
 
 #[cfg(test)]
 mod tests {
-    use log::kv::Source;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
 

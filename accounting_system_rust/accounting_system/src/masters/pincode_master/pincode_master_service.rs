@@ -13,7 +13,7 @@ pub trait PincodeMasterService:Send+Sync {
     async fn get_all_pincodes(&self)->Option<Arc<Vec<Arc<PincodeMaster>>>>;
     async fn get_pincode_by_id(&self, id: &Uuid) -> Option<Arc<PincodeMaster>>;
 }
-
+#[allow(dead_code)]
 pub fn get_pincode_master_service(arc: Arc<Pool>) -> Arc<dyn PincodeMasterService> {
     let pincode_dao = get_pincode_master_dao(arc);
     let cache: Cache<i32, Arc<Vec<Arc<PincodeMaster>>>> = Cache::new(1);

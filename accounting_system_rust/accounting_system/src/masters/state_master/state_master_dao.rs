@@ -50,7 +50,7 @@ impl TryFrom<&Row> for StateMasterModel {
         })
     }
 }
-
+#[allow(dead_code)]
 pub fn get_state_master_dao(client: Arc<Pool>) -> Arc<dyn StateMasterDao> {
     let state_master_dao = StateMasterDaoPostgresImpl{
         postgres_client:client

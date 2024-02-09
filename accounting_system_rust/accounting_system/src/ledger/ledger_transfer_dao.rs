@@ -63,7 +63,7 @@ impl LedgerTransferDaoPostgresImpl {
     }
 }
 
-
+#[allow(dead_code)]
 pub fn get_ledger_transfer_dao(pool: Arc<Pool>) -> Arc<dyn LedgerTransferDao> {
     Arc::new(LedgerTransferDaoPostgresImpl { postgres_client: pool })
 }
@@ -169,7 +169,6 @@ fn convert_transfers_to_postgres_array(transfers: &[Transfer]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use async_std::channel::unbounded;
     use rand::Rng;
     use rstest::rstest;
     use std::ops::Not;
@@ -260,7 +259,7 @@ mod tests {
             let postgres_client = get_postgres_conn_pool(port, None).await;
             let accs = create_two_accounts_for_transfer().await;
             let mut ledger_transfer_dao = LedgerTransferDaoPostgresImpl { postgres_client: postgres_client.clone() };
-            let mut a_trf = generate_random_transfers(accs[0],
+            let  mut a_trf = generate_random_transfers(accs[0],
                                                       accs[1],
                                                       100,
                                                       *SEED_LEDGER_MASTER_ID,
@@ -296,7 +295,7 @@ mod tests {
             let postgres_client = get_postgres_conn_pool(port, None).await;
             let accs = create_two_accounts_for_transfer().await;
             let mut ledger_transfer_dao = LedgerTransferDaoPostgresImpl { postgres_client: postgres_client.clone() };
-            let mut a_trf = generate_random_transfers(accs[0],
+            let mut  a_trf = generate_random_transfers(accs[0],
                                                       accs[1],
                                                       100,
                                                       *SEED_LEDGER_MASTER_ID,
@@ -823,8 +822,6 @@ mod tests {
             get_postgres_conn_pool(port, None).await);
         let led_mst_req = a_create_ledger_master_entry_request(Default::default());
         let account_master_service = get_account_service_for_test(get_postgres_conn_pool(port, None).await);
-        let id = Uuid::now_v7();
-        let id2 = Uuid::now_v7();
         let mut db_acc_led_id = *SEED_LEDGER_MASTER_ID;
         let mut cr_acc_led_id = *SEED_LEDGER_MASTER_ID;
         let mut tr_led_id = *SEED_LEDGER_MASTER_ID;

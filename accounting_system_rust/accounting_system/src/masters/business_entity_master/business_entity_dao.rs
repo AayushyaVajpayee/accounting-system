@@ -65,7 +65,7 @@ impl TryFrom<Row> for BusinessEntityMaster {
     }
 }
 
-
+#[allow(dead_code)]
 pub fn get_business_entity_dao(client: Arc<Pool>) -> Arc<dyn BusinessEntityDao> {
     let a = BusinessEntityDaoImpl {
         postgres_client: client

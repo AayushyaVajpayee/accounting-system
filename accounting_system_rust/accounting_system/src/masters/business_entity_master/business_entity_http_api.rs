@@ -17,12 +17,12 @@ impl ResponseError for BusinessEntityServiceError {
         }
     }
 }
-
+#[allow(dead_code)]
 async fn create_business_entity_master(data: Data<Arc<dyn BusinessEntityService>>, request: web::Json<CreateBusinessEntityRequest>) -> actix_web::Result<impl Responder> {
     let ap = data.create_business_entity(&request).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
-
+#[allow(dead_code)]
 async fn get_business_entity_master_by_id(data: Data<Arc<dyn BusinessEntityService>>, business_entity_id: Path<Uuid>, req: HttpRequest) -> actix_web::Result<impl Responder> {
     let tenant_id =extract_tenant_id_from_header(&req)?;
     let pd = data.get_business_entity_by_id(&business_entity_id, &tenant_id).await?;

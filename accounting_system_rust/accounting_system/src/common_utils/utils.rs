@@ -28,7 +28,7 @@ pub fn get_current_time_us() -> Result<i64, TimeError> {
         })?.as_micros() as i64;
     Ok(current_time)
 }
-
+#[allow(dead_code)]
 pub fn current_indian_financial_year() -> u32 {
     let utc_now = Utc::now().naive_utc();
     let current_date = chrono_tz::Asia::Kolkata.from_utc_datetime(&utc_now).date_naive();
@@ -42,12 +42,13 @@ pub fn current_indian_financial_year() -> u32 {
 
     start_year as u32
 }
-
+#[allow(dead_code)]
 pub fn current_indian_date() -> NaiveDate {
     let utc_now = Utc::now().naive_utc();
     let current_date = chrono_tz::Asia::Kolkata.from_utc_datetime(&utc_now).date_naive();
     current_date
 }
+#[allow(dead_code)]
 #[derive(Debug,Error)]
 pub enum TenantHeaderError{
     #[error("x-tenant-id header not present in request")]

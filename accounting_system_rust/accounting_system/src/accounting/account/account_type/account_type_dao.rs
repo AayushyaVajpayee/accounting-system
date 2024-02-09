@@ -24,14 +24,7 @@ const BY_ID_QUERY: &str = concatcp!(
     " where id=$1"
 );
 
-const INSERT_STATEMENT: &str = concatcp!(
-    "insert into ",
-    TABLE_NAME,
-    " (",
-    SELECT_FIELDS,
-    ")",
-    " values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id"
-);
+
 const ALL_TYPES_FOR_TENANT: &str = concatcp!(
     "select ",
     SELECT_FIELDS,
@@ -154,7 +147,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
         account_types
     }
 }
-
+#[allow(dead_code)]
 pub fn get_account_type_dao(pool: Arc<Pool>) -> Arc<dyn AccountTypeDao> {
     let dao = AccountTypeDaoPostgresImpl {
         postgres_client: pool,

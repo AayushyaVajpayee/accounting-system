@@ -17,7 +17,6 @@ const TABLE_NAME: &str = "currency_master";
 
 const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1 and tenant_id=$2");
 
-const INSERT_STATEMENT: &str = concatcp!("insert into ",TABLE_NAME," (",SELECT_FIELDS,")"," values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id");
 
 #[async_trait]
 pub trait CurrencyDao: Send + Sync {
@@ -43,7 +42,7 @@ impl TryFrom<&Row> for CurrencyMaster {
         })
     }
 }
-
+#[allow(dead_code)]
 pub fn get_currency_dao(client: Arc<Pool>) -> Arc<dyn CurrencyDao> {
     let currency_dao = CurrencyDaoPostgresImpl {
         postgres_client: client

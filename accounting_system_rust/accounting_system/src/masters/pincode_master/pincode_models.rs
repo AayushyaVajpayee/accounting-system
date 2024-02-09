@@ -27,7 +27,7 @@ impl Pincode {
             CountryEnum::India => {
                 let pincode = pincode
                     .parse::<u32>()
-                    .map_err(|a| "india pincode has to be numeric")?;
+                    .map_err(|_| "india pincode has to be numeric")?;
                 if !(100000..=999999).contains(&pincode) {
                     return Err("pincode should be 6 digits only");
                 }

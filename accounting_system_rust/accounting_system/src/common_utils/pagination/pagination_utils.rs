@@ -13,7 +13,7 @@ use validator::Validate;
 
 use crate::common_utils::pagination::constants::{CURRENT_PAGE, LINKS, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};
 use crate::common_utils::pagination::pagination_utils::MiddlewareErrorEnum::PaginationHeaderMissing;
-
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum MiddlewareErrorEnum {
     #[error("pagination header {0} is missing in response")]
@@ -67,7 +67,7 @@ pub struct PaginationMetadata {
     pub total_count: u32,
 }
 
-
+#[allow(dead_code)]
 pub fn set_pagination_headers(header_map: &mut HeaderMap, pagination_metadata: &PaginationMetadata) {
     let total_key = HeaderName::from_static(TOTAL_COUNT);
     let total_value = HeaderValue::from(pagination_metadata.total_count);
@@ -82,14 +82,14 @@ pub fn set_pagination_headers(header_map: &mut HeaderMap, pagination_metadata: &
     header_map.insert(curr_key, curr_value);
     header_map.insert(total_pages_key, total_pages_value);
 }
-
+#[allow(dead_code)]
 pub fn generate_api_link_header(base_url: &str, page: u32, per_page: u32, total_count: u32) -> String {
     let links = generate_links(base_url, page, per_page, total_count);
     let link_header = links.iter().map(|(&rel, url)| format!("{}: <{}>", rel, url)).collect::<Vec<_>>().join(", ");
 
     link_header
 }
-
+#[allow(dead_code)]
 fn generate_links(base_url: &str, page: u32, per_page: u32, total_count: u32) -> HashMap<&'static str, String> {
     let mut links = HashMap::new();
 

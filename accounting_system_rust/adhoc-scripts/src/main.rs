@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::{Debug, format};
+use std::fmt::{Debug};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::{NoContext, Timestamp, Uuid};
 
@@ -12,7 +12,7 @@ fn main() {
     // process_ledger_master_seed();
     // process_state_master_seed();
     // process_city_mst_seed();
-    process_pincode_master_seed();
+    process_pincode_master_seed().unwrap();
     println!("Hello, world!");
 }
 
@@ -116,7 +116,7 @@ fn process_account_type_master_seed() -> Result<(), Box<dyn Error>> {
     let mut map: HashMap<String, String> = HashMap::new();
     for rec in account_type_master_reader.records() {
         let string_record = rec?;
-        let mut account_type_master: AccountTypeMaster = string_record.deserialize(None)?;
+        let account_type_master: AccountTypeMaster = string_record.deserialize(None)?;
         let id = account_type_master.id.parse::<i32>()?;
         let timestmp = Timestamp::
         from_unix(NoContext,

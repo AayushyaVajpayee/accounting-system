@@ -40,7 +40,7 @@ mod tests{
                 assert_that!(p).is_some()
                     .matches(|a|**a == *SEED_SUBTITLE_ID.to_string().as_str());
             }
-            SimpleQueryMessage::CommandComplete(a) => {
+            SimpleQueryMessage::CommandComplete(_) => {
                 unreachable!();
             }
             _ =>{unreachable!();}
@@ -72,7 +72,7 @@ mod tests{
                     .await.unwrap();
                 assert_that!(q).is_some();
             }
-            SimpleQueryMessage::CommandComplete(a) => {
+            SimpleQueryMessage::CommandComplete(_) => {
                 unreachable!();
             }
             _ =>{unreachable!();}
