@@ -33,7 +33,7 @@ pub trait CityMasterDao:Send+Sync {
 
     async fn get_city_by_id(&self, id: &Uuid) -> Option<CityMaster>;
 }
-
+#[allow(dead_code)]
 pub fn get_city_master_dao(client: Arc<Pool>) -> Arc<dyn CityMasterDao> {
     let city_master_dao = CityMasterDaoImpl{
         postgres_client:client

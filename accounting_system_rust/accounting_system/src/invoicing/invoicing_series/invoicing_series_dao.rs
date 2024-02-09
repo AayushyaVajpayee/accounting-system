@@ -1,4 +1,3 @@
-use actix_web::ResponseError;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
@@ -42,7 +41,7 @@ impl TryFrom<Row> for InvoicingSeriesMaster {
 struct InvoicingSeriesDaoImpl {
     postgres_client: Arc<Pool>,
 }
-
+#[allow(dead_code)]
 pub fn get_invoicing_series_dao(client: Arc<Pool>) -> Arc<dyn InvoicingSeriesDao> {
     let ad = InvoicingSeriesDaoImpl {
         postgres_client: client

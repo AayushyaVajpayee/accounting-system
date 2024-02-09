@@ -20,7 +20,7 @@ pub struct InvoiceTemplateDaoImpl{
     postgres_client: Arc<Pool>,
 }
 
-
+#[allow(dead_code)]
 pub fn get_invoice_template_dao(client:Arc<Pool>) ->Arc<dyn InvoiceTemplateDao>{
     let a = InvoiceTemplateDaoImpl{
         postgres_client:client

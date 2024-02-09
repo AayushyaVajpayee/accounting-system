@@ -1,8 +1,6 @@
 use anyhow::{Context, ensure};
 use derive_builder::Builder;
-use log::kv::ToKey;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -182,6 +180,7 @@ pub mod tests {
     lazy_static!{
         pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2:Uuid =Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap();
     }
+    #[allow(dead_code)]
     pub fn a_business_entity_master(b: BusinessEntityMasterBuilder) -> BusinessEntityMaster {
         BusinessEntityMaster {
             base_master_fields: b.base_master_fields.unwrap_or_default(),

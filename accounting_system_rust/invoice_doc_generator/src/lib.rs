@@ -12,45 +12,49 @@ pub mod invoice_line1;
 pub mod invoice_line;
 pub mod percentages;
 
-
-pub struct InvoiceHeader{
-    invoice_number:InvoiceNumber,
-    order_number:String,
-    order_date:String,
-    payment_terms:PaymentTerms,
-    supplier_detail:SupplierDetail,
-    customer_detail:CustomerDetail
+#[allow(dead_code)]
+pub struct InvoiceHeader {
+    invoice_number: InvoiceNumber,
+    order_number: String,
+    order_date: String,
+    payment_terms: PaymentTerms,
+    supplier_detail: SupplierDetail,
+    customer_detail: CustomerDetail,
 }
 
-pub struct SupplierDetail{
-    gstin:Option<GstinNo>,
-    address:Address,
+#[allow(dead_code)]
+pub struct SupplierDetail {
+    gstin: Option<GstinNo>,
+    address: Address,
 }
 
-pub struct CustomerDetail{
-    gstin:Option<GstinNo>,
-    billing_address:Address,
-    shipping_address:Address
+#[allow(dead_code)]
+pub struct CustomerDetail {
+    gstin: Option<GstinNo>,
+    billing_address: Address,
+    shipping_address: Address,
 }
 
+#[allow(dead_code)]
 pub struct AdditionalCharge {
     unit_price: Price,
     tax_percent: TaxPercentage,// lets not tax additional charge just show it.
 }
 
-
-pub struct Address{
-    city:String,
-    pincode:String,
-    address_line_1:String,
-    address_line_2:String,
-    address_line_3:String
+#[allow(dead_code)]
+pub struct Address {
+    city: String,
+    pincode: String,
+    address_line_1: String,
+    address_line_2: String,
+    address_line_3: String,
 }
 
-pub struct Invoice{
-    currency_name:String,
-    header:InvoiceHeader,
-    invoice_lines:Vec<InvoiceLine>,
-    additional_charges:Vec<AdditionalCharge>,
+#[allow(dead_code)]
+pub struct Invoice {
+    currency_name: String,
+    header: InvoiceHeader,
+    invoice_lines: Vec<InvoiceLine>,
+    additional_charges: Vec<AdditionalCharge>,
 
 }

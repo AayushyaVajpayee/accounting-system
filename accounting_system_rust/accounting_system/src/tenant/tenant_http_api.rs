@@ -54,7 +54,7 @@ impl ResponseError for TenantServiceError {
                 let err_list = vec![errs.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            TenantServiceError::Other(a) => {
+            TenantServiceError::Other(_) => {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
@@ -68,10 +68,6 @@ setup_routes!(TenantService,
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use actix_web::test;
-
     use crate::get_and_create_api_test;
     use crate::tenant::tenant_http_api::map_endpoints_to_functions;
     use crate::tenant::tenant_models::Tenant;

@@ -8,7 +8,6 @@ use uuid::Uuid;
 
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::pagination::pagination_utils::{PaginatedResponse, PaginationRequest};
-use crate::masters::address_master::address_service::AddressService;
 use crate::masters::company_master::company_unit_master::company_unit_dao::company_unit_dao::CompanyUnitDao;
 use crate::masters::company_master::company_unit_master::company_unit_models::{CompanyUnitMaster, CreateCompanyUnitRequest};
 

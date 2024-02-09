@@ -54,7 +54,7 @@ pub mod tests{
     use crate::accounting::currency::currency_models::{AuditMetadataBase, AuditMetadataBaseBuilder, CreateCurrencyMasterRequest, CreateCurrencyMasterRequestBuilder, CurrencyMaster, CurrencyMasterBuilder};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
-    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
+
 
     lazy_static! {
     pub static ref SEED_CURRENCY_ID:Uuid= Uuid::from_str("018c0bff-4036-7ef8-8383-ae8a38c8ecf1").unwrap();

@@ -106,6 +106,7 @@ pub mod tests {
     lazy_static! {
         pub static ref SEED_ADDRESS_ID:Uuid = Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap();
     }
+    #[allow(dead_code)]
     pub struct AddressBuilder {
         base_master_fields: Option<BaseMasterFields>,
         line_1: Option<AddressLine>,

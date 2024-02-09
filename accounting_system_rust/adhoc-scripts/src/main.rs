@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::{Debug, format};
+use std::fmt::{Debug};
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::{NoContext, Timestamp, Uuid};
 
@@ -12,7 +12,7 @@ fn main() {
     // process_ledger_master_seed();
     // process_state_master_seed();
     // process_city_mst_seed();
-    process_pincode_master_seed();
+    process_pincode_master_seed().unwrap();
     println!("Hello, world!");
 }
 
@@ -41,6 +41,7 @@ struct LedgerMaster {
     created_at: String,
     updated_at: String,
 }
+#[allow(dead_code)]
 
 fn process_currency_master_seed() -> Result<(), Box<dyn Error>> {
     let p1 = std::env::current_dir()?;
@@ -104,6 +105,7 @@ struct Account {
     created_at: String,
     updated_at: String,
 }
+#[allow(dead_code)]
 
 fn process_account_type_master_seed() -> Result<(), Box<dyn Error>> {
     let p1 = std::env::current_dir()?;
@@ -114,7 +116,7 @@ fn process_account_type_master_seed() -> Result<(), Box<dyn Error>> {
     let mut map: HashMap<String, String> = HashMap::new();
     for rec in account_type_master_reader.records() {
         let string_record = rec?;
-        let mut account_type_master: AccountTypeMaster = string_record.deserialize(None)?;
+        let account_type_master: AccountTypeMaster = string_record.deserialize(None)?;
         let id = account_type_master.id.parse::<i32>()?;
         let timestmp = Timestamp::
         from_unix(NoContext,
@@ -155,7 +157,7 @@ fn process_account_type_master_seed() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
-
+#[allow(dead_code)]
 fn parse_child_ids_array_in_seed(array: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let mut array = array.trim();
     if array.is_empty() {
@@ -168,7 +170,7 @@ fn parse_child_ids_array_in_seed(array: &str) -> Result<Vec<String>, Box<dyn Err
         .collect::<Vec<String>>();
     Ok(parsed_ar)
 }
-
+#[allow(dead_code)]
 fn process_ledger_master_seed() -> Result<(), Box<dyn Error>> {
     let curr_path = std::env::current_dir()?;
     let dest_path = curr_path.join("schema/postgres/seed_data/ledger_master.csv");
@@ -224,7 +226,7 @@ struct CityMaster {
     updated_at: String,
     country_id: String,
 }
-
+#[allow(dead_code)]
 fn process_state_master_seed() -> Result<(), Box<dyn Error>> {
     let curr_path = std::env::current_dir()?;
     let seed_path = curr_path.join("schema/postgres/seed_data/state_master.csv");
@@ -263,7 +265,7 @@ struct PincodeMst {
     updated_at: String,
     country_id: String,
 }
-
+#[allow(dead_code)]
 fn process_city_mst_seed() -> Result<(), Box<dyn Error>> {
     let curr_path = std::env::current_dir()?;
     let seed_path = curr_path.join("schema/postgres/seed_data/");
@@ -290,7 +292,7 @@ fn process_city_mst_seed() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
-
+#[allow(dead_code)]
 fn process_pincode_master_seed() -> Result<(), Box<dyn Error>> {
     let curr_dir = std::env::current_dir()?;
     let seed_path = curr_dir.join("schema/postgres/seed_data/");
@@ -304,7 +306,7 @@ fn process_pincode_master_seed() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
-
+#[allow(dead_code)]
 fn get_uuid(id: i32) -> Uuid {
     let timestmp = Timestamp::
     from_unix(NoContext,

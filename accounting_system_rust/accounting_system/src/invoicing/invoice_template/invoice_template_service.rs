@@ -45,7 +45,7 @@ impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
         Ok(k.is_some())
     }
 }
-
+#[allow(dead_code)]
 pub fn get_invoice_template_master_service(arc: Arc<Pool>) -> Arc<dyn InvoiceTemplateService> {
     let dao = get_invoice_template_dao(arc);
     let cache: Cache<(Uuid, Uuid), Arc<InvoiceTemplateMaster>> =

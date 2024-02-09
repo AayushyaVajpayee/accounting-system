@@ -1,7 +1,6 @@
-use actix_web::{HttpResponseBuilder, Responder, ResponseError, Scope, web};
+use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, Query};
-use std::fmt::Display;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -22,7 +21,7 @@ impl ResponseError for CompanyUnitServiceError {
         }
     }
 }
-
+#[allow(dead_code)]
 async fn create_company_unit(
     data: Data<Arc<dyn CompanyUnitService>>,
     request: web::Json<CreateCompanyUnitRequest>,
@@ -30,7 +29,7 @@ async fn create_company_unit(
     let resp = data.create_company_unit(&request).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(resp))
 }
-
+#[allow(dead_code)]
 async fn get_company_unit_by_id(
     data: Data<Arc<dyn CompanyUnitService>>,
     company_unit_id: Path<Uuid>,
@@ -40,7 +39,7 @@ async fn get_company_unit_by_id(
         .await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(resp))
 }
-
+#[allow(dead_code)]
 async fn get_company_units_by_company_id(
     data: Data<Arc<dyn CompanyUnitService>>,
     query: Query<PaginationRequest>,

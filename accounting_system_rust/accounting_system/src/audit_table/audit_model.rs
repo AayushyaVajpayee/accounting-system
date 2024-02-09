@@ -1,6 +1,5 @@
 use serde_json::Value;
-use std::str::FromStr;
-use uuid::{Builder, Uuid};
+use uuid::{ Uuid};
 
 #[derive(Debug)]
 pub struct AuditEntry {

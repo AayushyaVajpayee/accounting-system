@@ -35,7 +35,7 @@ pub trait InvoicingService {
    async fn create_invoice(&self,req: &CreateInvoiceRequest)->Result<Uuid,InvoicingServiceError>;
 }
 
-
+#[allow(dead_code)]
 struct InvoicingServiceImpl {
     dao:Arc<dyn InvoicingDao>,
     tenant_service: Arc<dyn TenantService>,

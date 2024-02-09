@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, Scope, web};
+use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use std::sync::Arc;
@@ -27,6 +27,7 @@ impl ResponseError for CurrencyServiceError {
         }
     }
 }
+
 async fn get_currency_by_id(
     id: Path<Uuid>,
     data: Data<Arc<dyn CurrencyService>>,
@@ -52,8 +53,7 @@ setup_routes!(CurrencyService,"/currency",
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{App, test};
-    use std::sync::Arc;
+    use actix_web::{ test};
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_http_api::map_endpoints_to_functions;

@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, Responder, ResponseError, Scope, web};
+use actix_web::{HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
@@ -44,8 +44,8 @@ setup_routes!(AccountService,
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{App, test};
-    use std::sync::Arc;
+    use actix_web::{ test};
+
     use uuid::Uuid;
 
     use crate::accounting::account::account_http_api::map_endpoints_to_functions;

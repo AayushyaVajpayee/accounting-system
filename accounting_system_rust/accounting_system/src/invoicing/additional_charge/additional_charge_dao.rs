@@ -31,7 +31,7 @@ mod tests {
         call persist_additional_charge({},'{}','{}','{}');
         commit;
         "#,convert_to_db_add_charge_input(&charges),*SEED_INVOICE_ID,*SEED_TENANT_ID,*SEED_USER_ID);
-        let a = postgres_client.get()
+        let _ = postgres_client.get()
             .await.unwrap()
             .simple_query(&query_form)
             .await.unwrap();

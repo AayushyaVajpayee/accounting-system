@@ -1,4 +1,4 @@
-use actix_web::{HttpResponseBuilder, Responder, ResponseError, Scope, web};
+use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use std::sync::Arc;
@@ -34,7 +34,7 @@ setup_routes!(AddressService,"/address",
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{App, test};
+    use actix_web::{ test};
     use uuid::Uuid;
 
     use crate::get_and_create_api_test;

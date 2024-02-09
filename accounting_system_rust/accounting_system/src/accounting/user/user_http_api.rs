@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, Responder, ResponseError, Scope, web};
+use actix_web::{HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -41,9 +41,9 @@ setup_routes!(UserService,"user","/id/{id}",web::get().to(get_user_by_id),"/crea
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{App, test};
+    use actix_web::{ test};
     use std::sync::Arc;
-    use uuid::Uuid;
+    
 
     use crate::accounting::user::user_http_api::map_endpoints_to_functions;
     use crate::accounting::user::user_models::{SEED_USER_ID, User};

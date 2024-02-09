@@ -4,9 +4,8 @@ use moka::future::Cache;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::country_master::country_dao::{CountryMasterDao, get_country_master_dao};
-use crate::masters::country_master::country_model::{CountryEnum, CountryMaster, INDIA_COUNTRY_ID};
+use crate::masters::country_master::country_model::{ CountryMaster};
 
 const CACHE_ALL_KEY: i32 = 1;
 
@@ -21,7 +20,7 @@ struct CountryMasterServiceImpl {
     cache_by_id: Cache<Uuid, Arc<CountryMaster>>,
     cache_all: Cache<i32, Arc<Vec<Arc<CountryMaster>>>>,
 }
-
+#[allow(dead_code)]
 pub fn get_country_master_service(arc: Arc<Pool>) -> Arc<dyn CountryMasterService> {
     let country_master_dao = get_country_master_dao(arc);
     let country_master_service = CountryMasterServiceImpl {

@@ -63,7 +63,7 @@ mod tests {
                assert_that!(p).is_some()
                    .matches(|a|*a==result.as_str());
             }
-            SimpleQueryMessage::CommandComplete(a) => {
+            SimpleQueryMessage::CommandComplete(_) => {
                 unreachable!();
             }
             _ =>{unreachable!();}

@@ -4,7 +4,6 @@ use moka::future::Cache;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::masters::pincode_master::pincode_master_dao::{get_pincode_master_dao, PincodeMasterDao};
 use crate::masters::pincode_master::pincode_models::PincodeMaster;
 
@@ -14,7 +13,7 @@ pub trait PincodeMasterService:Send+Sync {
     async fn get_all_pincodes(&self)->Option<Arc<Vec<Arc<PincodeMaster>>>>;
     async fn get_pincode_by_id(&self, id: &Uuid) -> Option<Arc<PincodeMaster>>;
 }
-
+#[allow(dead_code)]
 pub fn get_pincode_master_service(arc: Arc<Pool>) -> Arc<dyn PincodeMasterService> {
     let pincode_dao = get_pincode_master_dao(arc);
     let cache: Cache<i32, Arc<Vec<Arc<PincodeMaster>>>> = Cache::new(1);

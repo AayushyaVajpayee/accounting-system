@@ -30,7 +30,7 @@ pub struct InvoiceLine {
     pub igst_applicable: bool,
     pub audit_metadata: AuditMetadataBase,
 }
-
+#[allow(dead_code)]
 #[derive(Debug,Builder)]
 struct AdditionalCharge {
     id: Uuid,
@@ -67,7 +67,7 @@ struct Invoice {
     payment_term_id: Option<Uuid>,
     audit_metadata: AuditMetadataBase,
 }
-
+#[allow(dead_code)]
 #[derive(Debug)]
 struct InvoiceTemplate {
     base_master_fields: BaseMasterFields,
@@ -129,7 +129,7 @@ pub mod tests {
             audit_metadata: an_audit_metadata_base(Default::default()),
         }
     }
-
+    #[allow(dead_code)]
     pub fn an_invoice(builder:InvoiceBuilder)->Invoice{
         Invoice{
             base_master_fields: builder.base_master_fields.unwrap_or_else(||a_base_master_field(Default::default())),

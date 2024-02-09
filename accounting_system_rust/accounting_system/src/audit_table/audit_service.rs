@@ -3,7 +3,6 @@ use deadpool_postgres::Pool;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::audit_table::audit_dao::{AuditDao, get_audit_dao};
 use crate::audit_table::audit_model::AuditEntry;
 

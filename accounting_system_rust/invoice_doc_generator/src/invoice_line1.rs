@@ -64,7 +64,7 @@ impl GstinNo {
 
 #[derive(Debug)]
 pub enum PaymentTerms {}
-
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct InvoiceLine {
     line_number: LineNumber,

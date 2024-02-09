@@ -63,7 +63,7 @@ impl PincodeMasterDao for PincodeMasterDaoImpl {
         rows.iter().map(|row| row.try_into().unwrap()).next()
     }
 }
-
+#[allow(dead_code)]
 pub fn get_pincode_master_dao(client: Arc<Pool>) -> Arc<dyn PincodeMasterDao> {
     let pincode_master_dao = PincodeMasterDaoImpl{
         postgres_client:client

@@ -40,7 +40,7 @@ struct BusinessEntityServiceImpl {
     cache_id: Cache<(Uuid, Uuid), Arc<BusinessEntityMaster>>,
 }
 
-
+#[allow(dead_code)]
 pub fn get_business_entity_master(arc: Arc<Pool>) -> Arc<dyn BusinessEntityService> {
     let dao = get_business_entity_dao(arc);
     let cache: Cache<(Uuid, Uuid), Arc<BusinessEntityMaster>> = Cache::builder()

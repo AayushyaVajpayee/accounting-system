@@ -3,7 +3,6 @@ use deadpool_postgres::Pool;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::ledger::ledgermaster::ledger_master_dao::{get_ledger_master_dao, LedgerMasterDao};
 use crate::ledger::ledgermaster::ledger_master_models::{CreateLedgerMasterEntryRequest, LedgerMaster};
 
@@ -28,7 +27,7 @@ impl LedgerMasterService for LedgerMasterServiceImpl {
     }
 }
 
-
+#[allow(dead_code)]
 pub fn get_ledger_master_service(arc: Arc<Pool>) -> Arc<dyn LedgerMasterService> {
     let dao = get_ledger_master_dao(arc);
     let service = LedgerMasterServiceImpl{

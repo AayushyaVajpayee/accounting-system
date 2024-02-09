@@ -1,7 +1,6 @@
 use anyhow::Context;
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
-use itertools::Itertools;
 use std::sync::Arc;
 use tracing::instrument;
 use uuid::Uuid;
@@ -19,7 +18,7 @@ use crate::masters::company_master::dao::queries_and_constants::{GET_BY_ID, SOFT
 struct CompanyMasterDaoPostgresImpl {
     postgres_client: Arc<Pool>,
 }
-
+#[allow(dead_code)]
 pub fn get_company_master_dao(pool: Arc<Pool>) -> Arc<dyn CompanyMasterDao> {
     let dao = CompanyMasterDaoPostgresImpl {
         postgres_client: pool,
@@ -178,7 +177,7 @@ mod tests {
             pg_pool.get().await.unwrap().simple_query("delete from company_master").await.unwrap();
         }
         let company_master_dao = CompanyMasterDaoPostgresImpl { postgres_client: pg_pool };
-        for i in 0..20 {
+        for _i in 0..20 {
             let k = a_create_company_request(Default::default());
             let p = k.to_company_master().unwrap();
             company_master_dao.create_new_company_for_tenant(&p, &k.idempotence_key).await.unwrap();//todo create batch api

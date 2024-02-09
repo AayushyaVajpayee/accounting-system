@@ -21,7 +21,7 @@ pub struct Database {
 pub struct Setting {
     pub db: Database,
 }
-
+#[allow(dead_code)]
 pub fn get_dev_conf() -> Setting {
     let p = Environment::with_prefix("POSTGRES").prefix_separator("_");
     let vars = p.collect().unwrap();

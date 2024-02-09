@@ -101,6 +101,7 @@ impl DiscountDays {
         ensure!(value>=0,"discount days cannot be less than 0");
         Ok(DiscountDays(value as u16))
     }
+    #[allow(dead_code)]
     pub fn inner(&self) -> u16 {
         self.0
     }
@@ -124,6 +125,7 @@ impl DueDays {
         ensure!(value<=400,"due days cannot be more than 400");
         Ok(DueDays(value as u16))
     }
+    #[allow(dead_code)]
     pub fn inner(&self) -> u16 {
         self.0
     }
@@ -177,6 +179,7 @@ impl PurchaseOrderDate {
     pub fn from_date(date: NaiveDate) -> anyhow::Result<Self> {
         Ok(PurchaseOrderDate(date))
     }
+    #[allow(dead_code)]
     pub fn get_date(&self) -> &NaiveDate {
         &self.0
     }

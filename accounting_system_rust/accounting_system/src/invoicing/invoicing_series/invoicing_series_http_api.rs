@@ -1,7 +1,6 @@
 use actix_web::{HttpRequest, HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
-use std::fmt::Display;
 use std::sync::Arc;
 use uuid::Uuid;
 use crate::common_utils::utils::extract_tenant_id_from_header;

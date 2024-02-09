@@ -40,6 +40,7 @@ impl AccountService for AccountServiceImpl {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_account_service(arc: Arc<Pool>) -> Arc<dyn AccountService> {
     let dao = get_account_dao(arc);
     let service = AccountServiceImpl { account_dao: dao };

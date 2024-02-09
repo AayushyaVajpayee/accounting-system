@@ -40,7 +40,7 @@ impl TryFrom<&Row> for CountryMaster {
         })
     }
 }
-
+#[allow(dead_code)]
 pub fn get_country_master_dao(client: Arc<Pool>) -> Arc<dyn CountryMasterDao> {
     let country_master_dao = CountryMasterDaoPostgresImpl{
         postgres_client:client

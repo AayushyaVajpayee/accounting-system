@@ -6,17 +6,17 @@ use crate::percentages::tax_discount_cess::TaxPercentageError::NotInBounds;
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "i32")]
-pub struct GSTPercentage(u16);
+pub struct GSTPercentage(f32);
 
 impl GSTPercentage {
     pub fn new(value: i32) -> anyhow::Result<Self> {
         match value {
-            0 | 3 | 5 | 12 | 18 | 28 => Ok(GSTPercentage(value as u16)),
+            0 | 3 | 5 | 12 | 18 | 28 => Ok(GSTPercentage(value as f32)),
             _ => { bail!("gst tax ({})% not supported",value) }
         }
     }
 
-    pub fn inner(&self)->u16{
+    pub fn inner(&self)->f32{
         self.0
     }
 }
