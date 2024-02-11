@@ -13,6 +13,7 @@ use crate::accounting::postgres_factory::get_postgres_conn_pool;
 use crate::accounting::user::user_service::get_user_service;
 use crate::audit_table::audit_service::get_audit_service;
 use crate::common_utils::pagination::pagination_utils::pagination_header_middleware;
+use crate::common_utils::utils::tenant_user_header_middleware;
 use crate::ledger::ledger_transfer_service::get_ledger_transfer_service;
 use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service;
 use crate::masters::city_master::city_master_service::get_city_master_service;
@@ -91,6 +92,9 @@ async fn main() -> io::Result<()> {
     println!("{}", std::process::id());
     HttpServer::new(move || {
         App::new()
+            .app_data(tenant_service.clone())
+            .app_data(user_service.clone())
+            .wrap(from_fn(tenant_user_header_middleware))
             .wrap(from_fn(pagination_header_middleware))
             .wrap(Logger::default())
             .configure(|conf| audit_table::audit_table_http_api::init_routes(conf, audit_table_service.clone()))

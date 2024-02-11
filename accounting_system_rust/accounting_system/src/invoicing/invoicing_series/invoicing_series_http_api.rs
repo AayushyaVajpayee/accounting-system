@@ -1,9 +1,9 @@
-use actix_web::{HttpRequest, HttpResponseBuilder, Responder, ResponseError, web};
+use actix_web::{ HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::common_utils::utils::extract_tenant_id_from_header;
+use crate::common_utils::utils::{ TenantId};
 
 use crate::invoicing::invoicing_series::invoicing_series_models::CreateInvoiceNumberSeriesRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::{InvoicingSeriesService, InvoicingSeriesServiceError};
@@ -24,11 +24,12 @@ async fn create_invoice_series(data: Data<Arc<dyn InvoicingSeriesService>>,
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
-async fn get_invoice_series(data: Data<Arc<dyn InvoicingSeriesService>>, invoicing_series_id: Path<Uuid>,
-                            req: HttpRequest) -> actix_web::Result<impl Responder> {
-    let tenant_id = extract_tenant_id_from_header(&req)?;
+async fn get_invoice_series(data: Data<Arc<dyn InvoicingSeriesService>>,
+                            invoicing_series_id: Path<Uuid>,
+                            tenant_id:TenantId
+                            ) -> actix_web::Result<impl Responder> {
     let ap = data
-        .get_invoicing_series_by_id(invoicing_series_id.into_inner(), tenant_id).await?;
+        .get_invoicing_series_by_id(invoicing_series_id.into_inner(), tenant_id.inner()).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 

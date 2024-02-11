@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use actix_web::{HttpRequest, HttpResponseBuilder, Responder, ResponseError, web};
+use actix_web::{ HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use uuid::Uuid;
 
-use crate::common_utils::utils::extract_tenant_id_from_header;
+use crate::common_utils::utils::{ TenantId};
 use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequest;
 use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, BusinessEntityServiceError};
 use crate::setup_routes;
@@ -17,15 +17,21 @@ impl ResponseError for BusinessEntityServiceError {
         }
     }
 }
+
 #[allow(dead_code)]
 async fn create_business_entity_master(data: Data<Arc<dyn BusinessEntityService>>, request: web::Json<CreateBusinessEntityRequest>) -> actix_web::Result<impl Responder> {
     let ap = data.create_business_entity(&request).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
+
 #[allow(dead_code)]
-async fn get_business_entity_master_by_id(data: Data<Arc<dyn BusinessEntityService>>, business_entity_id: Path<Uuid>, req: HttpRequest) -> actix_web::Result<impl Responder> {
-    let tenant_id =extract_tenant_id_from_header(&req)?;
-    let pd = data.get_business_entity_by_id(&business_entity_id, &tenant_id).await?;
+async fn get_business_entity_master_by_id(data: Data<Arc<dyn BusinessEntityService>>,
+                                          business_entity_id: Path<Uuid>,
+                                          tenant_id: TenantId,
+) -> actix_web::Result<impl Responder> {
+    let pd = data.get_business_entity_by_id(&business_entity_id,
+                                            &tenant_id.inner())
+        .await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(pd))
 }
 setup_routes!(BusinessEntityService,"/business-entity",
