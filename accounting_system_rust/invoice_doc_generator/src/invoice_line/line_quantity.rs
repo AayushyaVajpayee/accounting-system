@@ -40,6 +40,9 @@ impl LineQuantity {
     pub fn get_quantity(&self)->f64{
         self.quantity
     }
+    pub fn uom_as_str(&self)->&str{
+        self.uom.as_str()
+    }
 }
 
 impl TryFrom<LineQuantityRaw> for LineQuantity {

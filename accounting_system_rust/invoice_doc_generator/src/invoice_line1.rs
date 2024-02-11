@@ -28,6 +28,20 @@ pub enum UOM {
     Box,
 }
 
+impl UOM{
+    pub fn as_str(&self)->&str{
+        match self {
+            UOM::MilliLitre => {"MilliLitre"}
+            UOM::Litre => {"Litre"}
+            UOM::Gram => {"Gram"}
+            UOM::KiloGram => {"KiloGram"}
+            UOM::Quintal => {"Quintal"}
+            UOM::Piece => {"Piece"}
+            UOM::Box => {"Box"}
+        }
+    }
+}
+
 impl TryFrom<String> for UOM {
     type Error = anyhow::Error;
 
