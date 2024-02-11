@@ -25,6 +25,9 @@ impl LineSubtitle {
         }
         Ok(Self(subtitle.to_string()))
     }
+    pub fn inner(&self)->&str{
+        self.0.as_str()
+    }
 }
 
 impl TryFrom<String> for LineSubtitle {
