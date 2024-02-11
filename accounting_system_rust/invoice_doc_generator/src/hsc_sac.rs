@@ -13,6 +13,14 @@ pub enum GstItemCode {
     HsnCode(Hsn),
     SacCode(Sac),
 }
+impl GstItemCode{
+    pub fn as_str(&self)->&str{
+        match self {
+            GstItemCode::HsnCode(a) => {a.0.as_str()}
+            GstItemCode::SacCode(a) => {a.0.as_str()}
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
 #[serde(try_from = "String")]
