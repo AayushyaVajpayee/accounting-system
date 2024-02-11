@@ -1,5 +1,5 @@
 use anyhow::{Context, ensure};
-use chrono::NaiveDate;
+use chrono::{NaiveDate};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -153,6 +153,9 @@ impl PurchaseOrderNo {
         );
         Ok(PurchaseOrderNo(value.to_owned()))
     }
+    pub fn inner(&self)->&str{
+        self.0.as_str()
+    }
 }
 
 impl TryFrom<String> for PurchaseOrderNo {
@@ -179,9 +182,12 @@ impl PurchaseOrderDate {
     pub fn from_date(date: NaiveDate) -> anyhow::Result<Self> {
         Ok(PurchaseOrderDate(date))
     }
-    #[allow(dead_code)]
     pub fn get_date(&self) -> &NaiveDate {
         &self.0
+    }
+    pub fn epoch_millis(&self) ->Option<i64>{
+       return self.0.and_hms_milli_opt(0, 0, 0, 0)
+            .map(|a| a.timestamp_millis())
     }
 }
 
@@ -205,6 +211,9 @@ impl BatchNo {
         ensure!(value.chars().all(|a|a.is_ascii_alphanumeric()),"batch no can only contain alphanumeric characters");
         Ok(Self(value.to_owned()))
     }
+    pub fn inner(&self) -> &str {
+        self.inner()
+    }
 }
 
 impl TryFrom<String> for BatchNo {
@@ -222,6 +231,10 @@ impl ExpiryDateMs {
     pub fn new(value: String) -> anyhow::Result<Self> {
         let p = NaiveDate::parse_from_str(value.as_str(), "%Y-%m-%d").context("")?;
         Ok(ExpiryDateMs(p))
+    }
+    pub fn epoch_millis(&self) -> Option<i64> {
+        self.0.and_hms_milli_opt(0, 0, 0, 0)
+            .map(|a| a.timestamp_millis())
     }
 }
 
