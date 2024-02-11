@@ -94,7 +94,7 @@ impl CompanyMasterServiceImpl {
             .tenant_service
             .get_tenant_by_id(request.tenant_id)
             .await?;
-        let user = self.user_service.get_user_by_id(request.created_by).await?;
+        let user = self.user_service.get_user_by_id(request.created_by,request.tenant_id).await?;
         let company_name = CompanyName::validate(request.name.as_str());
         let cin = CompanyIdentificationNumber::validate(request.cin.as_str());
         if tenant.is_none() {
@@ -223,7 +223,7 @@ pub mod tests {
             .once();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Ok(Some(a_user(Default::default()))))
+            .returning(|_a,_| Ok(Some(a_user(Default::default()))))
             .once();
         let  company_service = CompanyMasterServiceImpl {
             dao: Arc::new(dao),
@@ -245,7 +245,7 @@ pub mod tests {
     async fn test_user_not_found_validation() {
         let mut user_service = MockUserService::new();
         let mut tenant_service = MockTenantService::new();
-        user_service.expect_get_user_by_id().returning(|_a| Ok(None));
+        user_service.expect_get_user_by_id().returning(|_a,_| Ok(None));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|a| Ok(Some(a_tenant(Default::default()))));
@@ -275,7 +275,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Ok(Some(a_user(Default::default()))));
+            .returning(|_a,_| Ok(Some(a_user(Default::default()))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(None));
@@ -308,7 +308,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a| Ok(Some(a_user(Default::default()))));
+            .returning(|_a,_| Ok(Some(a_user(Default::default()))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(Some(a_tenant(Default::default()))));

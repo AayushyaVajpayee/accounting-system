@@ -152,7 +152,7 @@ pub async fn tenant_user_header_middleware(
     let _tenant =tenant_service.get_tenant_by_id(tenant_id.0)
         .await?
         .ok_or(TenantIdHeaderError::NotInDb)?;
-    let _user=user_service.get_user_by_id(user_id.0)
+    let _user=user_service.get_user_by_id(user_id.0,tenant_id.inner())
         .await?
         .ok_or(UserIdHeaderError::NotInDb)?;
     // pre-processing

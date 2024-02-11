@@ -18,7 +18,7 @@ pub enum UserServiceError {
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UserService:Send+Sync {
-    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, UserServiceError>;
+    async fn get_user_by_id(&self, id: Uuid,tenant_id:Uuid) -> Result<Option<User>, UserServiceError>;
     async fn create_user(&self, user: &CreateUserRequest) -> Result<Uuid, UserServiceError>;
 }
 
@@ -47,9 +47,9 @@ struct UserServiceImpl {
 
 #[async_trait]
 impl UserService for UserServiceImpl {
-    async fn get_user_by_id(&self, id: Uuid) -> Result<Option<User>, UserServiceError> {
+    async fn get_user_by_id(&self, id: Uuid,tenant_id:Uuid) -> Result<Option<User>, UserServiceError> {
         //todo to be cached locally
-        self.user_dao.get_user_by_id(&id).await.map_err(|a| a.into())
+        self.user_dao.get_user_by_id(id,tenant_id).await.map_err(|a| a.into())
     }
 
     async fn create_user(&self, user: &CreateUserRequest) -> Result<Uuid, UserServiceError> {

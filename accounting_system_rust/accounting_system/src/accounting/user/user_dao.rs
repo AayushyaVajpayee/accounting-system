@@ -12,12 +12,12 @@ use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid
 
 const SELECT_FIELDS: &str = "id,tenant_id,first_name,last_name,email_id,mobile_number,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "app_user";
-const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
+const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1 and tenant_id=$2");
 
 
 #[async_trait]
 pub trait UserDao: Send + Sync {
-    async fn get_user_by_id(&self, id: &Uuid) -> Result<Option<User>, DaoError>;
+    async fn get_user_by_id(&self, id: Uuid,tenant_id: Uuid) -> Result<Option<User>, DaoError>;
     async fn create_user(&self, request: &CreateUserRequest) -> Result<Uuid, DaoError>;
 }
 
@@ -57,11 +57,11 @@ pub fn get_user_dao(client: Arc<Pool>) -> Arc<dyn UserDao> {
 
 #[async_trait]
 impl UserDao for UserDaoPostgresImpl {
-    async fn get_user_by_id(&self, id: &Uuid) -> Result<Option<User>, DaoError> {
+    async fn get_user_by_id(&self, id: Uuid, tenant_id:Uuid) -> Result<Option<User>, DaoError> {
         let rows = self.postgres_client.get()
             .await?
             .query(BY_ID_QUERY,
-                   &[&id]).await?;
+                   &[&id,&tenant_id]).await?;
         rows.iter().map(|row|
             row.try_into()
         ).next().transpose()
@@ -119,7 +119,7 @@ mod tests {
         let postgres_client = get_postgres_conn_pool(port, None).await;
         let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let user_id = user_dao.create_user(&user).await.unwrap();
-        let user = user_dao.get_user_by_id(&user_id).await.unwrap().unwrap();
+        let user = user_dao.get_user_by_id(user_id,*SEED_TENANT_ID).await.unwrap().unwrap();
         assert_eq!(user.id, user_id);
     }
 
@@ -131,7 +131,7 @@ mod tests {
         let user_request = a_create_user_request(Default::default());
         let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = user_dao.create_user(&user_request).await.unwrap();
-        let acc = user_dao.get_user_by_id(&id).await.unwrap();
+        let acc = user_dao.get_user_by_id(id,*SEED_TENANT_ID).await.unwrap();
         assert_that!(acc).is_some();
     }
 

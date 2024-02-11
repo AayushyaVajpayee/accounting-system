@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::accounting::user::user_models::CreateUserRequest;
 use crate::accounting::user::user_service::{UserService, UserServiceError};
+use crate::common_utils::utils::TenantId;
 use crate::setup_routes;
 
 impl ResponseError for UserServiceError {
@@ -25,8 +26,8 @@ impl ResponseError for UserServiceError {
     }
 }
 
-async fn get_user_by_id(id: web::Path<Uuid>, data: web::Data<Arc<dyn UserService>>) -> actix_web::Result<impl Responder> {
-    let p = data.get_user_by_id(id.into_inner()).await?;
+async fn get_user_by_id(id: web::Path<Uuid>, data: Data<Arc<dyn UserService>>,tenant_id:TenantId) -> actix_web::Result<impl Responder> {
+    let p = data.get_user_by_id(id.into_inner(),tenant_id.inner()).await?;
     Ok(web::Json(p))
 }
 
@@ -47,13 +48,14 @@ mod tests {
     use crate::accounting::user::user_models::{SEED_USER_ID, User};
     use crate::accounting::user::user_models::tests::{a_create_user_request, a_user, UserTestDataBuilder};
     use crate::accounting::user::user_service::{MockUserService, UserService};
-    use crate::get_and_create_api_test;
+    use crate::{ get_and_create_api_test_v2};
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_api() {
         let closure= ||{
             let mut mocked = MockUserService::new();
-            mocked.expect_get_user_by_id().returning(|_| Ok(Some(a_user(
+            mocked.expect_get_user_by_id().returning(|_,_| Ok(Some(a_user(
                 UserTestDataBuilder { id: Some(Default::default()), ..Default::default() }
             ))));
             mocked.expect_create_user().returning(|_| Ok(Default::default()));
@@ -64,6 +66,7 @@ mod tests {
         let exp_user = a_user(
             UserTestDataBuilder { id: Some(Default::default()), ..Default::default() }
         );
-        get_and_create_api_test!(User,UserService,closure,get_uri,"/user/create",a_create_user_request(Default::default()),exp_user);
+        get_and_create_api_test_v2!(User,UserService,closure,get_uri,"/user/create",a_create_user_request(Default::default()),exp_user,*SEED_TENANT_ID);
+
     }
 }
