@@ -217,7 +217,7 @@ pub mod tests {
             .once();
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|_a| Ok(Some(a_tenant(Default::default()))))
+            .returning(|_a| Ok(Some(Arc::new(a_tenant(Default::default())))))
             .once();
         user_service
             .expect_get_user_by_id()
@@ -246,7 +246,7 @@ pub mod tests {
         user_service.expect_get_user_by_id().returning(|_a,_| Ok(None));
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|a| Ok(Some(a_tenant(Default::default()))));
+            .returning(|a| Ok(Some(Arc::new(a_tenant(Default::default())))));
         let company_request = a_create_company_request(Default::default());
         let user_service: Arc<dyn UserService> = Arc::new(user_service);
         let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);
@@ -309,7 +309,7 @@ pub mod tests {
             .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))));
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|_a| Ok(Some(a_tenant(Default::default()))));
+            .returning(|_a| Ok(Some(Arc::new(a_tenant(Default::default())))));
         let company_request = a_create_company_request(CreateCompanyRequestBuilder {
             name,
             cin,
