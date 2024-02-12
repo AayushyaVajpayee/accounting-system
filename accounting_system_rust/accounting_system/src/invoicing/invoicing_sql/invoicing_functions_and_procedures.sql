@@ -22,8 +22,7 @@ create type create_invoice_line_request as
     mrp                 real,
     batch_no            text,
     expiry_date_ms      bigint,
-    line_net_total      double precision,
-    igst_applicable     bool
+    line_net_total      double precision
 );
 
 
@@ -52,6 +51,7 @@ create type create_invoice_request as
     total_additional_charges_amount double precision,
     round_off                       double precision,
     total_payable_amount            double precision,
+    igst_applicable     bool,
     created_by                      uuid
 );
 
