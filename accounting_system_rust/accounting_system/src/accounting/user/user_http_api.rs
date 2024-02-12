@@ -55,9 +55,9 @@ mod tests {
     async fn test_api() {
         let closure= ||{
             let mut mocked = MockUserService::new();
-            mocked.expect_get_user_by_id().returning(|_,_| Ok(Some(a_user(
+            mocked.expect_get_user_by_id().returning(|_,_| Ok(Some(Arc::new(a_user(
                 UserTestDataBuilder { id: Some(Default::default()), ..Default::default() }
-            ))));
+            )))));
             mocked.expect_create_user().returning(|_| Ok(Default::default()));
             mocked
         };

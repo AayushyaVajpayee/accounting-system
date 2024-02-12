@@ -168,9 +168,7 @@ pub mod tests {
         get_postgres_conn_pool, get_postgres_image_port,
     };
     use crate::accounting::user::user_models::tests::a_user;
-    use crate::accounting::user::user_service::{
-        get_user_service_for_test, MockUserService, UserService,
-    };
+    use crate::accounting::user::user_service::{get_user_service, MockUserService, UserService};
     use crate::common_utils::dao_error::DaoError;
     use crate::masters::company_master::company_master_request_response::tests::{
         a_create_company_request, CreateCompanyRequestBuilder,
@@ -187,7 +185,7 @@ pub mod tests {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
         let tenant_service = get_tenant_service(postgres_client.clone());
-        let user_service = get_user_service_for_test(postgres_client.clone());
+        let user_service = get_user_service(postgres_client.clone());
         let dao = get_company_master_dao(postgres_client.clone());
         let service = CompanyMasterServiceImpl {
             dao,
@@ -223,7 +221,7 @@ pub mod tests {
             .once();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a,_| Ok(Some(a_user(Default::default()))))
+            .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))))
             .once();
         let  company_service = CompanyMasterServiceImpl {
             dao: Arc::new(dao),
@@ -275,7 +273,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a,_| Ok(Some(a_user(Default::default()))));
+            .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(None));
@@ -308,7 +306,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a,_| Ok(Some(a_user(Default::default()))));
+            .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(Some(a_tenant(Default::default()))));
