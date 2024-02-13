@@ -27,7 +27,6 @@ pub struct InvoiceLine {
     pub mrp: Option<Price>,
     pub batch_no: Option<BatchNo>,
     pub expiry_date_ms: Option<ExpiryDateMs>,
-    pub igst_applicable: bool,
     pub audit_metadata: AuditMetadataBase,
 }
 #[allow(dead_code)]
@@ -62,6 +61,7 @@ struct Invoice {
     total_tax_amount: f64,
     round_off: f64,
     total_payable_amount: f64,
+    igst_applicable:bool,
     invoice_pdf_s3_id: Option<Uuid>,
     invoice_template_id: Option<Uuid>,
     payment_term_id: Option<Uuid>,
@@ -113,7 +113,6 @@ pub mod tests {
             mrp: None,
             batch_no: None,
             expiry_date_ms: None,
-            igst_applicable: false,
             audit_metadata: an_audit_metadata_base(Default::default()),
         }
     }
@@ -154,6 +153,7 @@ pub mod tests {
             invoice_template_id: builder.invoice_template_id.flatten(),
             payment_term_id: builder.payment_term_id.flatten(),
             audit_metadata: builder.audit_metadata.unwrap_or(an_audit_metadata_base(Default::default())),
+            igst_applicable: builder.igst_applicable.unwrap_or(false)
         }
     }
 }
