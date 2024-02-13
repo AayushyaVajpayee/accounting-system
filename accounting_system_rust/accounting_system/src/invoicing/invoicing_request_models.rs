@@ -1,5 +1,5 @@
 use anyhow::{Context, ensure};
-use chrono::{NaiveDate};
+use chrono::NaiveDate;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -14,7 +14,6 @@ use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, Disc
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateInvoiceRequest {
     pub idempotence_key: Uuid,
-    pub tenant_id: Uuid,
     pub invoice_template_id: Uuid,
     pub invoicing_series_mst_id: Uuid,
     pub currency_id: Uuid,
@@ -264,7 +263,6 @@ pub mod tests {
     use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
-    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
         pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
@@ -273,7 +271,6 @@ pub mod tests {
     pub fn a_create_invoice_request(builder: CreateInvoiceRequestBuilder) -> CreateInvoiceRequest {
         CreateInvoiceRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             invoice_template_id: builder.invoice_template_id.unwrap_or(*SEED_INVOICE_TEMPLATE_ID),
             invoicing_series_mst_id: builder.invoicing_series_mst_id.unwrap_or(*SEED_INVOICING_SERIES_MST_ID),
             currency_id: builder.currency_id.unwrap_or(*SEED_CURRENCY_ID),

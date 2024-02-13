@@ -120,11 +120,12 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequest, line_no: i16) -> a
     })
 }
 
-fn convert_to_invoice_db(req:&CreateInvoiceRequest,currency_scale:u32,igst_applicable:bool,created_by:Uuid)->anyhow::Result<InvoiceDb>{
+pub fn convert_to_invoice_db(req:&CreateInvoiceRequest,currency_scale:i16,igst_applicable:bool,
+                             created_by:Uuid,tenant_id:Uuid)->anyhow::Result<InvoiceDb>{
     let date = chrono::Utc::now().naive_utc();
     Ok(InvoiceDb{
         idempotence_key: req.idempotence_key,
-        tenant_id: req.tenant_id,
+        tenant_id,
         invoice_template_id: req.invoice_template_id,
         invoicing_series_mst_id: req.invoicing_series_mst_id,
         invoice_date_ms: chrono_tz::Asia::Kolkata.from_utc_datetime(&date)

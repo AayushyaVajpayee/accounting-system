@@ -83,13 +83,13 @@ impl CreateInvoiceRequest {
             .fold_ok(0.0, Add::add)
     }
 
-    pub fn total_amount(&self,scale:u32) -> anyhow::Result<f64> {
+    pub fn total_amount(&self,scale:i16) -> anyhow::Result<f64> {
         ensure!(scale<=7,"only scale less than {},is supported but was {}",7,scale);
         let amt = self.total_taxable_amount()?
             + self.total_tax_amount()?
             + self.total_cess_amount()?
             + self.total_additional_charge_amount();
-        let s = 10_i32.pow(scale) as f64;
+        let s = 10_i32.pow(scale as u32) as f64;
         let rounded_amt =(amt*s).round()/s;
         Ok(rounded_amt)
     }

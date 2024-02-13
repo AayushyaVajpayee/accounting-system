@@ -15,9 +15,11 @@ use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::current_indian_date;
 use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
 use crate::invoicing::invoicing_dao::InvoicingDao;
+use crate::invoicing::invoicing_dao_models::convert_to_invoice_db;
 use crate::invoicing::invoicing_request_models::CreateInvoiceRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
+use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 use crate::tenant::tenant_service::TenantService;
 
 #[derive(Debug, Error)]
@@ -32,12 +34,12 @@ pub enum InvoicingServiceError {
 
 #[async_trait]
 pub trait InvoicingService {
-   async fn create_invoice(&self,req: &CreateInvoiceRequest)->Result<Uuid,InvoicingServiceError>;
+    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError>;
 }
 
 #[allow(dead_code)]
 struct InvoicingServiceImpl {
-    dao:Arc<dyn InvoicingDao>,
+    dao: Arc<dyn InvoicingDao>,
     tenant_service: Arc<dyn TenantService>,
     currency_service: Arc<dyn CurrencyService>,
     invoicing_series_service: Arc<dyn InvoicingSeriesService>,
@@ -46,13 +48,13 @@ struct InvoicingServiceImpl {
 }
 
 impl InvoicingServiceImpl {
-    async fn validate_create_invoice_request(&self, req: &CreateInvoiceRequest) -> Result<(), InvoicingServiceError> {
+    async fn validate_create_invoice_request(&self, req: &CreateInvoiceRequest, tenant_id: Uuid) -> Result<(), InvoicingServiceError> {
         let mut errors: Vec<String> = vec![];
         Self::validate_invoice_lines(req, &mut errors);
         Self::validate_order_date(req, &mut errors);
         Self::validate_invoice_bill_ship_detail(req, &mut errors);
         Self::validate_invoice_lines_gst_codes(req, &mut errors);
-        self.validate_ids(req, &mut errors).await?;
+        self.validate_ids(req, tenant_id, &mut errors).await?;
         if !errors.is_empty() {
             Err(InvoicingServiceError::Validation(errors))
         } else {
@@ -108,9 +110,10 @@ impl InvoicingServiceImpl {
         }
     }
 
-    async fn validate_ids(&self, req: &CreateInvoiceRequest,
+    async fn validate_ids(&self, req: &CreateInvoiceRequest, tenant_id: Uuid,
                           errors: &mut Vec<String>)
-                          -> Result<(), InvoicingServiceError> {
+                          -> Result<(), InvoicingServiceError>
+    {
         async fn wrap<T: Error + Send + Sync + 'static>(fetch_block: impl Future<Output=Result<bool, T>>, err_msg: &str, errors: &mut Vec<String>) -> anyhow::Result<()> {
             let valid = fetch_block.await.context("error during id validation")?;
             if !valid {
@@ -118,43 +121,82 @@ impl InvoicingServiceImpl {
             }
             Ok(())
         }
-        wrap(async {
-            self
-                .tenant_service.get_tenant_by_id(req.tenant_id).await
-                .map(|a| a.is_some())
-        }, "tenant id is not valid", errors).await?;
+
         wrap(async {
             self.currency_service
-                .get_currency_entry(req.currency_id, req.tenant_id).await
+                .get_currency_entry(req.currency_id, tenant_id).await
                 .map(|a| a.is_some())
         }, "currency id does not exists for this tenant id", errors).await?;
         wrap(
             self.business_entity_service
-                .is_valid_business_entity_id(&req.supplier_id, &req.tenant_id)
+                .is_valid_business_entity_id(&req.supplier_id, &tenant_id)
             , "supplier id does not exists for this tenant id", errors).await?;
 
         if let Some(bill_ship) = req.bill_ship_detail.as_ref() {
             wrap(self.business_entity_service
-                     .is_valid_business_entity_id(&bill_ship.billed_to_customer_id, &req.tenant_id),
+                     .is_valid_business_entity_id(&bill_ship.billed_to_customer_id, &tenant_id),
                  "bill_to_id does not exists for this tenant id", errors).await?;
             wrap(
                 self.business_entity_service
-                    .is_valid_business_entity_id(&bill_ship.shipped_to_customer_id, &req.tenant_id),
+                    .is_valid_business_entity_id(&bill_ship.shipped_to_customer_id, &tenant_id),
                 "ship_to_id does not exists for this tenant id", errors,
             ).await?;
         }
         wrap(
             self.invoice_template_service
-                .is_valid_template_id(req.invoice_template_id, req.tenant_id),
+                .is_valid_template_id(req.invoice_template_id, tenant_id),
             "invoice template id does not exists for this tenant id", errors,
         ).await?;
         Ok(())
     }
+
+    async fn igst_applicable(&self, supplier_id: Uuid, bill_to_id: Option<Uuid>, tenant_id: Uuid)
+                             -> anyhow::Result<bool> {
+        return if let Some(bill_to_id) = bill_to_id {
+            let supplier =
+                self.business_entity_service
+                    .get_business_entity_by_id(&supplier_id, &tenant_id).await
+                    .context("supplier fetch get_business_entity_by_id failed")?
+                    .with_context(|| format!("business entity id not found for id:{}", supplier_id))?;
+            let bill_to = self.business_entity_service
+                .get_business_entity_by_id(&bill_to_id, &tenant_id).await
+                .context("bill to fetch get_business_entity_by_id failed")?
+                .with_context(|| format!("business entity id not found for id:{}", bill_to_id))?;
+            let supplier_gstin = supplier.entity_type.extract_gstin()
+                .with_context(|| format!("could not extract gstin from supplier id {}", supplier.base_master_fields.id))?;
+            let bill_to_gstin = bill_to.entity_type.extract_gstin();
+            if let Some(bill_to_gstin) = bill_to_gstin {
+                is_gstin_from_same_state(supplier_gstin, bill_to_gstin)
+                    .map(|a| !a)
+            } else {
+                return Ok(false);
+            }
+        } else {
+            Ok(false)
+        };
+    }
 }
+
+fn is_gstin_from_same_state(gstin1: &GstinNo, gstin2: &GstinNo) -> anyhow::Result<bool> {
+    Ok(gstin1.get_str().get(0..2)
+        .context("gstin short than 2")? ==
+        gstin2.get_str().get(0..2)
+            .context("gstin short than 2")?)
+}
+
 #[async_trait]
 impl InvoicingService for InvoicingServiceImpl {
-    async fn create_invoice(&self,req: &CreateInvoiceRequest)->Result<Uuid,InvoicingServiceError> {
-        self.validate_create_invoice_request(req).await?;
+    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError> {
+        self.validate_create_invoice_request(req, tenant_id).await?;
+        let curr = self.currency_service
+            .get_currency_entry(req.currency_id, tenant_id).await
+            .context("err while fetching currency from db")?
+            .context("currency not found in db")?;
+        let igst_applicable = self.igst_applicable(req.supplier_id,
+                                                   req.bill_ship_detail.as_ref()
+                                                       .map(|a| a.billed_to_customer_id),
+                                                   tenant_id).await?;
+        let _db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
         self.dao.create_invoice().await?;
         todo!()
         // req.
