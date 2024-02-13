@@ -196,8 +196,8 @@ impl InvoicingService for InvoicingServiceImpl {
                                                    req.bill_ship_detail.as_ref()
                                                        .map(|a| a.billed_to_customer_id),
                                                    tenant_id).await?;
-        let _db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
-        self.dao.create_invoice().await?;
+        let db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
+        self.dao.create_invoice(&db_model).await?;
         todo!()
         // req.
         //validate

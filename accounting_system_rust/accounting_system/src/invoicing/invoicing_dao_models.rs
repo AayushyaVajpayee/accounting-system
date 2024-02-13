@@ -1,50 +1,55 @@
 use anyhow::anyhow;
 use chrono::TimeZone;
 use itertools::Itertools;
+use tokio_postgres::types::ToSql;
 use uuid::Uuid;
 use xxhash_rust::xxh32;
 
 use crate::common_utils::utils::current_indian_financial_year;
 use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequest, CreateInvoiceRequest, PaymentTermsValidated};
 
-#[derive(Debug)]
+#[derive(Debug,ToSql)]
+#[postgres(name = "create_payment_terms_request")]
 pub struct PaymentTermsDb {
     pub due_days: i32,
     pub discount_days: Option<i32>,
     pub discount_percent: Option<f32>,
 }
 
-#[derive(Debug)]
+#[derive(Debug,ToSql)]
+#[postgres(name = "create_invoice_line_request")]
 pub struct InvoiceLineDb<'a> {
     pub line_id: Uuid,
     pub line_no: i16,
     pub hsn_sac_code: &'a str,
     pub line_title: &'a str,
-    pub line_title_sac_hash: i64,
+    pub title_hsn_sac_hash: i64,
     pub line_subtitle: Option<&'a str>,
     pub subtitle_hash: Option<i64>,
     pub quantity: f64,
     pub uqc: &'a str,
     pub unit_price: f64,
-    pub tax_rate_percentage: f32,
+    pub tax_percentage: f32,
     pub discount_percentage: f32,
     pub cess_percentage: f32,
-    pub mrp: Option<f64>,
+    pub mrp: Option<f32>,
     pub batch_no: Option<&'a str>,
     pub expiry_date_ms: Option<i64>,
     pub line_net_total: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug,ToSql)]
+#[postgres(name = "create_additional_charge_request")]
 pub struct AdditionalChargeDb<'a> {
     pub line_id: Uuid,
     pub line_no: i16,
     pub line_title: &'a str,
-    pub line_title_xx_hash: i64,
+    pub title_xx_hash: i64,
     pub rate: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug,ToSql)]
+#[postgres(name = "create_invoice_request")]
 pub struct InvoiceDb<'a> {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,
@@ -54,7 +59,7 @@ pub struct InvoiceDb<'a> {
     pub currency_id: Uuid,
     pub service_invoice: bool,
     pub b2b_invoice: bool,
-    pub e_invoice_applicable: bool,
+    pub e_invoicing_applicable: bool,
     pub supplier_id: Uuid,
     pub billed_to_customer_id: Option<Uuid>,
     pub shipped_to_customer_id: Option<Uuid>,
@@ -73,7 +78,6 @@ pub struct InvoiceDb<'a> {
     pub igst_applicable:bool
 }
 
-
 fn convert_to_payment_terms_db(req: &PaymentTermsValidated) -> PaymentTermsDb {
     PaymentTermsDb {
         due_days: req.due_days.inner() as i32,
@@ -88,7 +92,7 @@ fn convert_to_additional_charge_db(req: &CreateAdditionalChargeRequest, line_no:
         line_id: Uuid::now_v7(),
         line_no,
         line_title: req.line_title.inner(),
-        line_title_xx_hash: compute_32_bit_xx_hash(req.line_title.inner()),
+        title_xx_hash: compute_32_bit_xx_hash(req.line_title.inner()),
         rate: req.rate.inner(),
     }
 }
@@ -103,17 +107,17 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequest, line_no: i16) -> a
         line_no,
         hsn_sac_code: req.gst_item_code.as_str(),
         line_title: req.line_title.inner(),
-        line_title_sac_hash: hash,
+        title_hsn_sac_hash: hash,
         line_subtitle: req.line_subtitle.as_ref().map(|a| a.inner()),
         subtitle_hash: req.line_subtitle.as_ref()
             .map(|a| compute_32_bit_xx_hash(a.inner())),
         quantity: req.quantity.get_quantity(),
         uqc: req.quantity.uom_as_str(),
         unit_price: req.unit_price.inner(),
-        tax_rate_percentage: req.tax_rate_percentage.inner(),
+        tax_percentage: req.tax_rate_percentage.inner(),
         discount_percentage: req.discount_percentage.inner(),
         cess_percentage: req.cess_percentage.inner(),
-        mrp: req.mrp.as_ref().map(|a| a.inner()),
+        mrp: req.mrp.as_ref().map(|a| a.inner() as f32),
         batch_no: req.batch_no.as_ref().map(|a| a.inner()),
         expiry_date_ms: req.expiry_date.as_ref().map(|a| a.epoch_millis()).flatten(),
         line_net_total:req.net_line_total()?,
@@ -136,7 +140,7 @@ pub fn convert_to_invoice_db(req:&CreateInvoiceRequest,currency_scale:i16,igst_a
         currency_id: req.currency_id,
         service_invoice: req.service_invoice,
         b2b_invoice: req.b2b_invoice,
-        e_invoice_applicable: req.einvoicing_applicable,
+        e_invoicing_applicable: req.einvoicing_applicable,
         supplier_id: req.supplier_id,
         billed_to_customer_id: req.bill_ship_detail
             .as_ref()

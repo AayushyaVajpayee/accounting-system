@@ -7,7 +7,7 @@ create type create_payment_terms_request as
 create type create_invoice_line_request as
 (
     line_id             uuid,
-    line_no             text,
+    line_no             smallint,
     hsn_sac_code        text,
     line_title          text,
     title_hsn_sac_hash  bigint,
@@ -51,8 +51,9 @@ create type create_invoice_request as
     total_additional_charges_amount double precision,
     round_off                       double precision,
     total_payable_amount            double precision,
-    igst_applicable     bool,
-    created_by                      uuid
+    created_by                      uuid,
+    igst_applicable                 bool
+
 );
 
 create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter integer,
