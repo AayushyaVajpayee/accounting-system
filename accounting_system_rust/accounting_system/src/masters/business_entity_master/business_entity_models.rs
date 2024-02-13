@@ -35,6 +35,15 @@ pub enum BusinessEntityType {
     },
 }
 
+impl BusinessEntityType{
+    pub fn extract_gstin(&self) -> Option<&GstinNo> {
+        match self {
+            BusinessEntityType::EligibleSupplier { gstin, .. } => Some(gstin),
+            BusinessEntityType::Other { gstin, .. } => gstin.as_ref(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct BusinessEntityName(String);
