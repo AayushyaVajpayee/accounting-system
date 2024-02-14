@@ -40,8 +40,9 @@ mod tests {
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
+    use crate::common_utils::pg_util::pg_util::ToPostgresString;
     use crate::invoicing::invoicing_dao::InvoicingDaoImpl;
-    use crate::invoicing::invoicing_dao_models::{AdditionalChargeDb, convert_to_invoice_db, InvoiceLineDb, PaymentTermsDb};
+    use crate::invoicing::invoicing_dao_models::{convert_to_invoice_db, PaymentTermsDb};
     use crate::invoicing::invoicing_request_models::tests::a_create_invoice_request;
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
@@ -56,9 +57,16 @@ mod tests {
                                   false,
                                   *SEED_USER_ID,*SEED_TENANT_ID)
                 .unwrap();
-        let p= postgres_client.get().await.unwrap()
+        let mut invoice_db_str = String::with_capacity(1000);
+
+        let _= postgres_client.get().await.unwrap()
             .query("select $1::create_invoice_request", &[&invoice_db])
             .await.unwrap();
+        invoice_db.fmt_postgres(&mut invoice_db_str).unwrap();
+        let m = format!("select {}::create_invoice_request",invoice_db_str);
+        let _ = postgres_client.get().await.unwrap()
+            .simple_query(&m).await.unwrap();
+
     }
 
     #[rstest]

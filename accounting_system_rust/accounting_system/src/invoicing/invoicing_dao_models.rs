@@ -4,11 +4,12 @@ use itertools::Itertools;
 use tokio_postgres::types::ToSql;
 use uuid::Uuid;
 use xxhash_rust::xxh32;
+use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, ToPostgresString};
 
 use crate::common_utils::utils::current_indian_financial_year;
 use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequest, CreateInvoiceRequest, PaymentTermsValidated};
 
-#[derive(Debug,ToSql)]
+#[derive(Debug, ToSql)]
 #[postgres(name = "create_payment_terms_request")]
 pub struct PaymentTermsDb {
     pub due_days: i32,
@@ -16,7 +17,18 @@ pub struct PaymentTermsDb {
     pub discount_percent: Option<f32>,
 }
 
-#[derive(Debug,ToSql)]
+impl ToPostgresString for PaymentTermsDb {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        let fields: &[&dyn ToPostgresString] = &[&self.due_days, &self.discount_days, &self.discount_percent];
+        create_composite_type_db_row(fields, f)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "create_payment_terms_request"
+    }
+}
+
+#[derive(Debug, ToSql)]
 #[postgres(name = "create_invoice_line_request")]
 pub struct InvoiceLineDb<'a> {
     pub line_id: Uuid,
@@ -38,7 +50,36 @@ pub struct InvoiceLineDb<'a> {
     pub line_net_total: f64,
 }
 
-#[derive(Debug,ToSql)]
+impl ToPostgresString for InvoiceLineDb<'_> {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        let fields: &[&dyn ToPostgresString] = &[
+            &self.line_id,
+            &self.line_no,
+            &self.hsn_sac_code,
+            &self.line_title,
+            &self.title_hsn_sac_hash,
+            &self.line_subtitle,
+            &self.subtitle_hash,
+            &self.quantity,
+            &self.uqc,
+            &self.unit_price,
+            &self.tax_percentage,
+            &self.discount_percentage,
+            &self.cess_percentage,
+            &self.mrp,
+            &self.batch_no,
+            &self.expiry_date_ms,
+            &self.line_net_total
+        ];
+        create_composite_type_db_row(fields, f)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "create_invoice_line_request"
+    }
+}
+
+#[derive(Debug, ToSql)]
 #[postgres(name = "create_additional_charge_request")]
 pub struct AdditionalChargeDb<'a> {
     pub line_id: Uuid,
@@ -48,7 +89,24 @@ pub struct AdditionalChargeDb<'a> {
     pub rate: f64,
 }
 
-#[derive(Debug,ToSql)]
+impl ToPostgresString for AdditionalChargeDb<'_> {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        let fields: &[&dyn ToPostgresString] = &[
+            &self.line_id,
+            &self.line_no,
+            &self.line_title,
+            &self.title_xx_hash,
+            &self.rate,
+        ];
+        create_composite_type_db_row(fields, f)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "create_additional_charge_request"
+    }
+}
+
+#[derive(Debug, ToSql)]
 #[postgres(name = "create_invoice_request")]
 pub struct InvoiceDb<'a> {
     pub idempotence_key: Uuid,
@@ -75,7 +133,44 @@ pub struct InvoiceDb<'a> {
     pub round_off: f64,
     pub total_payable_amount: f64,
     pub created_by: Uuid,
-    pub igst_applicable:bool
+    pub igst_applicable: bool,
+}
+
+impl ToPostgresString for InvoiceDb<'_> {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        let fields: &[&dyn ToPostgresString] = &[
+            &self.idempotence_key,
+            &self.tenant_id,
+            &self.invoice_template_id,
+            &self.invoicing_series_mst_id,
+            &self.invoice_date_ms,
+            &self.currency_id,
+            &self.service_invoice,
+            &self.b2b_invoice,
+            &self.e_invoicing_applicable,
+            &self.supplier_id,
+            &self.billed_to_customer_id,
+            &self.shipped_to_customer_id,
+            &self.order_number,
+            &self.order_date,
+            &self.payment_terms,
+            &self.invoice_lines,
+            &self.additional_charges,
+            &self.financial_year,
+            &self.total_taxable_amount,
+            &self.total_tax_amount,
+            &self.total_additional_charges_amount,
+            &self.round_off,
+            &self.total_payable_amount,
+            &self.created_by,
+            &self.igst_applicable,
+        ];
+        create_composite_type_db_row(fields, f)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "create_invoice_request"
+    }
 }
 
 fn convert_to_payment_terms_db(req: &PaymentTermsValidated) -> PaymentTermsDb {
@@ -120,23 +215,23 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequest, line_no: i16) -> a
         mrp: req.mrp.as_ref().map(|a| a.inner() as f32),
         batch_no: req.batch_no.as_ref().map(|a| a.inner()),
         expiry_date_ms: req.expiry_date.as_ref().map(|a| a.epoch_millis()).flatten(),
-        line_net_total:req.net_line_total()?,
+        line_net_total: req.net_line_total()?,
     })
 }
 
-pub fn convert_to_invoice_db(req:&CreateInvoiceRequest,currency_scale:i16,igst_applicable:bool,
-                             created_by:Uuid,tenant_id:Uuid)->anyhow::Result<InvoiceDb>{
+pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, igst_applicable: bool,
+                             created_by: Uuid, tenant_id: Uuid) -> anyhow::Result<InvoiceDb> {
     let date = chrono::Utc::now().naive_utc();
-    Ok(InvoiceDb{
+    Ok(InvoiceDb {
         idempotence_key: req.idempotence_key,
         tenant_id,
         invoice_template_id: req.invoice_template_id,
         invoicing_series_mst_id: req.invoicing_series_mst_id,
         invoice_date_ms: chrono_tz::Asia::Kolkata.from_utc_datetime(&date)
             .date_naive()
-            .and_hms_opt(0,0,0)
-            .map(|a|a.timestamp_millis())
-            .ok_or_else(||anyhow!("error during invoice date computation"))?,
+            .and_hms_opt(0, 0, 0)
+            .map(|a| a.timestamp_millis())
+            .ok_or_else(|| anyhow!("error during invoice date computation"))?,
         currency_id: req.currency_id,
         service_invoice: req.service_invoice,
         b2b_invoice: req.b2b_invoice,
@@ -144,25 +239,25 @@ pub fn convert_to_invoice_db(req:&CreateInvoiceRequest,currency_scale:i16,igst_a
         supplier_id: req.supplier_id,
         billed_to_customer_id: req.bill_ship_detail
             .as_ref()
-            .map(|l|l.billed_to_customer_id),
+            .map(|l| l.billed_to_customer_id),
         shipped_to_customer_id: req.bill_ship_detail
             .as_ref()
-            .map(|l|l.shipped_to_customer_id),
+            .map(|l| l.shipped_to_customer_id),
         order_number: req.order_number.as_ref()
-            .map(|a|a.inner()),
+            .map(|a| a.inner()),
         order_date: req.order_date.as_ref()
-            .map(|a|a.epoch_millis()).flatten(),
+            .map(|a| a.epoch_millis()).flatten(),
         payment_terms: req.payment_terms.as_ref()
-            .map(|a|convert_to_payment_terms_db(&a)),
-        invoice_lines:  req.invoice_lines
+            .map(|a| convert_to_payment_terms_db(&a)),
+        invoice_lines: req.invoice_lines
             .iter()
             .enumerate()
-            .map(|a|convert_to_invoice_line_db(a.1,a.0 as i16))
+            .map(|a| convert_to_invoice_line_db(a.1, a.0 as i16))
             .collect::<anyhow::Result<Vec<InvoiceLineDb>>>()?,
-        additional_charges:req.additional_charges
+        additional_charges: req.additional_charges
             .iter()
             .enumerate()
-            .map(|a|convert_to_additional_charge_db(a.1,a.0 as i16))
+            .map(|a| convert_to_additional_charge_db(a.1, a.0 as i16))
             .collect_vec(),
         financial_year: current_indian_financial_year() as i16,
         total_taxable_amount: req.total_taxable_amount()?,
