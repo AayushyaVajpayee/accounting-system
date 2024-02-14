@@ -1,5 +1,5 @@
 create or replace function get_or_create_payment_term(_due_days integer, _discount_days integer,
-                                                      _discount_percent integer,
+                                                      _discount_percent real,
                                                       _tenant_id uuid, _created_by uuid) returns uuid as
 $$
 DECLARE

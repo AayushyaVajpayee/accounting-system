@@ -178,7 +178,7 @@ BEGIN
     on conflict do nothing;
     get diagnostics impacted_rows= row_count;
     if impacted_rows != 0 then
-        if payment_terms is null then
+        if payment_terms is not null then
             select get_or_create_payment_term(payment_terms.due_days, payment_terms.discount_days,
                                               payment_terms.discount_percent, req.tenant_id,
                                               req.created_by)
@@ -186,7 +186,8 @@ BEGIN
         end if;
         select create_invoice_table_entry(req, payment_term_id) into invoice_id;
         call persist_invoice_lines(req, invoice_id);
-        select persist_additional_charge(req.additional_charges, invoice_id, req.tenant_id, req.created_by);
+        call persist_additional_charge(req.additional_charges, invoice_id, req.tenant_id, req.created_by);
+        return invoice_id;
     else
         select response
         from idempotence_store
