@@ -46,14 +46,36 @@ mod tests {
     use crate::common_utils::pg_util::pg_util::ToPostgresString;
     use crate::invoicing::invoicing_dao::InvoicingDaoImpl;
     use crate::invoicing::invoicing_dao_models::{convert_to_invoice_db};
-    use crate::invoicing::invoicing_request_models::tests::a_create_invoice_request;
+    use crate::invoicing::invoicing_request_models::tests::{a_create_invoice_request, SEED_INVOICE_ID};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::invoicing::payment_term::payment_term_models::tests::SEED_PAYMENT_TERM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
     use std::fmt::Write;
     use std::str::FromStr;
     use uuid::Uuid;
-
+    #[tokio::test]
+    async fn test_persist_invoice_lines(){
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port,None).await;
+        let dao = InvoicingDaoImpl { postgres_client: postgres_client.clone() };
+        let req = a_create_invoice_request(Default::default());
+        let p=convert_to_invoice_db(&req,2,
+                                    false,*SEED_USER_ID,
+                                    *SEED_TENANT_ID).unwrap();
+        let mut input_str = String::with_capacity(1000);
+        write!(&mut input_str,"call persist_invoice_lines(").unwrap();
+        p.fmt_postgres(&mut input_str).unwrap();
+        write!(&mut input_str,",'{}')",*SEED_INVOICE_ID).unwrap();
+        let _ =dao.postgres_client.get().await.unwrap()
+            .simple_query(&input_str).await.unwrap();
+        let line_id=&p.invoice_lines[0].line_id;
+        let inv_line = dao.postgres_client.get().await.unwrap()
+            .query_opt("select id from invoice_line where id=$1",&[line_id])
+            .await.unwrap();
+        assert_that!(inv_line).is_some();
+        let id:Uuid=inv_line.unwrap().get(0);
+        assert_that!(id).is_equal_to(line_id);
+    }
     #[tokio::test]
     async fn test_create_invoice_table_entry(){
         let port = get_postgres_image_port().await;

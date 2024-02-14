@@ -151,13 +151,13 @@ BEGIN
             into subtitle_id;
             insert into invoice_line (id, entity_version_id, tenant_id, active, approval_status, remarks,
                                       invoice_table_id, line_title_hsn_sac_id, line_subtitle_id, quantity,
-                                      unit_price, tax_rate_bps, discount_bps, cess_bps, line_number, line_net_total,
-                                      mrp, batch, expiry_date_ms, uqc, igst_applicable, created_by, updated_by,
+                                      unit_price, tax_percentage, discount_percentage, cess_percentage, line_number, line_net_total,
+                                      mrp, batch, expiry_date_ms, uqc, created_by, updated_by,
                                       created_at, updated_at)
             values (line.line_id, 0, req.tenant_id, true, 1, null, invoice_tab_id, title_id, subtitle_id,
-                    line.quantity, line.unit_price, line.tax_rate_bps, line.discount_bps, line.cess_bps,
+                    line.quantity, line.unit_price, line.tax_percentage, line.discount_percentage, line.cess_percentage,
                     line.line_no, line.line_net_total, line.mrp, line.batch_no, line.expiry_date_ms, line.uqc,
-                    line.igst_applicable, req.created_by, req.created_by, default, default);
+                    req.created_by, req.created_by, default, default);
         end loop;
 end
 $$ language plpgsql;
@@ -185,7 +185,7 @@ BEGIN
             into payment_term_id;
         end if;
         select create_invoice_table_entry(req, payment_term_id) into invoice_id;
-        select persist_invoice_lines(req, invoice_id);
+        call persist_invoice_lines(req, invoice_id);
         select persist_additional_charge(req.additional_charges, invoice_id, req.tenant_id, req.created_by);
     else
         select response

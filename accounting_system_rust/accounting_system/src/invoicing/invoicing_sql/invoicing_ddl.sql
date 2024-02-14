@@ -52,7 +52,7 @@ create table invoice_line
     line_subtitle_id      uuid references line_subtitle (id),
     quantity              double precision                not null,
     unit_price            real                            not null,
-    tax_rate_percentage   real                            not null,
+    tax_percentage   real                            not null,
     discount_percentage   real                            not null,
     cess_percentage       real                            not null,
     line_number           smallint                        not null,
