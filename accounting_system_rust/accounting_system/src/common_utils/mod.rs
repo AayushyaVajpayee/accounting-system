@@ -6,3 +6,4 @@ pub mod macro_utils;
 pub mod db_row_conversion_utils;
 pub mod common_utils_db_mapping;
 pub mod cache_utils;
+pub mod pg_util;
