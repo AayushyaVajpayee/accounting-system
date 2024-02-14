@@ -127,8 +127,7 @@ BEGIN
             req.total_taxable_amount, req.total_tax_amount, req.total_additional_charges_amount, req.round_off,
             req.total_payable_amount, null, req.invoice_template_id, _payment_term_id, req.created_by, req.created_by,
             default, default);
-
-
+    return inv_id;
 END
 
 $$ language plpgsql;

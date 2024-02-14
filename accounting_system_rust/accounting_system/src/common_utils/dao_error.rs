@@ -1,4 +1,5 @@
-use anyhow::Error as AnyhowError;
+use std::fmt::Error;
+use anyhow::{anyhow, Error as AnyhowError};
 use deadpool_postgres::PoolError;
 use tokio_postgres::error::SqlState;
 
@@ -21,6 +22,12 @@ pub enum DaoError {
 impl From<PoolError> for DaoError {
     fn from(value: PoolError) -> Self {
         DaoError::ConnectionPool(value.to_string())
+    }
+}
+
+impl From<std::fmt::Error> for DaoError {
+    fn from(value: Error) -> Self {
+        DaoError::AnyhowError(anyhow!(value))
     }
 }
 
