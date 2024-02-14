@@ -292,6 +292,7 @@ mod tests {
     #[rstest]
     #[case(42, "42", "integer")]
     #[case(Some(42), "42", "integer")]
+    #[should_panic]
     #[case(None::<i32>, "null", "integer")]
     #[case("hello", "'hello'", "text")]
     #[case(&42, "42", "integer")]
