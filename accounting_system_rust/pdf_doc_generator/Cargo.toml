@@ -1,0 +1,22 @@
+[package]
+name = "pdf_doc_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+typst = { git = "https://github.com/typst/typst.git", tag = "v0.10.0" }
+comemo = "0.3"
+
+# typst rendering (for demonstration purpose)
+typst-pdf = { git = "https://github.com/typst/typst.git", tag = "v0.10.0" }
+zune-inflate = { version = "0.2", default_features = false, features = [
+    "gzip",
+    "std",
+] }
+tar = "0.4"
+ureq = "2.9"
+serde = "1.0.196"
+serde_json = "1.0.113"
+# utils
+time = "0.3"
+ttf-parser = "0.20"
