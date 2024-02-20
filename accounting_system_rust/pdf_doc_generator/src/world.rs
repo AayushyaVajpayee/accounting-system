@@ -68,7 +68,9 @@ impl InMemoryWorld {
             book: Prehashed::new(FontBook::from_fonts(&fonts)),
             fonts,
             files: RefCell::new(HashMap::new()),
-            package_cache_dir: Default::default(),
+            package_cache_dir: std::env::var_os("CACHE_DIRECTORY")
+            .map(|os_path| os_path.into())
+            .unwrap_or(std::env::temp_dir()),
             time: OffsetDateTime::now_utc(),
             http: ureq::Agent::new(),
         };
