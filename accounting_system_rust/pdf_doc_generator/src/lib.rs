@@ -1,3 +1,5 @@
+mod world;
+
 use typst::foundations::Bytes;
 use typst::text::Font;
 
