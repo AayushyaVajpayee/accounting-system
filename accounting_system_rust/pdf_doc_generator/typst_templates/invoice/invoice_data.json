@@ -1,0 +1,209 @@
+{
+  "invoice_number": "INV00123456789",
+  "invoice_date": {
+    "month": 10,
+    "year": 2024,
+    "day": 30
+  },
+  "order_date": {
+    "month": 12,
+    "year": 2024,
+    "day": 26
+  },
+  "payment_terms": "credit",
+  "order_number": "PO1233459898098",
+  "irn_no": "jfdkjajo43u40r04jg0gh04r0h0tijh0jth034hg0394hg0h443hg00h00hoijfds",
+  "supplier": {
+    "name": "Hindustan Unilever Private Ltd",
+    "gstin": "22AAAAA0000A1Z5",
+    "address": {
+      "line_1": "140 new haridwar colony",
+      "line_2": "Haridwar, pincode: 249407,Uttarakhand"
+    }
+  },
+  "billed_to": {
+    "name": "Sai Enterprises",
+    "gstin": "01AAAAA0000A1Z9",
+    "address": {
+      "line_1": "140 new haridwar colony",
+      "line_2": "Haridwar, pincode: 249407,Uttarakhand"
+    }
+  },
+  "shipped_to": {
+    "name": "Sai Enterprises",
+    "gstin": "01AAAAA0010A1Z9",
+    "address": {
+      "line_1": "140 new haridwar colony",
+      "line_2": "Haridwar, pincode: 249407,Uttarakhand"
+    }
+  },
+  "additional_charges": [
+    {
+      "name": "insurance charge",
+      "rate": 100
+    },
+    {
+      "name": "logistics charge",
+      "rate": 70.56
+    }
+  ],
+  "tax_summary": {
+    "igst_lines": [
+      {
+        "tax_slab": 5,
+        "tax_amount": 230
+      },
+      {
+        "tax_slab": 18,
+        "tax_amount": 324
+      },
+      {
+        "tax_slab": 28,
+        "tax_amount": 924
+      }
+    ],
+    "cgst_lines": [],
+    "sgst_lines": [],
+    "total_tax_amount": 1678
+  },
+  "invoice_summary": {
+    "taxable_amt": 1000,
+    "tax_amt": 900,
+    "additional_charges_amt": 170.56,
+    "round_off": 0.10,
+    "total_payable_amount": 2100.10
+  },
+  "invoice_lines_table": {
+    "invoice_lines_total": 193424.00,
+    "headers_and_units": [
+      [
+        "sl no",
+        "",
+        "line_no"
+      ],
+      [
+        "item",
+        "",
+        "item"
+      ],
+      [
+        "hsn",
+        "",
+        "hsn"
+      ],
+      [
+        "batch no",
+        "",
+        "batch_no"
+      ],
+      [
+        "expiry date",
+        "",
+        "expiry_date"
+      ],
+      [
+        "mrp",
+        "Rs",
+        "mrp"
+      ],
+      [
+        "uqc",
+        "",
+        "uqc"
+      ],
+      [
+        "qty",
+        "",
+        "qty"
+      ],
+      [
+        "unit price",
+        "Rs",
+        "unit_price"
+      ],
+      [
+        "discount",
+        "%",
+        "discount_percentage"
+      ],
+      [
+        "igst",
+        "%",
+        "igst_percentage"
+      ],
+      [
+        "cgst",
+        "%",
+        "cgst_percentage"
+      ],
+      [
+        "sgst",
+        "%",
+        "sgst_percentage"
+      ],
+      [
+        "cess",
+        "%",
+        "cess_percentage"
+      ],
+      [
+        "line total",
+        "Rs",
+        "line_total"
+      ]
+    ],
+    "lines": [
+      {
+        "line_no": 1,
+        "item": "some",
+        "hsn": "01901",
+        "batch_no": "BU983434",
+        "expiry_date": null,
+        "mrp": 20,
+        "uqc": "BOX",
+        "qty": 122,
+        "unit_price": 200,
+        "discount_percentage": 5,
+        "igst_percentage": 5,
+        "cgst_percentage": 0,
+        "sgst_percentage": 0,
+        "cess_percentage": 0,
+        "line_total": 1995
+      },
+      {
+        "line_no": 2,
+        "item": "maggi",
+        "hsn": "032401",
+        "batch_no": "BU988724",
+        "expiry_date": null,
+        "mrp": 39,
+        "uqc": "BOX",
+        "qty": 98,
+        "unit_price": 123,
+        "discount_percentage": 9,
+        "igst_percentage": 18,
+        "cgst_percentage": 0,
+        "sgst_percentage": 0,
+        "cess_percentage": 0,
+        "line_total": 2334
+      },
+      {
+        "line_no": 3,
+        "item": "coffee",
+        "hsn": "023401",
+        "batch_no": "KJ988724",
+        "expiry_date": null,
+        "mrp": 45,
+        "uqc": "BOX",
+        "qty": 43,
+        "unit_price": 133,
+        "discount_percentage": 6,
+        "igst_percentage": 28,
+        "cgst_percentage": 0,
+        "sgst_percentage": 0,
+        "cess_percentage": 0,
+        "line_total": 2454
+      }
+    ]
+  }
+}
