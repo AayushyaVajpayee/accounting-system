@@ -9,8 +9,8 @@ use typst::diag::{eco_format, FileError, FileResult, PackageError, PackageResult
 use typst::foundations::{Bytes, Datetime};
 use typst::syntax::{FileId, PackageSpec, Source};
 use typst::text::{Font, FontBook};
+use crate::fonts::register_fonts;
 
-use crate::register_fonts;
 
 struct FileEntry {
     bytes: Bytes,
