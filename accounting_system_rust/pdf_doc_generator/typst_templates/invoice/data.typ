@@ -1,1 +1,0 @@
-#let invoice_model = json("invoice_data.json")

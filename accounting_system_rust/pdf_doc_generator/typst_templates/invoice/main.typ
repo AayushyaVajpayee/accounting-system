@@ -1,10 +1,9 @@
-#import "data.typ"
 #import "@preview/tablex:0.0.8": tablex, cellx,vlinex,hlinex
 #import "invoice_lines.typ"
 #import "tax_summary.typ"
 #import "invoice_summary.typ"
 #set page(flipped: true)
-
+#let invoice_model = json("invoice_data.json")
 #let supplier_heading(name,gstin,address)=[
  #grid(columns: (1fr,3fr,1fr),
  align(center+horizon)[#image("sunset.png")],
@@ -59,21 +58,21 @@ day:hdrs.invoice_date.day).display("[day]-[month repr:short]-[year]")
 
 ]
 #show: set page(margin: (x:10pt,y:5pt))
-#supplier_heading(data.invoice_model.supplier.name,data.invoice_model.supplier.gstin,data.invoice_model.supplier.address)
+#supplier_heading(invoice_model.supplier.name,invoice_model.supplier.gstin,invoice_model.supplier.address)
 #line(length: 100%)
 
 #grid(columns: (2.8fr,0.05fr,1.15fr),
-header_details(data.invoice_model.supplier,
-data.invoice_model.billed_to,
-data.invoice_model.shipped_to),
+header_details(invoice_model.supplier,
+invoice_model.billed_to,
+invoice_model.shipped_to),
 [],
-prepare_header_key_vals(data.invoice_model)
+prepare_header_key_vals(invoice_model)
 )
-#invoice_lines.invoice_line_tableV2(data.invoice_model.invoice_lines_table)
+#invoice_lines.invoice_line_tableV2(invoice_model.invoice_lines_table)
 
 #grid(
 
   columns:(1fr,0.5fr,1fr),
-  align(center,tax_summary.tax_summary_table(data.invoice_model.tax_summary)),[],
-  align(center,invoice_summary.invoice_summary(data.invoice_model.invoice_summary))
+  align(center,tax_summary.tax_summary_table(invoice_model.tax_summary)),[],
+  align(center,invoice_summary.invoice_summary(invoice_model.invoice_summary))
 )

@@ -1,31 +1,38 @@
 use std::cell::{RefCell, RefMut};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use comemo::Prehashed;
+use time::macros::time;
 use time::OffsetDateTime;
 use typst::{Library, World};
 use typst::diag::{eco_format, FileError, FileResult, PackageError, PackageResult};
-use typst::foundations::{Bytes, Datetime};
+use typst::foundations::{Bytes, Datetime, panic};
 use typst::syntax::{FileId, PackageSpec, Source};
 use typst::text::{Font, FontBook};
+
 use crate::fonts::register_fonts;
 
-
-struct FileEntry {
+pub struct FileEntry {
     bytes: Bytes,
     source: Option<Source>,
 }
 
 impl FileEntry {
-    fn new(bytes: Vec<u8>, source: Option<Source>) -> Self {
+    pub fn from_bytes(bytes: Bytes, source: Option<Source>) -> Self {
+        Self {
+            bytes,
+            source,
+        }
+    }
+    pub fn new(bytes: Vec<u8>, source: Option<Source>) -> Self {
         //todo we need to provide another constructor that will provide all related files as bytes in a hashmap
         Self {
             bytes: bytes.into(),//todo for our use case we can take static bytes for many things except the json
             source,
         }
     }
-    fn source(&mut self, id: FileId) -> FileResult<Source> {
+    pub fn source(&mut self, id: FileId) -> FileResult<Source> {
         let source = if let Some(source) = &self.source {
             source
         } else {
@@ -38,7 +45,7 @@ impl FileEntry {
     }
 }
 
-struct InMemoryWorld {
+pub struct InMemoryWorld {
     root: PathBuf,
     /// The content of a source.
     source: Source,
@@ -56,10 +63,11 @@ struct InMemoryWorld {
     time: OffsetDateTime,
     /// http agent to download packages.
     http: ureq::Agent,
+    file_map: HashMap<&'static str, Bytes>
 }
 
 impl InMemoryWorld {
-    pub fn new(content: &str) {
+    pub fn new(content: &str, file_map: HashMap<&'static str, Bytes>) -> Self {
         let fonts = register_fonts();
         Self {
             root: PathBuf::from(""),
@@ -69,20 +77,24 @@ impl InMemoryWorld {
             fonts,
             files: RefCell::new(HashMap::new()),
             package_cache_dir: std::env::var_os("CACHE_DIRECTORY")
-            .map(|os_path| os_path.into())
-            .unwrap_or(std::env::temp_dir()),
+                .map(|os_path| os_path.into())
+                .unwrap_or(std::env::temp_dir()),
             time: OffsetDateTime::now_utc(),
             http: ureq::Agent::new(),
-        };
+            file_map,
+        }
     }
     fn download_package(&self, package: &PackageSpec) -> PackageResult<PathBuf> {
         let package_subdir = format!("{}/{}/{}", package.namespace, package.name, package.version);
         let path = self.package_cache_dir.join(package_subdir);
-
+        if let Some(path_str) = path.to_str() {
+            if self.file_map.contains_key(path_str) {
+                return Ok(path);
+            }
+        }
         if path.exists() {
             return Ok(path);
         }
-
         eprintln!("downloading {package}");
         let url = format!(
             "https://packages.typst.org/{}/{}-{}.tar.gz",
@@ -120,7 +132,6 @@ impl InMemoryWorld {
             _ = std::fs::remove_dir_all(&path);
             PackageError::MalformedArchive(Some(eco_format!("{error}")))
         })?;
-
         Ok(path)
     }
     fn file(&self, id: FileId) -> FileResult<RefMut<'_, FileEntry>> {
@@ -128,17 +139,18 @@ impl InMemoryWorld {
             return Ok(entry);
         }
         let path = if let Some(package) = id.package() {
-            // Fetching file from package
             let package_dir = self.download_package(package)?;
             id.vpath().resolve(&package_dir)
         } else {
-            // Fetching file from disk
             id.vpath().resolve(&self.root)
         }
             .ok_or(FileError::AccessDenied)?;
-        // Err(FileError::NotFound(id.vpath().as_rootless_path().into()))
-        println!("directory called:  {}", path.to_str().unwrap());
-        let content = std::fs::read(&path).map_err(|error| FileError::from_io(error, &path))?;//todo
+        if let Some(a) = self.file_map.get(path.to_str().unwrap()) {
+            let p = FileEntry::from_bytes(a.clone(), None);
+            return Ok(RefMut::map(self.files.borrow_mut(),
+                                  |files| files.entry(id).or_insert(p)));
+        }
+        let content = std::fs::read(&path).map_err(|error| FileError::from_io(error, &path))?;
         Ok(RefMut::map(self.files.borrow_mut(), |files| {
             files.entry(id).or_insert(FileEntry::new(content, None))
         }))
@@ -167,7 +179,6 @@ impl World for InMemoryWorld {
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        // self.file(id).map(|file| file.bytes.clone())
         self.file(id).map(|file| file.bytes.clone())
     }
 

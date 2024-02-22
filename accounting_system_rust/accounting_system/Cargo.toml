@@ -38,6 +38,7 @@ config = "0.14.0"
 gstin_validator = { path = "../gstin_validator" }
 invoicing_calculations = { path = "../invoicing_calculations" }
 invoice_doc_generator = { path = "../invoice_doc_generator" }
+pdf_doc_generator={path = "../pdf_doc_generator"}
 const_format = "0.2.32"
 moka = { version = "0.12.5", features = ["future"] }
 lazy_static = "1.4.0"
