@@ -58,27 +58,27 @@ fn test_pdf_creation() {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DocDate {
     //todo derive from epoch millis or date. decide on one
-    month: u16,
-    year: u16,
-    day: u16,
+    pub month: u16,
+    pub year: u16,
+    pub day: u16,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InvoiceLine {
-    line_no: u16,
-    item: String,
-    hsn: String,
-    batch_no: Option<String>,
-    expiry_date: Option<DocDate>,
-    mrp: Option<i32>,
-    uqc: String,
-    unit_price: i32,
-    discount_percentage: i32,
-    igst_percentage: Option<u16>,
-    cgst_percentage: Option<u16>,
-    sgst_percentage: Option<u16>,
-    cess_percentage: Option<u16>,
-    line_total: i32,
+    pub line_no: u16,
+    pub item: String,
+    pub hsn: String,
+    pub batch_no: Option<String>,
+    pub expiry_date: Option<DocDate>,
+    pub mrp: Option<i32>,
+    pub uqc: String,
+    pub unit_price: i32,
+    pub discount_percentage: i32,
+    pub igst_percentage: Option<u16>,
+    pub cgst_percentage: Option<u16>,
+    pub sgst_percentage: Option<u16>,
+    pub cess_percentage: Option<u16>,
+    pub line_total: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -95,68 +95,68 @@ pub struct HeaderAndUnit(Header, Unit, JsonKey);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InvoiceSummary {
-    taxable_amt: i32,
-    tax_amt: i32,
-    additional_charges_amt: i32,
-    round_off: i32,
-    total_payable_amount: i32,
+    pub taxable_amt: i32,
+    pub tax_amt: i32,
+    pub additional_charges_amt: i32,
+    pub round_off: i32,
+    pub total_payable_amount: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InvoiceLineTable {
-    invoice_lines_total: i32,
-    header_and_units: Vec<HeaderAndUnit>,
-    lines: Vec<InvoiceLine>,
+   pub invoice_lines_total: i32,
+   pub header_and_units: Vec<HeaderAndUnit>,
+   pub lines: Vec<InvoiceLine>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaxLine {
-    tax_slab: i32,
-    tax_amount: i32,
+    pub tax_slab: i32,
+    pub tax_amount: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaxSummary {
-    igst_lines: Vec<TaxLine>,
-    cgst_lines: Vec<TaxLine>,
-    sgst_lines: Vec<TaxLine>,
-    total_tax_amount: i32,
+    pub igst_lines: Vec<TaxLine>,
+    pub cgst_lines: Vec<TaxLine>,
+    pub sgst_lines: Vec<TaxLine>,
+    pub total_tax_amount: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AdditionalCharge {
-    name: String,
-    rate: i32,
+    pub name: String,
+    pub rate: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Address {
-    line_1: String,
-    line_2: String,
+    pub line_1: String,
+    pub line_2: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InvoiceParty {
-    name: String,
-    gstin: String,
-    address: Address,
+    pub name: String,
+    pub gstin: String,
+    pub address: Address,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Invoice {
-    invoice_number: String,
-    invoice_date: DocDate,
-    order_date: Option<DocDate>,
-    payment_term: String,
-    order_number: Option<String>,
-    irn_no: String,
-    supplier: InvoiceParty,
-    billed_to: InvoiceParty,
-    shipped_to: InvoiceParty,
-    additional_charges: Vec<AdditionalCharge>,
-    tax_summary: TaxSummary,
-    invoice_summary: InvoiceSummary,
-    invoice_lines_table: InvoiceLineTable,
+    pub invoice_number: String,
+    pub invoice_date: DocDate,
+    pub order_date: Option<DocDate>,
+    pub payment_term: String,
+    pub order_number: Option<String>,
+    pub irn_no: String,
+    pub supplier: InvoiceParty,
+    pub billed_to: InvoiceParty,
+    pub shipped_to: InvoiceParty,
+    pub additional_charges: Vec<AdditionalCharge>,
+    pub tax_summary: TaxSummary,
+    pub invoice_summary: InvoiceSummary,
+    pub invoice_lines_table: InvoiceLineTable,
 }
 
 
