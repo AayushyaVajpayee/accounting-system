@@ -3,6 +3,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use std::sync::Arc;
 use uuid::Uuid;
+use crate::common_utils::utils::TenantId;
 
 use crate::masters::address_master::address_model::CreateAddressRequest;
 use crate::masters::address_master::address_service::{AddressService, AddressServiceError};
@@ -22,8 +23,8 @@ async fn create_address(data: Data<Arc<dyn AddressService>>, request: web::Json<
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
-async fn get_address_by_id(data: Data<Arc<dyn AddressService>>, address_id: Path<Uuid>) -> actix_web::Result<impl Responder> {
-    let ap = data.get_address_by_id(&address_id).await?;
+async fn get_address_by_id(data: Data<Arc<dyn AddressService>>, address_id: Path<Uuid>,tenant_id: TenantId) -> actix_web::Result<impl Responder> {
+    let ap = data.get_address_by_id(tenant_id.inner(),address_id.into_inner()).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
@@ -36,11 +37,12 @@ setup_routes!(AddressService,"/address",
 mod tests {
     use uuid::Uuid;
 
-    use crate::get_and_create_api_test;
+    use crate::{ get_and_create_api_test_v2};
     use crate::masters::address_master::address_http_api::map_endpoints_to_functions;
     use crate::masters::address_master::address_model::{Address, CreateAddressRequestBuilder};
     use crate::masters::address_master::address_model::tests::a_create_address_request;
     use crate::masters::address_master::address_service::{AddressService, MockAddressService};
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_create_address() {
@@ -49,15 +51,15 @@ mod tests {
             mock.expect_create_address()
                 .returning(|_| Ok(Default::default()));
             mock.expect_get_address_by_id()
-                .returning(|_| Ok(Some(Default::default())));
+                .returning(|_,_| Ok(Some(Default::default())));
             mock
         };
         let get_uri = format!("/address/id/{}", Uuid::default());
         let expected_address: Address = Default::default();
-        get_and_create_api_test!(Address,AddressService,closure,
+        get_and_create_api_test_v2!(Address,AddressService,closure,
             get_uri,
             "/address/create",
             a_create_address_request(CreateAddressRequestBuilder::default()),
-            expected_address);
+            expected_address,*SEED_TENANT_ID);
     }
 }

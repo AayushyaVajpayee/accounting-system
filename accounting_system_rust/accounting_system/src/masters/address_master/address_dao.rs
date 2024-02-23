@@ -13,7 +13,7 @@ use crate::masters::address_master::address_utils::create_address_input_for_db_f
 
 #[async_trait]
 pub trait AddressDao: Send + Sync {
-    async fn get_address_by_id(&self, address_id: &Uuid) -> Result<Option<Address>, DaoError>;
+    async fn get_address_by_id(&self,tenant_id:Uuid, address_id: Uuid) -> Result<Option<Address>, DaoError>;
     async fn create_address(&self, request: &CreateAddressRequest) -> Result<Uuid, DaoError>;
 }
 
@@ -53,14 +53,14 @@ pub fn get_address_dao(client: Arc<Pool>) -> Arc<dyn AddressDao> {
 
 const TABLE_NAME: &str = "address";
 const SELECT_FIELDS: &str = "id,entity_version_id,tenant_id,active,approval_status,remarks,pincode_id,city_id,state_id,country,line_1,line_2,landmark,created_by,updated_by,created_at,updated_at";
-const QUERY_BY_ID: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where id=$1");
+const QUERY_BY_ID: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME," where tenant_id=$1 and  id=$2");
 
 #[async_trait]
 impl AddressDao for AddressDaoImpl {
-    async fn get_address_by_id(&self, address_id: &Uuid) -> Result<Option<Address>, DaoError> {
+    async fn get_address_by_id(&self, tenant_id:Uuid,address_id: Uuid) -> Result<Option<Address>, DaoError> {
         let query = QUERY_BY_ID;
         let addr: Option<Address> = self.postgres_client.get().await?
-            .query_opt(query, &[&address_id]).await?
+            .query_opt(query, &[&tenant_id,&address_id]).await?
             .map(|a| a.try_into())
             .transpose()?;
         Ok(addr)
@@ -90,6 +90,7 @@ mod tests {
     use crate::masters::address_master::address_dao::{AddressDao, AddressDaoImpl};
     use crate::masters::address_master::address_model::CreateAddressRequestBuilder;
     use crate::masters::address_master::address_model::tests::a_create_address_request;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_insert_and_get_address() {
@@ -98,7 +99,7 @@ mod tests {
         let dao = AddressDaoImpl { postgres_client: postgres_client.clone() };
         let address = a_create_address_request(CreateAddressRequestBuilder::default());
         let id = dao.create_address(&address).await.unwrap();
-        let k = dao.get_address_by_id(&id).await.unwrap();
+        let k = dao.get_address_by_id(*SEED_TENANT_ID,id).await.unwrap();
         assert_that!(k).is_some()
             .map(|a| &a.base_master_fields.id)
             .is_equal_to(id);
