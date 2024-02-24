@@ -14,6 +14,7 @@ impl ResponseError for BusinessEntityServiceError {
     fn status_code(&self) -> StatusCode {
         match self {
             BusinessEntityServiceError::Db(_) => { StatusCode::INTERNAL_SERVER_ERROR }
+            BusinessEntityServiceError::Other(_) => {StatusCode::INTERNAL_SERVER_ERROR}
         }
     }
 }
@@ -44,14 +45,13 @@ mod tests {
 
     use crate::get_and_create_api_test_v2;
     use crate::masters::business_entity_master::business_entity_http_api::map_endpoints_to_functions;
-    use crate::masters::business_entity_master::business_entity_models::BusinessEntityMaster;
+    use crate::masters::business_entity_master::business_entity_models::{BusinessEntityDto, BusinessEntityMaster};
     use crate::masters::business_entity_master::business_entity_models::tests::a_create_business_entity_request;
     use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, MockBusinessEntityService};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_create_and_get_business_entity() {
-        let expected_val: BusinessEntityMaster = Default::default();
         let closure = move || {
             let mut mock = MockBusinessEntityService::new();
             mock.expect_get_business_entity_by_id()
@@ -60,13 +60,14 @@ mod tests {
                 .returning(|_| Ok(Default::default()));
             mock
         };
+        let p:BusinessEntityDto = Default::default();
         let get_uri = format!("/business-entity/id/{}", Uuid::default());
-        get_and_create_api_test_v2!(BusinessEntityMaster,
+        get_and_create_api_test_v2!(BusinessEntityDto,
             BusinessEntityService,
             closure,get_uri,
             "/business-entity/create",
             a_create_business_entity_request(Default::default()),
-            expected_val,
+            p,
             *SEED_TENANT_ID
         );
     }

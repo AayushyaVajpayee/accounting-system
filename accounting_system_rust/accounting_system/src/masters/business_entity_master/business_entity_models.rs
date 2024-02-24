@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use anyhow::{Context, ensure};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
@@ -5,9 +6,17 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::masters::address_master::address_model::Address;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
+#[derive(Debug,Serialize,Deserialize,Default, PartialEq)]
+pub struct BusinessEntityDto{
+    pub business_entity:BusinessEntityMaster,
+    pub address:Option<Arc<Address>>
+}
+impl BusinessEntityDto{
 
+}
 #[derive(Debug, Serialize, Deserialize, Builder, PartialEq, Default)]
 pub struct BusinessEntityMaster {
     pub base_master_fields: BaseMasterFields,
@@ -40,6 +49,17 @@ impl BusinessEntityType{
         match self {
             BusinessEntityType::EligibleSupplier { gstin, .. } => Some(gstin),
             BusinessEntityType::Other { gstin, .. } => gstin.as_ref(),
+        }
+    }
+    
+    pub fn get_address_id(&self)->Option<Uuid>{
+        match self {
+            BusinessEntityType::EligibleSupplier { address_id,.. } => {
+                Some(*address_id)
+            }
+            BusinessEntityType::Other { address_id,.. } => {
+                address_id.clone()
+            }
         }
     }
 }

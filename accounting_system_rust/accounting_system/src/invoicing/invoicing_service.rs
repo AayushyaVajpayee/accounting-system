@@ -158,13 +158,16 @@ impl InvoicingServiceImpl {
                     .get_business_entity_by_id(&supplier_id, &tenant_id).await
                     .context("supplier fetch get_business_entity_by_id failed")?
                     .with_context(|| format!("business entity id not found for id:{}", supplier_id))?;
+            
             let bill_to = self.business_entity_service
                 .get_business_entity_by_id(&bill_to_id, &tenant_id).await
                 .context("bill to fetch get_business_entity_by_id failed")?
                 .with_context(|| format!("business entity id not found for id:{}", bill_to_id))?;
-            let supplier_gstin = supplier.entity_type.extract_gstin()
-                .with_context(|| format!("could not extract gstin from supplier id {}", supplier.base_master_fields.id))?;
-            let bill_to_gstin = bill_to.entity_type.extract_gstin();
+            let supplier_gstin = supplier.business_entity.entity_type.extract_gstin()
+                .with_context(|| format!("could not extract gstin from supplier id {}", 
+                                         supplier.business_entity
+                    .base_master_fields.id))?;
+            let bill_to_gstin = bill_to.business_entity.entity_type.extract_gstin();
             if let Some(bill_to_gstin) = bill_to_gstin {
                 is_gstin_from_same_state(supplier_gstin, bill_to_gstin)
                     .map(|a| !a)
