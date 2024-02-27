@@ -6,13 +6,13 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
-use crate::masters::address_master::address_model::Address;
+use crate::masters::address_master::address_model::{ AddressDto};
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 #[derive(Debug,Serialize,Deserialize,Default, PartialEq)]
 pub struct BusinessEntityDto{
     pub business_entity:BusinessEntityMaster,
-    pub address:Option<Arc<Address>>
+    pub address:Option<Arc<AddressDto>>
 }
 impl BusinessEntityDto{
 

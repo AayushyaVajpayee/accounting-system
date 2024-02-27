@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use std::str::FromStr;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -13,7 +14,7 @@ pub enum CountryEnum {
     Others
 }
 
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize, Default, PartialEq)]
 pub struct CountryName(String);
 
 impl CountryName{
@@ -25,7 +26,7 @@ impl CountryName{
         Ok(CountryName(name.to_ascii_uppercase()))
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct CountryMaster{
     pub id:Uuid,
     pub name:CountryName,//not more than 60 char

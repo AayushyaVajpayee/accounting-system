@@ -1,10 +1,11 @@
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::country_master::country_model::CountryEnum;
 use crate::masters::country_master::country_utils::get_country_enum_from_id;
 
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize, Default, PartialEq)]
 pub struct PincodeMaster {
     pub id: Uuid,
     pub pincode: Pincode,
@@ -13,12 +14,16 @@ pub struct PincodeMaster {
     pub country_id:Uuid
 }
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,Serialize, Deserialize, PartialEq)]
 pub enum Pincode {
     IndianPincode(u32),
     Others(String),
 }
-
+impl Default for Pincode{
+    fn default() -> Self {
+        Pincode::IndianPincode(249407)
+    }
+}
 impl Pincode {
     pub fn new(pincode: &str, country_id: Uuid) -> Result<Self, &'static str> {
         let country_enum = get_country_enum_from_id(country_id);

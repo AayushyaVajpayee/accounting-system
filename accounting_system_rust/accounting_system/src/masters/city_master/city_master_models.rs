@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize,Default, PartialEq)]
 pub struct CityName(String);
 
 impl CityName {
@@ -15,7 +16,7 @@ impl CityName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize, Default, PartialEq)]
 pub struct CityMaster {
     pub id: Uuid,
     pub city_name: CityName, //worst case it should not be more than 60
