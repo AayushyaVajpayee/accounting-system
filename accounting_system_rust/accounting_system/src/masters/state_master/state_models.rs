@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize, Default, PartialEq)]
 pub struct StateName(String);
 
 impl StateName {
@@ -16,7 +17,7 @@ impl StateName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize, Default, PartialEq)]
 pub struct StateMasterModel {
     pub id: Uuid,
     pub state_name: StateName,

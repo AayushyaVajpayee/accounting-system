@@ -13,6 +13,7 @@ impl ResponseError for AddressServiceError {
     fn status_code(&self) -> StatusCode {
         match self {
             AddressServiceError::Db(_) => { StatusCode::INTERNAL_SERVER_ERROR }
+            AddressServiceError::Other(_) => { StatusCode::INTERNAL_SERVER_ERROR}
         }
     }
 }
@@ -39,7 +40,7 @@ mod tests {
 
     use crate::{ get_and_create_api_test_v2};
     use crate::masters::address_master::address_http_api::map_endpoints_to_functions;
-    use crate::masters::address_master::address_model::{Address, CreateAddressRequestBuilder};
+    use crate::masters::address_master::address_model::{Address, AddressDto, CreateAddressRequestBuilder};
     use crate::masters::address_master::address_model::tests::a_create_address_request;
     use crate::masters::address_master::address_service::{AddressService, MockAddressService};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
@@ -55,8 +56,8 @@ mod tests {
             mock
         };
         let get_uri = format!("/address/id/{}", Uuid::default());
-        let expected_address: Address = Default::default();
-        get_and_create_api_test_v2!(Address,AddressService,closure,
+        let expected_address: AddressDto = Default::default();
+        get_and_create_api_test_v2!(AddressDto,AddressService,closure,
             get_uri,
             "/address/create",
             a_create_address_request(CreateAddressRequestBuilder::default()),

@@ -1,10 +1,15 @@
+use std::sync::Arc;
 use anyhow::bail;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::masters::city_master::city_master_models::CityMaster;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
+use crate::masters::country_master::country_model::CountryMaster;
+use crate::masters::pincode_master::pincode_models::{Pincode, PincodeMaster};
+use crate::masters::state_master::state_models::StateMasterModel;
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Clone)]
 #[serde(try_from = "String")]
@@ -63,7 +68,14 @@ pub struct Address {
     pub country_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
 }
-
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct AddressDto{
+    pub address:Address,
+    pub country:Arc<CountryMaster>,
+    pub city:Arc<CityMaster>,
+    pub pincode:Arc<PincodeMaster>,
+    pub state:Arc<StateMasterModel>
+}
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateAddressRequest {
