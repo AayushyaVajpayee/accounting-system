@@ -44,14 +44,20 @@ pub enum BusinessEntityType {
     },
 }
 
-impl BusinessEntityType{
+impl BusinessEntityType {
     pub fn extract_gstin(&self) -> Option<&GstinNo> {
         match self {
             BusinessEntityType::EligibleSupplier { gstin, .. } => Some(gstin),
             BusinessEntityType::Other { gstin, .. } => gstin.as_ref(),
         }
     }
-    
+    pub fn get_name(&self) -> &str {
+        match self {
+            BusinessEntityType::EligibleSupplier { name, .. } => { name.inner() }
+            BusinessEntityType::Other { name, .. } => { name.inner() }
+        }
+    }
+
     pub fn get_address_id(&self)->Option<Uuid>{
         match self {
             BusinessEntityType::EligibleSupplier { address_id,.. } => {
@@ -197,16 +203,16 @@ pub mod tests {
     use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, BusinessEntityMasterBuilder, CreateBusinessEntityRequest, CreateBusinessEntityRequestBuilder};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
-    lazy_static!{
+    lazy_static! {
         pub static ref SEED_BUSINESS_ENTITY_ID1:Uuid = Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap();
     }
-    lazy_static!{
+    lazy_static! {
         pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1:Uuid =Uuid::from_str("018d503d-acef-795b-89ae-dfb0b7feda60").unwrap();
     }
-    lazy_static!{
+    lazy_static! {
         pub static ref SEED_BUSINESS_ENTITY_ID2:Uuid = Uuid::from_str("018d5efd-009f-7e36-9d4f-8ad30460cada").unwrap();
     }
-    lazy_static!{
+    lazy_static! {
         pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2:Uuid =Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap();
     }
     #[allow(dead_code)]
