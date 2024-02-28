@@ -38,8 +38,8 @@ impl AddressLine {
         }
         Ok(Self(line.to_string()))
     }
-    pub fn get_inner(self) -> String {
-        self.0
+    pub fn get_inner(&self) -> &str {
+        self.0.as_str()
     }
 }
 
