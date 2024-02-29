@@ -262,7 +262,7 @@ pub mod tests {
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
     use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
-    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
+    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
 
     lazy_static! {
         pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
@@ -277,7 +277,7 @@ pub mod tests {
             einvoicing_applicable: builder.einvoicing_applicable.unwrap_or(false),
             b2b_invoice: builder.b2b_invoice.unwrap_or(true),
             service_invoice: builder.service_invoice.unwrap_or(false),
-            supplier_id: builder.supplier_id.unwrap_or(*SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1),
+            supplier_id: builder.supplier_id.unwrap_or(*SEED_BUSINESS_ENTITY_ID1),
             bill_ship_detail: builder.bill_ship_detail.unwrap_or_else(|| Some(a_bill_ship_detail(Default::default()))),
             order_number: builder.order_number.flatten(),
             order_date: builder.order_date.flatten(),
