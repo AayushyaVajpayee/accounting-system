@@ -5,13 +5,13 @@ use thiserror::Error;
 use crate::percentages::tax_discount_cess::TaxPercentageError::NotInBounds;
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
-#[serde(try_from = "i32")]
+#[serde(try_from = "f32")]
 pub struct GSTPercentage(f32);
 
 impl GSTPercentage {
-    pub fn new(value: i32) -> anyhow::Result<Self> {
+    pub fn new(value: f32) -> anyhow::Result<Self> {
         match value {
-            0 | 3 | 5 | 12 | 18 | 28 => Ok(GSTPercentage(value as f32)),
+            0.0 | 3.0 | 5.0 | 12.0 | 18.0 | 28.0 => Ok(GSTPercentage(value)),
             _ => { bail!("gst tax ({})% not supported",value) }
         }
     }
@@ -21,9 +21,9 @@ impl GSTPercentage {
     }
 }
 
-impl TryFrom<i32> for GSTPercentage {
+impl TryFrom<f32> for GSTPercentage {
     type Error = anyhow::Error;
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
         GSTPercentage::new(value)
     }
 }
