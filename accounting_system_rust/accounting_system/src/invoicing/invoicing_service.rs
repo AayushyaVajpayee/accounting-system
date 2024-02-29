@@ -24,7 +24,7 @@ use crate::tenant::tenant_service::TenantService;
 
 #[derive(Debug, Error)]
 pub enum InvoicingServiceError {
-    #[error("error in db {}", 0)]
+    #[error("error in db {0}")]
     Db(#[from]DaoError),
     #[error("validation failures \n {}", .0.join("\n"))]
     Validation(Vec<String>),
