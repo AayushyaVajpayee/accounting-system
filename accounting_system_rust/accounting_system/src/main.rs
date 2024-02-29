@@ -14,8 +14,13 @@ use crate::accounting::user::user_service::get_user_service;
 use crate::audit_table::audit_service::get_audit_service;
 use crate::common_utils::pagination::pagination_utils::pagination_header_middleware;
 use crate::common_utils::utils::tenant_user_header_middleware;
+use crate::invoicing::invoice_template::invoice_template_service::get_invoice_template_master_service;
+use crate::invoicing::invoicing_series::invoicing_series_service::get_invoicing_series_service;
+use crate::invoicing::invoicing_service::get_invoicing_service;
 use crate::ledger::ledger_transfer_service::get_ledger_transfer_service;
 use crate::ledger::ledgermaster::ledger_master_service::get_ledger_master_service;
+use crate::masters::address_master::address_service::get_address_service;
+use crate::masters::business_entity_master::business_entity_service::get_business_entity_master_service;
 use crate::masters::city_master::city_master_service::get_city_master_service;
 use crate::masters::company_master::company_master_service::get_company_master_service;
 use crate::masters::country_master::country_service::get_country_master_service;
@@ -66,12 +71,10 @@ async fn healthcheck() -> actix_web::Result<impl Responder> {
 }
 
 
-
-
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
-    env_logger::init();
+    std::env::set_var("RUST_LOG", "error");
+    env_logger::builder().format_timestamp_micros().init();
 
     let pool = Arc::new(get_postgres_conn_pool());
     let audit_table_service = get_audit_service(pool.clone());
@@ -88,15 +91,32 @@ async fn main() -> io::Result<()> {
     let account_service = get_account_service(pool.clone());
     let ledger_service = get_ledger_transfer_service(pool.clone());
     let company_master_service = get_company_master_service(pool.clone(), tenant_service.clone(), user_service.clone());
+    let address_service = get_address_service(pool.clone(),
+                                              country_master_service.clone(),
+                                              city_master_service.clone(),
+                                              pincode_service.clone(),
+                                              state_master_service.clone());
+    let business_entity_service = get_business_entity_master_service(pool.clone(), address_service.clone());
+    let invoice_template_service = get_invoice_template_master_service(pool.clone());
+    let invoicing_series_service = get_invoicing_series_service(pool.clone());
+    let invoicing_service = get_invoicing_service(
+        pool.clone(),
+        tenant_service.clone(),
+        currency_service.clone(),
+        invoicing_series_service.clone(),
+        business_entity_service.clone(),
+        invoice_template_service.clone()
+    );
     // let invoice_template_service= get_invoice_template_service();
     println!("{}", std::process::id());
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(tenant_service.clone())
             .app_data(user_service.clone())
             .wrap(from_fn(tenant_user_header_middleware))
             .wrap(from_fn(pagination_header_middleware))
-            .wrap(Logger::default())
+
             .configure(|conf| audit_table::audit_table_http_api::init_routes(conf, audit_table_service.clone()))
             .configure(|conf| tenant_http_api::init_routes(conf, tenant_service.clone()))
             .configure(|conf| accounting::user::user_http_api::init_routes(conf, user_service.clone()))
@@ -110,6 +130,7 @@ async fn main() -> io::Result<()> {
             .configure(|conf| accounting::account::account_type::account_type_http_api::init_routes(conf, account_type_master_service.clone()))
             .configure(|conf| accounting::account::account_http_api::init_routes(conf, account_service.clone()))
             .configure(|conf| ledger::ledger_transfer_http_api::init_routes(conf, ledger_service.clone()))
+            .configure(|conf| invoicing::invoicing_http_api::init_routes(conf,invoicing_service.clone()))
             .route("/healthcheck", web::get().to(healthcheck))
     })
         .bind(("0.0.0.0", 8080))?

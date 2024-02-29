@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use async_trait::async_trait;
+use deadpool_postgres::Pool;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -14,7 +15,7 @@ use crate::accounting::currency::currency_service::CurrencyService;
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::current_indian_date;
 use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
-use crate::invoicing::invoicing_dao::InvoicingDao;
+use crate::invoicing::invoicing_dao::{get_invoicing_dao, InvoicingDao};
 use crate::invoicing::invoicing_dao_models::convert_to_invoice_db;
 use crate::invoicing::invoicing_request_models::CreateInvoiceRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
@@ -210,6 +211,22 @@ impl InvoicingService for InvoicingServiceImpl {
     //template_id,series_mst_id,currency_id,supplier_id,billed_to,shipped_to ids must exist for this tenant
 }
 
+pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantService>,
+                             currency_service: Arc<dyn CurrencyService>,
+                             invoicing_series_service: Arc<dyn InvoicingSeriesService>,
+                             business_entity_service: Arc<dyn BusinessEntityService>,
+                             invoice_template_service: Arc<dyn InvoiceTemplateService>) -> Arc<dyn InvoicingService> {
+    let invoicing_service_dao = get_invoicing_dao(arc);
+    let service =InvoicingServiceImpl {
+        dao: invoicing_service_dao,
+        tenant_service,
+        currency_service,
+        invoicing_series_service,
+        business_entity_service,
+        invoice_template_service,
+    };
+    Arc::new(service)
+}
 
 #[cfg(test)]
 mod tests {

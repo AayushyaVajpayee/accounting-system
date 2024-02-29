@@ -19,6 +19,13 @@ pub trait InvoicingDao: Send + Sync {
     async fn create_invoice(&self, invoice_db: &InvoiceDb) -> Result<Uuid, DaoError>;
 }
 
+pub fn get_invoicing_dao(arc:Arc<Pool>)->Arc<dyn InvoicingDao>{
+   let p = InvoicingDaoImpl{
+        postgres_client: arc,
+    };
+   Arc::new(p)
+}
+
 #[async_trait]
 impl InvoicingDao for InvoicingDaoImpl {
     async fn create_invoice(&self, invoice_db: &InvoiceDb) -> Result<Uuid, DaoError> {
