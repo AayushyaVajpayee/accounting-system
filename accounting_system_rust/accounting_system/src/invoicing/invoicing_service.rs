@@ -33,7 +33,7 @@ pub enum InvoicingServiceError {
 }
 
 #[async_trait]
-pub trait InvoicingService {
+pub trait InvoicingService:Send+Sync {
     async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError>;
 }
 
