@@ -312,7 +312,7 @@ pub mod tests {
             line_subtitle: builder.line_subtitle.flatten(),
             quantity: builder.quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
             unit_price: builder.unit_price.unwrap_or_else(|| Price::new(10.0).unwrap()),
-            tax_rate_percentage: builder.tax_rate_percentage.unwrap_or_else(|| GSTPercentage::new(28).unwrap()),
+            tax_rate_percentage: builder.tax_rate_percentage.unwrap_or_else(|| GSTPercentage::new(28.0).unwrap()),
             discount_percentage: builder.discount_percentage.unwrap_or_else(|| DiscountPercentage::new(0.0).unwrap()),
             cess_percentage: builder.cess_percentage.unwrap_or_else(|| CessPercentage::new(0.0).unwrap()),
             mrp: builder.mrp.flatten(),

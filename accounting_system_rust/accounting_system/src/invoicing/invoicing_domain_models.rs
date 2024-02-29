@@ -105,7 +105,7 @@ pub mod tests {
             line_subtitle_id: builder.line_subtitle_id.unwrap_or(Some(*SEED_SUBTITLE_ID)),
             quantity: builder.quantity.unwrap_or(a_line_quantity(Default::default())),
             unit_price: builder.unit_price.unwrap_or(Price::new(10.0).unwrap()),
-            tax_rate_bps: builder.tax_rate_bps.unwrap_or(GSTPercentage::new(28).unwrap()),
+            tax_rate_bps: builder.tax_rate_bps.unwrap_or(GSTPercentage::new(28.0).unwrap()),
             discount_percentage: builder.discount_percentage.unwrap_or(DiscountPercentage::new(0.0).unwrap()),
             cess_percentage: builder.cess_percentage.unwrap_or(CessPercentage::new(0.0).unwrap()),
             line_no: builder.line_no.unwrap_or(LineNumber::new(1).unwrap()),
