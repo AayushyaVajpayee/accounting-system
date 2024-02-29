@@ -67,10 +67,11 @@ pub struct DocDate {
 pub struct InvoiceLine {
     pub line_no: u16,
     pub item: String,
-    pub hsn: String,
+    pub hsn_sac: String,
     pub batch_no: Option<String>,
     pub expiry_date: Option<DocDate>,
     pub mrp: Option<f32>,
+    pub quantity:f64,
     pub uqc: String,
     pub unit_price: f64,
     pub discount_percentage: f32,

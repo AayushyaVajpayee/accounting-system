@@ -10,20 +10,20 @@
 
 #let invoice_line_tableV2(invoice_lines)=[
   #align(center,tablex(
-    columns:invoice_lines.headers_and_units.len(),
+    columns:invoice_lines.header_and_units.len(),
     auto-hlines: false,
     align:center+horizon,
     header-rows:2,
     fill:(col, _r) => if calc.even(_r) and _r!=0 { luma(240) } else { white },
     hlinex(),
-    ..invoice_lines.headers_and_units.map(it=>it.first()).
+    ..invoice_lines.header_and_units.map(it=>it.first()).
     map(it=>[*#it*]),
-    ..invoice_lines.headers_and_units.map(it=>it.at(1)).
+    ..invoice_lines.header_and_units.map(it=>it.at(1)).
     map(it=>it),
     hlinex(),
-    ..spread_lines(invoice_lines.lines,invoice_lines.headers_and_units.map(it=>it.at(2))),
+    ..spread_lines(invoice_lines.lines,invoice_lines.header_and_units.map(it=>it.at(2))),
     hlinex(),
-    colspanx(invoice_lines.headers_and_units.len()-1)[#align(right,[*total amount* (add additional ..charge breakup above)])],[193424.00],
+    colspanx(invoice_lines.header_and_units.len()-1)[#align(right,[*total amount* (add additional ..charge breakup above)])],[193424.00],
      hlinex()
   ))
 ]

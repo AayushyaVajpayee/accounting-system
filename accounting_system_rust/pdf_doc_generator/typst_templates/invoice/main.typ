@@ -36,6 +36,25 @@
     [*address*],supplier.address,billed_to.address,shipped_to.address,hlinex()
   )
 ]
+#let get_order_date(order_date)={
+  if order_date== none{
+
+  }else{
+  [/ Order date:#datetime(
+       year:order_date.year,
+    month:order_date.month,
+    day:order_date.day
+    ).display("[day]-[month repr:short]-[year]")]
+  }
+}
+#let get_payment_terms_key(payment_terms)={
+  if payment_terms== none or payment_terms=="" {
+
+  }else{
+  [/ Payment terms: #payment_terms]
+  }
+}
+
 #let prepare_header_key_vals(hdrs)=[
   #set terms(separator: [: ])
   / Invoice no:#hdrs.invoice_number
@@ -46,13 +65,9 @@ day:hdrs.invoice_date.day).display("[day]-[month repr:short]-[year]")
 
   / Order no:#hdrs.order_number
 
-  / Order date:#datetime(
-    year:hdrs.order_date.year,
-    month:hdrs.order_date.month,
-    day:hdrs.order_date.day
-  ).display("[day]-[month repr:short]-[year]")
+  #get_order_date(hdrs.order_date)
 
-  / Payment terms: #hdrs.payment_terms
+  #get_payment_terms_key(hdrs.payment_term)
 
   / IRN no: #hdrs.irn_no
 
