@@ -12,7 +12,7 @@ use typst::syntax::{FileId, PackageSpec, Source};
 use typst::text::{Font, FontBook};
 
 use crate::fonts::register_fonts;
-
+#[derive(Debug)]
 pub struct FileEntry {
     bytes: Bytes,
     source: Option<Source>,
@@ -44,7 +44,7 @@ impl FileEntry {
         Ok(source.clone())
     }
 }
-
+#[derive(Debug)]
 pub struct InMemoryWorld {
     root: PathBuf,
     /// The content of a source.
@@ -63,7 +63,7 @@ pub struct InMemoryWorld {
     time: OffsetDateTime,
     /// http agent to download packages.
     http: ureq::Agent,
-    file_map: HashMap<&'static str, Bytes>
+    file_map: HashMap<&'static str, Bytes>,
 }
 
 impl InMemoryWorld {
