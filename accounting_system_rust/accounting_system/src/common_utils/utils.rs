@@ -141,9 +141,9 @@ pub async fn tenant_user_header_middleware(
      req: ServiceRequest,
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
-    let tenant_service:&Data<Arc<dyn TenantService>> = req.app_data()
+    let tenant_service:&Arc<dyn TenantService> = req.app_data()
         .ok_or(ErrorInternalServerError(anyhow!("tenant service not found")))?;
-    let user_service:&Data<Arc<dyn UserService>> = req.app_data()
+    let user_service:&Arc<dyn UserService> = req.app_data()
         .ok_or(ErrorInternalServerError(anyhow!("user service not found")))?;
     let tenant_id =extract_tenant_id_from_header(req.request())?;
     let user_id = extract_user_id_from_header(req.request())?;
