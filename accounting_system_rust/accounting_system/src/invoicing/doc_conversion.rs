@@ -13,7 +13,7 @@ use crate::invoicing::invoicing_dao_models::{InvoiceDb, InvoiceLineDb};
 use crate::masters::business_entity_master::business_entity_models::BusinessEntityDto;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
 
-pub async fn convert_to_invoice_doc_model<'a>(invoice: InvoiceDb<'a>,
+pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
                                               invoice_number: String,
                                               business_entity_service: Arc<dyn BusinessEntityService>,
                                               currency: Arc<CurrencyMaster>,
@@ -100,8 +100,8 @@ const BATCH_NO: (&str, &str, &str) = ("batch_no", "", "batch_no");
 const EXPIRY_DATE: (&str, &str, &str) = ("expiry_date", "", "expiry_date");
 const MRP: (&str, &str, &str) = ("mrp", "", "mrp");
 const UQC: (&str, &str, &str) = ("uqc", "", "uqc");
-const QTY: (&str, &str, &str) = ("qty", "", "qty");
-const UNIT_PRICE: (&str, &str, &str) = ("unit price", "", "unit price");
+const QTY: (&str, &str, &str) = ("qty", "", "quantity");
+const UNIT_PRICE: (&str, &str, &str) = ("unit price", "", "unit_price");
 const DISCOUNT: (&str, &str, &str) = ("discount", "%", "discount_percentage");
 const IGST: (&str, &str, &str) = ("igst", "%", "igst_percentage");
 const CGST: (&str, &str, &str) = ("cgst", "%", "cgst_percentage");
@@ -208,10 +208,11 @@ fn convert_db_line_to_doc_line(a: &InvoiceLineDb, igst_applicable: bool) -> anyh
     let line = pdf_doc_generator::invoice_template::InvoiceLine {
         line_no: a.line_no as u16,
         item: a.line_title.to_string(),
-        hsn: a.hsn_sac_code.to_string(),
+        hsn_sac: a.hsn_sac_code.to_string(),
         batch_no: a.batch_no.map(|b| b.to_string()),
         expiry_date: a.expiry_date_ms.map(|e| epoch_ms_to_doc_date(e)).transpose()?,
         mrp: a.mrp,
+        quantity:a.quantity,
         uqc: a.uqc.to_string(),
         unit_price: a.unit_price,
         discount_percentage: a.discount_percentage,
