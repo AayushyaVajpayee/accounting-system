@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::error::Error;
 use std::future::Future;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -10,10 +10,12 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use invoice_doc_generator::hsc_sac::GstItemCode::{HsnCode, SacCode};
+use pdf_doc_generator::invoice_template;
 
 use crate::accounting::currency::currency_service::CurrencyService;
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::current_indian_date;
+use crate::invoicing::doc_conversion::convert_to_invoice_doc_model;
 use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
 use crate::invoicing::invoicing_dao::{get_invoicing_dao, InvoicingDao};
 use crate::invoicing::invoicing_dao_models::convert_to_invoice_db;
@@ -159,15 +161,15 @@ impl InvoicingServiceImpl {
                     .get_business_entity_by_id(&supplier_id, &tenant_id).await
                     .context("supplier fetch get_business_entity_by_id failed")?
                     .with_context(|| format!("business entity id not found for id:{}", supplier_id))?;
-            
+
             let bill_to = self.business_entity_service
                 .get_business_entity_by_id(&bill_to_id, &tenant_id).await
                 .context("bill to fetch get_business_entity_by_id failed")?
                 .with_context(|| format!("business entity id not found for id:{}", bill_to_id))?;
             let supplier_gstin = supplier.business_entity.entity_type.extract_gstin()
-                .with_context(|| format!("could not extract gstin from supplier id {}", 
+                .with_context(|| format!("could not extract gstin from supplier id {}",
                                          supplier.business_entity
-                    .base_master_fields.id))?;
+                                             .base_master_fields.id))?;
             let bill_to_gstin = bill_to.business_entity.entity_type.extract_gstin();
             if let Some(bill_to_gstin) = bill_to_gstin {
                 is_gstin_from_same_state(supplier_gstin, bill_to_gstin)
@@ -201,8 +203,21 @@ impl InvoicingService for InvoicingServiceImpl {
                                                        .map(|a| a.billed_to_customer_id),
                                                    tenant_id).await?;
         let db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
-        self.dao.create_invoice(&db_model).await?;
-        todo!()
+        let p = self.dao.create_invoice(&db_model).await?;
+        let df = self
+            .currency_service
+            .get_currency_entry(db_model.currency_id, db_model.tenant_id)
+            .await.context("")?
+            .context("currency cannot be none for created invoice")?;
+        let inv = convert_to_invoice_doc_model(&db_model,
+                                               "dfafdsa".to_string(),
+                                               self.business_entity_service.clone(), df).await?;
+        // let mut jkj= self.pdf_lacks.lock().unwrap();
+        let asd = invoice_template::create_invoice_pdf(inv)?;
+            // jkj.create_invoice_pdf(inv)?;
+        //todo lot to be done to make this api production ready
+        let p = std::fs::write("sdfsdf.pdf", asd).context("error writing invoice file")?;
+        Ok(Default::default())
         // req.
         //validate
         //calculate invoice fields
