@@ -22,17 +22,25 @@ jobs:
         working-directory: ./accounting_system_rust
 
     runs-on: ubuntu-latest
-
+    permissions:
+      id-token: write
+      contents: read
     steps:
-    - uses: actions/checkout@v4
-    - run: echo ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
-    - run: echo ${{env.MESSAGE}}
-    - uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: |
-          ./accounting_system_rust
-    - name: build and run tests
-      run: cargo test --locked
+      - uses: actions/checkout@v4
+      - run: echo ${{contains(github.event.head_commit.message,'#bld_img') && (github.event.ref=='refs/heads/main')}}
+      - run: echo ${{env.MESSAGE}}
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{env.AWS_REGION}}
+          role-to-assume: arn:aws:iam::169296002015:user/github_aws_user
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            ./accounting_system_rust
+      - name: build and run tests
+        run: cargo test --locked
 
 
   docker_image:
