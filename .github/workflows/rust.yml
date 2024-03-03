@@ -33,8 +33,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{env.AWS_REGION}}
-          role-to-assume: arn:aws:iam::169296002015:user/github_aws_user
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          role-to-assume: arn:aws:iam::169296002015:role/unit-tests-gha
+          role-session-name: GitHub_unit_test_to_AWS_via_FederatedOIDC
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
