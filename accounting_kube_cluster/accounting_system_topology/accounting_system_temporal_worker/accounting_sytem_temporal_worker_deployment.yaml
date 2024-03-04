@@ -22,22 +22,6 @@ spec:
               value: "true"
             - name: TEMPORAL_FRONTEND_SERVICE_NAME
               value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
-            - name: TEMPORAL_FRONTEND_SERVICE_NAME
-              value: accounting-temporal-frontend
           #          envFrom:
           #            - secretRef:
           #                name: postgres-db-pwd
