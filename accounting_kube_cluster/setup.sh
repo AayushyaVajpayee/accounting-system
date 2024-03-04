@@ -31,6 +31,9 @@ yq -i '.data.POSTGRES_USER=strenv(POSTGRES_USER) |
        .data.POSTGRES_HOST=strenv(POSTGRES_HOST) ' ./accounting_system_topology/accounting_system/postgres_db_config_map.yaml
 yq -i '.stringData.AWS_SECRET_ACCESS_KEY=strenv(AWS_SECRET_ACCESS_KEY) |
        .stringData.AWS_ACCESS_KEY_ID=strenv(AWS_ACCESS_KEY_ID) |
+       .stringData.AWS_ACCOUNT=strenv(AWS_ACCOUNT)' ./accounting_system_topology/accounting_system/accounting_system_aws_secret.yaml
+yq -i '.stringData.AWS_SECRET_ACCESS_KEY=strenv(AWS_SECRET_ACCESS_KEY) |
+       .stringData.AWS_ACCESS_KEY_ID=strenv(AWS_ACCESS_KEY_ID) |
        .stringData.AWS_ACCOUNT=strenv(AWS_ACCOUNT)' ./ecr_cred_refresher/ecr_secret.yaml
 enc_val=$(echo -n "$POSTGRES_USER_PASSWORD" | base64) yq -i '.data.POSTGRES_PASSWORD=strenv(enc_val)' ./accounting_system_topology/accounting_system/postgres_db_pwd.yaml
 

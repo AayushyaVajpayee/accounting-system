@@ -17,6 +17,8 @@ spec:
           image: accounting-system # Replace with your actual image name
           envFrom:
             - secretRef:
+                name: accounting_system_aws_secret
+            - secretRef:
                 name: postgres-db-pwd
             - configMapRef:
                 name: postgres-db-config
