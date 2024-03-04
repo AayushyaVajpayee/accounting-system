@@ -6,11 +6,11 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    resourceNames: ["regcred"] # Replace with your desired ECR token secret name
-    verbs: ["delete"]
+    resourceNames: ["docker-secret"] # Replace with your desired ECR token secret name
+    verbs: ["delete","get", "watch", "list"]
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["create"]
+    verbs: ["create","get", "watch", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

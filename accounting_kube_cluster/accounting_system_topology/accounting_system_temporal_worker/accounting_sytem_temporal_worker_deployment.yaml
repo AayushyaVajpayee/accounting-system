@@ -12,12 +12,30 @@ spec:
       labels:
         app: accounting-temporal-java-worker
     spec:
+      imagePullSecrets:
+        - name: docker-secret
       containers:
         - name: my-container
-          image: accounting-temporal-java-worker:latest # Replace with your actual image name
+          image: 169296002015.dkr.ecr.ap-south-1.amazonaws.com/accounting_temporal_java_worker:37cdedd # Replace with your actual image name
           env:
             - name: IS_KUBERNETES_ENV
               value: "true"
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
+            - name: TEMPORAL_FRONTEND_SERVICE_NAME
+              value: accounting-temporal-frontend
             - name: TEMPORAL_FRONTEND_SERVICE_NAME
               value: accounting-temporal-frontend
           #          envFrom:

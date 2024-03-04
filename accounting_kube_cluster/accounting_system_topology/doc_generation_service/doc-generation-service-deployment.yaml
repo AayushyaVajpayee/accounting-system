@@ -12,6 +12,8 @@ spec:
       labels:
         app: doc-generation
     spec:
+      imagePullSecrets:
+        - name: docker-secret
       containers:
         - name: my-container
           image: doc-generation # Replace with your actual image name

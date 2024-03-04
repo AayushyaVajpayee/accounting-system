@@ -10,6 +10,10 @@ export POSTGRES_HOST="$db_name_prefix_helm-postgresql.default.svc.cluster.local"
 export NAMESPACE_NAME=default
 export DOCKER_SECRET_NAME=docker-secret
 export TEMPORAL_DEPLOYMENT_PREFIX="accounting"
+export AWS_ACCESS_KEY_ID=""
+export AWS_SECRET_ACCESS_KEY=""
+export AWS_ACCOUNT=""
+export AWS_REGION=""
 #export tem="create database $ACCOUNTING_POSTGRES_DB;
 #create database $TEMPORAL_DB;
 #create database $TEMPORAL_VISIBILITY_DB;"

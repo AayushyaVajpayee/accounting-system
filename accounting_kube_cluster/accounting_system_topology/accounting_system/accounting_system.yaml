@@ -12,12 +12,14 @@ spec:
       labels:
         app: accounting-system
     spec:
+      imagePullSecrets:
+        - name: docker-secret
       containers:
         - name: my-container
-          image: accounting-system # Replace with your actual image name
+          image: 169296002015.dkr.ecr.ap-south-1.amazonaws.com/accounting_system:d3c45e1 # Replace with your actual image name
           envFrom:
             - secretRef:
-                name: accounting_system_aws_secret
+                name: accounting-system-aws-secret
             - secretRef:
                 name: postgres-db-pwd
             - configMapRef:
