@@ -10,6 +10,10 @@ export POSTGRES_HOST="$db_name_prefix_helm-postgresql.default.svc.cluster.local"
 export NAMESPACE_NAME=default
 export DOCKER_SECRET_NAME=docker-secret
 export TEMPORAL_DEPLOYMENT_PREFIX="accounting"
+export AWS_ACCESS_KEY_ID=""
+export AWS_SECRET_ACCESS_KEY=""
+export AWS_ACCOUNT=""
+export AWS_REGION=""
 #export tem="create database $ACCOUNTING_POSTGRES_DB;
 #create database $TEMPORAL_DB;
 #create database $TEMPORAL_VISIBILITY_DB;"
@@ -29,6 +33,9 @@ yq -i '.data.POSTGRES_USER=strenv(POSTGRES_USER) |
        .data.POSTGRES_APP_DB=strenv(ACCOUNTING_POSTGRES_DB) |
        .data.POSTGRES_PORT=strenv(POSTGRES_PORT) |
        .data.POSTGRES_HOST=strenv(POSTGRES_HOST) ' ./accounting_system_topology/accounting_system/postgres_db_config_map.yaml
+yq -i '.stringData.AWS_SECRET_ACCESS_KEY=strenv(AWS_SECRET_ACCESS_KEY) |
+       .stringData.AWS_ACCESS_KEY_ID=strenv(AWS_ACCESS_KEY_ID) |
+       .stringData.AWS_ACCOUNT=strenv(AWS_ACCOUNT)' ./accounting_system_topology/accounting_system/accounting_system_aws_secret.yaml
 yq -i '.stringData.AWS_SECRET_ACCESS_KEY=strenv(AWS_SECRET_ACCESS_KEY) |
        .stringData.AWS_ACCESS_KEY_ID=strenv(AWS_ACCESS_KEY_ID) |
        .stringData.AWS_ACCOUNT=strenv(AWS_ACCOUNT)' ./ecr_cred_refresher/ecr_secret.yaml
