@@ -56,13 +56,13 @@ struct Invoice {
     billed_to_business_entity_id: Option<Uuid>,
     shipped_to_business_entity_id: Option<Uuid>,
     purchase_order_number: Option<PurchaseOrderNo>,
-    einvoice_json_s3_id: Option<Uuid>,
+    einvoice_json_s3_id: Option<String>,
     total_taxable_amount: f64,
     total_tax_amount: f64,
     round_off: f64,
     total_payable_amount: f64,
     igst_applicable:bool,
-    invoice_pdf_s3_id: Option<Uuid>,
+    invoice_pdf_s3_id: Option<String>,
     invoice_template_id: Option<Uuid>,
     payment_term_id: Option<Uuid>,
     audit_metadata: AuditMetadataBase,
@@ -71,7 +71,7 @@ struct Invoice {
 #[derive(Debug)]
 struct InvoiceTemplate {
     base_master_fields: BaseMasterFields,
-    sample_doc_s3_id: Option<Uuid>,
+    sample_doc_s3_id: Option<String>,
     //there will be a template id of the pdf generator to use in kotlin pdf generating service
     audit_metadata: AuditMetadataBase,
 }

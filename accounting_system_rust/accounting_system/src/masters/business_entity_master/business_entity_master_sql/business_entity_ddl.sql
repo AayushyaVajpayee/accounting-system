@@ -29,11 +29,11 @@ create table business_entity_invoice_detail --similarly other can be business_en
     remarks                    varchar(70),
 
     business_entity_id         uuid references business_entity (id),
-    business_logo_s3_id        uuid,-- will not be a range query filter
-    invoice_signature_s3_id    uuid, --will not be a range query filter
+    business_logo_s3_id        varchar(200),-- will not be a range query filter
+    invoice_signature_s3_id    varchar(200), --will not be a range query filter
     invoice_template_id        uuid,
     e_invoicing_applicable     bool,
-    terms_and_conditions_s3_id uuid,
+    terms_and_conditions_s3_id varchar(200),
 
     created_by                 uuid references app_user (id) not null,
     updated_by                 uuid references app_user (id),

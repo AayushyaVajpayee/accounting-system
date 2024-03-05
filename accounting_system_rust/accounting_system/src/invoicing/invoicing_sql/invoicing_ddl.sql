@@ -22,14 +22,14 @@ create table invoice
     billed_to_business_entity       uuid references business_entity (id),--only applicable in b2b invoices
     shipped_to_business_entity      uuid references business_entity (id),---only applicable in b2b invoices
     purchase_order_number           varchar(35),
-    einvoice_json_s3_id             uuid,
+    einvoice_json_s3_id             varchar(200),
     total_taxable_amount            double precision                                    not null,
     total_tax_amount                double precision                                    not null,
     total_additional_charges_amount double precision                                    not null,
     round_off                       double precision                                    not null,
     total_payable_amount            double precision                                    not null,
     igst_applicable                 boolean,
-    invoice_pdf_s3_id               uuid,
+    invoice_pdf_s3_id               varchar(200),
     invoice_template_id             uuid references invoice_template (id)               not null,
     payment_term_id                 uuid references payment_term,
     created_by                      uuid references app_user (id)                       not null,
