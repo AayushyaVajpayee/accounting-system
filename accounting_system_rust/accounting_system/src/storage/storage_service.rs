@@ -15,6 +15,7 @@ struct StorageServiceImpl {
     client: AwsStorageService,
 }
 
+pub const FINANCIAL_DOCS_BUCKET_NAME:&str ="accounting-system-fin-docs";
 pub async fn get_storage_service() -> Arc<dyn StorageService> {
     let aws_store = AwsStorageService::new().await;
     Arc::new(StorageServiceImpl {

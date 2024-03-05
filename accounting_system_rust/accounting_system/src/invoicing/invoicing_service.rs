@@ -50,6 +50,7 @@ struct InvoicingServiceImpl {
     storage_service:Arc<dyn StorageService>
 }
 
+
 impl InvoicingServiceImpl {
     async fn validate_create_invoice_request(&self, req: &CreateInvoiceRequest, tenant_id: Uuid) -> Result<(), InvoicingServiceError> {
         let mut errors: Vec<String> = vec![];
@@ -211,6 +212,10 @@ impl InvoicingService for InvoicingServiceImpl {
     }
 
     //template_id,series_mst_id,currency_id,supplier_id,billed_to,shipped_to ids must exist for this tenant
+}
+
+fn create_storage_file_key(tenant_id:Uuid,invoice_id:Uuid)->String{
+    format!("{}-invoice-{}.pdf",tenant_id,invoice_id)
 }
 
 pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantService>,
