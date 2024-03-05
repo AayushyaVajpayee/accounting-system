@@ -17,7 +17,7 @@ async fn create_s3_client(config: &SdkConfig) -> Client {
 
 
 #[async_trait]
-pub trait StorageService {
+pub trait Storage {
     async fn upload_object(&self, bucket_name: &str, asset_name: &str, bytes: Vec<u8>) -> anyhow::Result<()>;
     async fn create_bucket(&self, bucket_name: &str) -> anyhow::Result<()>;
     async fn get_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<Vec<u8>>;
@@ -40,7 +40,7 @@ impl AwsStorageService {
 }
 
 #[async_trait]
-impl StorageService for AwsStorageService {
+impl Storage for AwsStorageService {
     async fn upload_object(&self, bucket_name: &str, asset_name: &str, bytes: Vec<u8>) -> anyhow::Result<()> {
         let body = ByteStream::from(bytes);
         let _ = self.client.put_object()
@@ -92,7 +92,7 @@ impl StorageService for AwsStorageService {
 mod tests {
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
-    use crate::storage_service::{AwsStorageService,  StorageService};
+    use crate::storage_service::{AwsStorageService, Storage};
 
     const UNIT_TESTS_BUCKET: &str = "unit-tests-objects-only";
 

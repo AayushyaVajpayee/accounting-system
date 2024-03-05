@@ -40,6 +40,7 @@ dependencies = [
  "serde",
  "serde_json",
  "spectral",
+ "storage_service",
  "testcontainers",
  "thiserror",
  "tokio",

@@ -11,6 +11,7 @@ mod masters;
 mod tenant;
 mod common_utils;
 mod db_schema_syncer;
+mod storage;
 
 
 

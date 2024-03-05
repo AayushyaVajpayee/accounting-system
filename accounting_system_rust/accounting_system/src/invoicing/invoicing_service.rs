@@ -21,6 +21,7 @@ use crate::invoicing::invoicing_request_models::CreateInvoiceRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
+use crate::storage::storage_service::StorageService;
 use crate::tenant::tenant_service::TenantService;
 
 #[derive(Debug, Error)]
@@ -46,6 +47,7 @@ struct InvoicingServiceImpl {
     invoicing_series_service: Arc<dyn InvoicingSeriesService>,
     business_entity_service: Arc<dyn BusinessEntityService>,
     invoice_template_service: Arc<dyn InvoiceTemplateService>,
+    storage_service:Arc<dyn StorageService>
 }
 
 impl InvoicingServiceImpl {
@@ -215,7 +217,8 @@ pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantServi
                              currency_service: Arc<dyn CurrencyService>,
                              invoicing_series_service: Arc<dyn InvoicingSeriesService>,
                              business_entity_service: Arc<dyn BusinessEntityService>,
-                             invoice_template_service: Arc<dyn InvoiceTemplateService>) -> Arc<dyn InvoicingService> {
+                             invoice_template_service: Arc<dyn InvoiceTemplateService>,
+                             storage_service:Arc<dyn StorageService>) -> Arc<dyn InvoicingService> {
     let invoicing_service_dao = get_invoicing_dao(arc);
     let service =InvoicingServiceImpl {
         dao: invoicing_service_dao,
@@ -224,6 +227,7 @@ pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantServi
         invoicing_series_service,
         business_entity_service,
         invoice_template_service,
+        storage_service
     };
     Arc::new(service)
 }

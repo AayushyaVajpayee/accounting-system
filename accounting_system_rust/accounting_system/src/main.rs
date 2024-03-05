@@ -26,6 +26,7 @@ use crate::masters::company_master::company_master_service::get_company_master_s
 use crate::masters::country_master::country_service::get_country_master_service;
 use crate::masters::pincode_master::pincode_master_service::get_pincode_master_service;
 use crate::masters::state_master::state_master_service::get_state_master_service;
+use crate::storage::storage_service::get_storage_service;
 use crate::tenant::tenant_http_api;
 use crate::tenant::tenant_service::get_tenant_service;
 
@@ -40,6 +41,7 @@ mod masters;
 mod tenant;
 mod common_utils;
 mod db_schema_syncer;
+mod storage;
 
 
 pub fn build_dependencies() {
@@ -75,7 +77,7 @@ async fn healthcheck() -> actix_web::Result<impl Responder> {
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "error");
     env_logger::builder().format_timestamp_micros().init();
-
+    let storage = get_storage_service().await;
     let pool = Arc::new(get_postgres_conn_pool());
     let audit_table_service = get_audit_service(pool.clone());
     let tenant_service = get_tenant_service(pool.clone());
@@ -105,7 +107,8 @@ async fn main() -> io::Result<()> {
         currency_service.clone(),
         invoicing_series_service.clone(),
         business_entity_service.clone(),
-        invoice_template_service.clone()
+        invoice_template_service.clone(),
+        storage.clone()
     );
     // let invoice_template_service= get_invoice_template_service();
     println!("{}", std::process::id());
