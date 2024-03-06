@@ -1,1 +1,46 @@
-GET 0.0.0.0:8080/create-invoice
+POST 0.0.0.0:8080/create-invoice
+x-acc-tenant-id: 018b33d9-c862-7fde-a0cd-55504d75e5e9
+x-acc-user-id: 018b3444-dc75-7a3f-a4d9-02c41071d3bd
+Content-Type: application/json
+
+{
+  "idempotence_key": "018df0bb-afb8-7ab1-815a-c47b8e5e8886",
+  "invoice_template_id": "018d5552-fb70-7d28-bbf6-7e726e5c15eb",
+  "invoicing_series_mst_id": "018d417d-e88a-732b-bdd9-db9aec8d3f78",
+  "currency_id": "018c0bff-4036-7ef8-8383-ae8a38c8ecf1",
+  "service_invoice": false,
+  "einvoicing_applicable": false,
+  "b2b_invoice": true,
+  "supplier_id": "018d5037-bb9d-7263-ba97-d3c46e188c89",
+  "bill_ship_detail": {
+    "billed_to_customer_id": "018d5efd-009f-7e36-9d4f-8ad30460cada",
+    "shipped_to_customer_id": "018d5efd-009f-7e36-9d4f-8ad30460cada"
+  },
+  "order_number": null,
+  "order_date": null,
+  "payment_terms": null,
+  "invoice_lines": [
+    {
+      "hsn_code": "38220011",
+      "line_title": "some random line title",
+      "line_subtitle": null,
+      "quantity": {
+        "quantity": 1.0,
+        "uom": "Piece"
+      },
+      "unit_price": 10.0,
+      "tax_rate_percentage": 28.0,
+      "discount_percentage": 0.0,
+      "cess_percentage": 0.0,
+      "mrp": null,
+      "batch_no": null,
+      "expiry_date": null
+    }
+  ],
+  "additional_charges": [
+    {
+      "line_title": "some line title",
+      "rate": 0.0
+    }
+  ]
+}
