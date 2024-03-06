@@ -7,7 +7,7 @@ import io.temporal.client.WorkflowOptions
 object InvoicingWorkflowService {
 
 
-    fun createInvoice():String {
+    fun createInvoice(tenantId:String,userId:String,invoiceRequest:String):String {
         val workflow =
             TemporalConfiguration.client
                 .newWorkflowStub(
@@ -18,6 +18,6 @@ object InvoicingWorkflowService {
                         .build()
                 )
 
-        return workflow.createInvoice("kj")
+        return workflow.createInvoice(tenantId,userId,invoiceRequest)
     }
 }

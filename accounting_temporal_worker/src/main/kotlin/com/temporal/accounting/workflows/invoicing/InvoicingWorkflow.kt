@@ -11,35 +11,31 @@ import java.time.Duration
 interface InvoiceCreationWorkflow {
 
     @WorkflowMethod
-    fun createInvoice(name: String): String
+    fun createInvoice(tenantId: String, userId: String, invoiceRequest: String): String
 }
 
 
 @ActivityInterface
 interface InvoiceCreationActivities {
-
-    fun createInvoiceDetailsInDb();
-    fun performEInvoicing();
-    fun generateAndStorePdfInS3();
-    fun storeDetailsInDb();
+    fun createInvoiceDetailsInDbAndPerformEInvoicing(tenantId: String, userId: String, invoiceRequest: String): String
+    fun generateAndStorePdfInS3AndUpdateDetailsInDb()
 }
 
 
 class InvoiceCreationActivitiesImpl : InvoiceCreationActivities {
-    override fun createInvoiceDetailsInDb() {
-        println("createInvoiceDetailsInDb")
+
+    override fun createInvoiceDetailsInDbAndPerformEInvoicing(
+        tenantId: String,
+        userId: String,
+        invoiceRequest: String
+    ): String {
+        println("userId $userId tenantId $tenantId")
+        println(invoiceRequest)
+        return "random placeholder for actual data"
     }
 
-    override fun performEInvoicing() {
-        println("performEInvoicing")
-    }
-
-    override fun generateAndStorePdfInS3() {
-        println("generateAndStorePdfInS3")
-    }
-
-    override fun storeDetailsInDb() {
-        println("storeDetailsInDb")
+    override fun generateAndStorePdfInS3AndUpdateDetailsInDb() {
+        println("generateAndStorePdfInS3 and storeDetailsInDb")
     }
 
 }
@@ -52,11 +48,15 @@ class InvoiceCreationWorkflowImpl : InvoiceCreationWorkflow {
             .build()
     )
 
-    override fun createInvoice(name: String): String {
-        activities.createInvoiceDetailsInDb()
-        activities.performEInvoicing()
-        activities.generateAndStorePdfInS3()
-        activities.storeDetailsInDb()
+    //input will be json
+//if already created then do nothing i guess?. to find if everything done or not call createInvoiceDetailsIndb and in response
+//return if all complete? why would it be incomplete? we are only creating invoice from this workflow
+//this means inflight requests have been taken care of.
+//all steps will need to be idempotent then
+    override fun createInvoice(tenantId: String, userId: String, invoiceRequest: String): String {
+        activities.createInvoiceDetailsInDbAndPerformEInvoicing(tenantId, userId, invoiceRequest)
+        activities.generateAndStorePdfInS3AndUpdateDetailsInDb()
+
         return "created"
     }
 
