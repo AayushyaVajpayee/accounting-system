@@ -8,7 +8,8 @@ use time::OffsetDateTime;
 use typst::{Library, World};
 use typst::diag::{eco_format, FileError, FileResult, PackageError, PackageResult};
 use typst::foundations::{Bytes, Datetime, panic};
-use typst::syntax::{FileId, PackageSpec, Source};
+use typst::syntax::{FileId, Source};
+use typst::syntax::package::PackageSpec;
 use typst::text::{Font, FontBook};
 
 use crate::fonts::register_fonts;
@@ -72,7 +73,7 @@ impl InMemoryWorld {
         Self {
             root: PathBuf::from(""),
             source: Source::detached(content),
-            library: Prehashed::new(Library::build()),
+            library: Prehashed::new(Library::builder().build()),
             book: Prehashed::new(FontBook::from_fonts(&fonts)),
             fonts,
             files: RefCell::new(HashMap::new()),

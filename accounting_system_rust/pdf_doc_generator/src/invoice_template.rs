@@ -171,5 +171,7 @@ anyhow::Result<Vec<u8>> {
     let document = typst::compile(&world, &mut tracer)
         .map_err(|a|anyhow!("error during typst compilation"))?;
     let pdf = typst_pdf::pdf(&document, None, None);
+    //invoice creation does not have that much reusable data. also this evicts all cache everywhere
+    comemo::evict(0);
     Ok(pdf)
 }
