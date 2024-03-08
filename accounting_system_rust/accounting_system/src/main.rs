@@ -4,6 +4,7 @@ use actix_web::middleware::Logger;
 use actix_web_lab::middleware::from_fn;
 use std::io;
 use std::sync::Arc;
+use log::LevelFilter;
 
 
 use crate::accounting::account::account_service::get_account_service;
@@ -76,7 +77,12 @@ async fn healthcheck() -> actix_web::Result<impl Responder> {
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "error");
-    env_logger::builder().format_timestamp_micros().init();
+    env_logger::builder()
+        .filter(Some("actix"),LevelFilter::Info)
+        .filter(Some("actix_web"),LevelFilter::Info)
+        .filter(Some("accounting_system"),LevelFilter::Info)
+        .format_module_path(true)
+        .format_timestamp_micros().init();
     let storage = get_storage_service().await;
     let pool = Arc::new(get_postgres_conn_pool());
     let audit_table_service = get_audit_service(pool.clone());
@@ -136,7 +142,7 @@ async fn main() -> io::Result<()> {
             .configure(|conf| invoicing::invoicing_http_api::init_routes(conf,invoicing_service.clone()))
             .route("/healthcheck", web::get().to(healthcheck))
     })
-        .bind(("0.0.0.0", 8080))?
+        .bind(("0.0.0.0", 8090))?
         .run()
         .await.expect("TODO: panic message");
     Ok(())

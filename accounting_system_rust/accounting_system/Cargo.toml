@@ -44,8 +44,8 @@ const_format = "0.2.32"
 moka = { version = "0.12.5", features = ["future"] }
 lazy_static = "1.4.0"
 anyhow = "1.0.79"
-tracing = "0.1.40"
-tracing-subscriber = "0.3.18"
+tracing = {version =  "0.1.40" }
+tracing-subscriber = { version = "0.3.18",features = ["env-filter"] }
 itertools = "0.12.1"
 maplit = "1.0.2"
 xxhash-rust = { version = "0.8.8", features = ["xxh32"] }
