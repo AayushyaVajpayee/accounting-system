@@ -33,34 +33,6 @@ jib{
 }
 
 ktor {
-
-
-//    docker {
-//        portMappings.set(listOf(
-//            io.ktor.plugin.features.DockerPortMapping(
-//                8080,
-//                8080,
-//                io.ktor.plugin.features.DockerPortMappingProtocol.TCP
-//            )
-//        ))
-//
-//        jreVersion.set(JavaVersion.VERSION_21)
-//        localImageName.set("accounting-temporal-java-worker")
-//        imageTag.set("la")
-//        externalRegistry.set(
-//            io.ktor.plugin.features.DockerImageRegistry.externalRegistry(
-//                username = provider { "AWS" },
-//                password = providers.provider {
-//                    get_value("AWS_PASSWORD")
-//                },
-//                hostname = providers.provider {
-//                    get_value("AWS_ECR_HOSTNAME")
-//                },
-//                project = provider { "accounting_temporal_java_worker" },
-//            )
-//        )
-
-//    }
 }
 
 repositories {
@@ -73,22 +45,13 @@ idea {
     }
 }
 dependencies {
-    implementation("io.ktor:ktor-server-core-jvm")
-    implementation("io.ktor:ktor-server-netty-jvm")
+    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
+    implementation("io.ktor:ktor-client-core:$ktor_version")
+    implementation("io.ktor:ktor-client-cio:$ktor_version")
+    implementation("io.ktor:ktor-client-logging:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.temporal:temporal-sdk:1.22.3")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
-
-//fun get_value(key: String): String {
-//    return if (providers.environmentVariable("CI").isPresent) {
-//        providers.environmentVariable("key").get()
-//    } else {
-//        val k = Properties();
-//        k.load(FileInputStream("custom.properties"));
-//        k[key] as String
-//
-//    }
-//
-//}
