@@ -65,7 +65,12 @@ ktor {
 repositories {
     mavenCentral()
 }
-
+idea {
+    module {
+        isDownloadJavadoc=true
+        isDownloadSources=true
+    }
+}
 dependencies {
     implementation("io.ktor:ktor-server-core-jvm")
     implementation("io.ktor:ktor-server-netty-jvm")
