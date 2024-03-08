@@ -1,7 +1,9 @@
+use std::time::Duration;
 use anyhow::Context;
 use async_trait::async_trait;
 use aws_config::{BehaviorVersion, SdkConfig};
 use aws_sdk_s3::Client;
+use aws_sdk_s3::presigning::PresigningConfig;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::types::{BucketLocationConstraint, CreateBucketConfiguration};
 
@@ -18,8 +20,9 @@ async fn create_s3_client(config: &SdkConfig) -> Client {
 
 #[async_trait]
 pub trait Storage {
-    async fn upload_object(&self, bucket_name: &str, asset_name: &str, bytes: Vec<u8>) -> anyhow::Result<()>;
+    async fn upload_object(&self, bucket_name: &str, asset_name: &str, bytes: Vec<u8>, expiry_time: Option<Duration>) -> anyhow::Result<String>;
     async fn create_bucket(&self, bucket_name: &str) -> anyhow::Result<()>;
+    async fn get_object_url(&self, bucket_name: &str, asset_name: &str, expiry_time: Option<Duration>) -> anyhow::Result<String>;
     async fn get_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<Vec<u8>>;
     async fn delete_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<()>;
 }
@@ -41,15 +44,20 @@ impl AwsStorageService {
 
 #[async_trait]
 impl Storage for AwsStorageService {
-    async fn upload_object(&self, bucket_name: &str, asset_name: &str, bytes: Vec<u8>) -> anyhow::Result<()> {
+    async fn upload_object(&self, bucket_name: &str,
+                           asset_name: &str,
+                           bytes: Vec<u8>,
+                           expiry_time: Option<Duration>) -> anyhow::Result<String> {
         let body = ByteStream::from(bytes);
         let _ = self.client.put_object()
+
             .bucket(bucket_name)
             .body(body)
             .key(asset_name)
             .send()
             .await.context("error during object upload")?;
-        Ok(())
+        let uri = self.get_object_url(bucket_name, asset_name, expiry_time).await?;
+        Ok(uri)
     }
 
     async fn create_bucket(&self, bucket_name: &str) -> anyhow::Result<()> {
@@ -65,6 +73,17 @@ impl Storage for AwsStorageService {
         Ok(())
     }
 
+    async fn get_object_url(&self, bucket_name: &str, asset_name: &str, expiry_time: Option<Duration>) -> anyhow::Result<String> {
+        let expiry_time = expiry_time.unwrap_or(Duration::from_secs(300));
+        let po = self.client.get_object()
+            .bucket(bucket_name)
+            .key(asset_name)
+            .presigned(PresigningConfig::expires_in(expiry_time)
+                .context("error in setting presigning expiry time")?)
+            .await?;
+        Ok(po.uri().to_string())
+    }
+
     async fn get_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<Vec<u8>> {
         let p = self.client.get_object()
             .bucket(bucket_name)
@@ -75,6 +94,7 @@ impl Storage for AwsStorageService {
             .context("error during collecting bytes from s3 object")?;
         Ok(asd.to_vec())
     }
+
 
     async fn delete_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<()> {
         let _ = self.client.delete_object()
@@ -104,16 +124,19 @@ mod tests {
         let asset_name = format!("unit_test_file_{}.txt", random_file_suffix);
         let text = "unit test file content";
         let result = storage_service.upload_object(UNIT_TESTS_BUCKET, &asset_name,
-                                                   text.as_bytes().to_vec()).await;
+                                                   text.as_bytes().to_vec(),None).await;
         assert_that!(result)
             .is_ok();
-        result.unwrap();
-        let output = storage_service.get_object(UNIT_TESTS_BUCKET, &asset_name)
-            .await;
-        assert_that!(output)
-            .is_ok();
-        let ou = output.unwrap();
-        let s = String::from_utf8(ou).unwrap();
+        let result=result.unwrap();
+        let r = url::Url::parse(&result).unwrap();
+        let p = reqwest::get(r)
+            .await
+            .unwrap()
+            .bytes()
+            .await
+            .unwrap();
+       
+        let s = String::from_utf8(p.to_vec()).unwrap();
         assert_that!(s).is_equal_to(text.to_string());
         let deletion_result = storage_service.delete_object(UNIT_TESTS_BUCKET,
                                                             &asset_name).await;

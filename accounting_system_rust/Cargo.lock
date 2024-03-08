@@ -4844,8 +4844,10 @@ dependencies = [
  "aws-config",
  "aws-sdk-s3",
  "rand 0.8.5",
+ "reqwest",
  "spectral",
  "tokio",
+ "url",
 ]
 
 [[package]]
