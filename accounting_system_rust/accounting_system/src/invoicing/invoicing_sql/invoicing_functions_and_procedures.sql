@@ -187,6 +187,10 @@ BEGIN
         select create_invoice_table_entry(req, payment_term_id) into invoice_id;
         call persist_invoice_lines(req, invoice_id);
         call persist_additional_charge(req.additional_charges, invoice_id, req.tenant_id, req.created_by);
+        update idempotence_store
+        set response=json_build_object('id', invoice_id)
+        where idempotence_key = req.idempotence_key
+          and workflow_type = 'create_invoice';
         return invoice_id;
     else
         select response
