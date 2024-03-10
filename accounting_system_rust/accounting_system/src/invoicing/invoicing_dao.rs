@@ -1,14 +1,15 @@
+use std::fmt::Write;
 use std::sync::Arc;
+use anyhow::Context;
 
 use async_trait::async_trait;
-use deadpool_postgres::{Pool};
-use uuid::Uuid;
+use deadpool_postgres::Pool;
 
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::pg_util::pg_util::ToPostgresString;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_json;
 use crate::invoicing::invoicing_dao_models::InvoiceDb;
-use std::fmt::Write;
-use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
+use crate::invoicing::invoicing_domain_models::CreateInvoiceDbResponse;
 
 struct InvoicingDaoImpl {
     postgres_client: Arc<Pool>,
@@ -16,19 +17,19 @@ struct InvoicingDaoImpl {
 
 #[async_trait]
 pub trait InvoicingDao: Send + Sync {
-    async fn create_invoice(&self, invoice_db: &InvoiceDb) -> Result<Uuid, DaoError>;
+    async fn create_invoice(&self, invoice_db: &InvoiceDb) -> Result<CreateInvoiceDbResponse, DaoError>;
 }
 
-pub fn get_invoicing_dao(arc:Arc<Pool>)->Arc<dyn InvoicingDao>{
-   let p = InvoicingDaoImpl{
+pub fn get_invoicing_dao(arc: Arc<Pool>) -> Arc<dyn InvoicingDao> {
+    let p = InvoicingDaoImpl {
         postgres_client: arc,
     };
-   Arc::new(p)
+    Arc::new(p)
 }
 
 #[async_trait]
 impl InvoicingDao for InvoicingDaoImpl {
-    async fn create_invoice(&self, invoice_db: &InvoiceDb) -> Result<Uuid, DaoError> {
+    async fn create_invoice(&self, invoice_db: &InvoiceDb) -> Result<CreateInvoiceDbResponse, DaoError> {
         let mut simple_query = String::with_capacity(1500);
         write!(&mut simple_query, "begin transaction;\n")?;
         write!(&mut simple_query, "select create_invoice(")?;
@@ -36,30 +37,38 @@ impl InvoicingDao for InvoicingDaoImpl {
         write!(&mut simple_query, ");\n commit;")?;
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(simple_query.as_str()).await?;
-        parse_db_output_of_insert_create_and_return_uuid(&rows)
+        let value = parse_db_output_of_insert_create_and_return_json(&rows)?;
+        let resp: CreateInvoiceDbResponse = serde_json::from_value(value)
+            .context("could not deserialize into CreateInvoiceDbResponse")?;
+        Ok(resp)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write;
+    use std::process::id;
+    use std::str::FromStr;
+
     use deadpool_postgres::GenericClient;
+    use itertools::Itertools;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
+    use uuid::{Uuid, uuid};
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::common_utils::pg_util::pg_util::ToPostgresString;
+    use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_json;
     use crate::invoicing::invoicing_dao::{InvoicingDao, InvoicingDaoImpl};
-    use crate::invoicing::invoicing_dao_models::{convert_to_invoice_db};
+    use crate::invoicing::invoicing_dao_models::convert_to_invoice_db;
+    use crate::invoicing::invoicing_domain_models::CreateInvoiceDbResponse;
     use crate::invoicing::invoicing_request_models::tests::{a_create_invoice_request, SEED_INVOICE_ID};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::invoicing::payment_term::payment_term_models::tests::SEED_PAYMENT_TERM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
-    use std::fmt::Write;
-    use std::str::FromStr;
-    use uuid::Uuid;
 
     #[tokio::test]
     async fn test_create_invoice() {
@@ -72,7 +81,7 @@ mod tests {
                                       *SEED_TENANT_ID).unwrap();
         let p = dao.create_invoice(&p).await.unwrap();
         let row = dao.postgres_client.get().await.unwrap()
-            .query_opt("select id from invoice where id=$1", &[&p])
+            .query_opt("select id from invoice where id=$1", &[&p.invoice_id])
             .await.unwrap();
         assert_that!(row).is_some();
     }
@@ -111,18 +120,15 @@ mod tests {
                                       false, *SEED_USER_ID,
                                       *SEED_TENANT_ID).unwrap();
         let mut input_str = String::with_capacity(1000);
+        write!(&mut input_str, "select 1;").unwrap();
         write!(&mut input_str, "select create_invoice_table_entry(").unwrap();
         p.fmt_postgres(&mut input_str).unwrap();
-        write!(&mut input_str, ",'{}')", *SEED_PAYMENT_TERM_ID).unwrap();
+        write!(&mut input_str, ",'{}');", *SEED_PAYMENT_TERM_ID).unwrap();
         let rows = dao.postgres_client.get().await.unwrap()
             .simple_query(&input_str).await.unwrap();
-        let id = rows.first().unwrap();
-        let uuid = match id {
-            SimpleQueryMessage::Row(a) => {
-                Uuid::from_str(a.get(0).unwrap()).unwrap()
-            }
-            _ => { panic!("panic") }
-        };
+        let po = rows.into_iter().skip(1).collect_vec();
+        let value = parse_db_output_of_insert_create_and_return_json(&po).unwrap();
+        let uuid = Uuid::from_str(value.get("invoice_id").unwrap().as_str().unwrap()).unwrap();
         let persisted_id = dao.postgres_client.get().await.unwrap()
             .query_opt("select id from invoice where id=$1", &[&uuid])
             .await.unwrap();
@@ -151,9 +157,12 @@ mod tests {
     }
 
     #[rstest]
-    #[case::without_padding(false, "TES1", "inv_num1")]
-    #[case::with_padding(true, "TES0000000000001", "inv_num2")]
-    async fn test_create_invoice_number(#[case] padding: bool, #[case] result: String, #[case] dbname: String) {
+    #[case::without_padding(false, "TES1", "inv_num1",2023)]
+    #[case::without_padding_new_financial_year(false, "TES1", "inv_num2",2999)]
+    #[case::with_padding(true, "TES0000000000001", "inv_num3",2023)]
+    async fn test_create_invoice_number(#[case] padding: bool, #[case] result: String,
+                                        #[case] dbname: String,
+                                        #[case] fin_year:u16) {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, Some(dbname.as_str())).await;
         let dao = InvoicingDaoImpl { postgres_client: postgres_client.clone() };
@@ -166,9 +175,9 @@ mod tests {
         let query_form = format!(
             r#"
             begin transaction;
-            select create_invoice_number('{}','{}'::smallint,'{}');
+            select create_invoice_number('{}','{}'::smallint,'{}','{}');
             commit;
-        "#, id, 2024, tenant_id);
+        "#, id, fin_year, tenant_id,*SEED_USER_ID);
         let p = dao.postgres_client.get()
             .await
             .unwrap()
@@ -187,7 +196,5 @@ mod tests {
             }
             _ => { unreachable!(); }
         }
-
-        println!("{}", query_form);
     }
 }

@@ -1,4 +1,5 @@
 use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use invoice_doc_generator::invoice_line::line_number::LineNumber;
@@ -10,7 +11,11 @@ use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, Disc
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::invoicing::invoicing_request_models::{BatchNo, ExpiryDateMs, PurchaseOrderNo};
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
-
+#[derive(Debug, Builder,Serialize,Deserialize)]
+pub struct CreateInvoiceDbResponse{
+    pub invoice_number:String,
+    pub invoice_id:Uuid
+}
 #[derive(Debug, Builder)]
 pub struct InvoiceLine {
     pub base_master_fields: BaseMasterFields,

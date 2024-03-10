@@ -168,7 +168,6 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessa
     };
     parse_rows(rows,closure)
 }
-
 fn parse_rows<T, F>(rows: &[SimpleQueryMessage], parse_fn: F)
                     -> Result<T, DaoError>
     where F: FnOnce(&str) -> Result<T, DaoError> {
