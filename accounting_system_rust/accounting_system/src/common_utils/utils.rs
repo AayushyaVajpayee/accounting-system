@@ -2,7 +2,7 @@ use std::future::{ Ready};
 use std::process::{ Output};
 use std::str::FromStr;
 use std::sync::Arc;
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use actix_web::{FromRequest, HttpRequest, ResponseError};
 use actix_web::body::MessageBody;
@@ -12,6 +12,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web_lab::middleware::Next;
 use chrono::{Datelike, NaiveDate, TimeZone, Utc};
+use serde_json::Value;
 use thiserror::Error;
 use tokio_postgres::SimpleQueryMessage;
 use tracing::error;
@@ -160,6 +161,17 @@ pub async fn tenant_user_header_middleware(
 }
 
 pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessage]) -> Result<Uuid, DaoError> {
+    let closure =|a:&str|{
+        Uuid::parse_str(a).map_err(|_| {
+            DaoError::PostgresQueryError("unable to convert str to uuid".to_string())
+        })
+    };
+    parse_rows(rows,closure)
+}
+
+fn parse_rows<T, F>(rows: &[SimpleQueryMessage], parse_fn: F)
+                    -> Result<T, DaoError>
+    where F: FnOnce(&str) -> Result<T, DaoError> {
     let row = rows.get(1).ok_or_else(|| {
         DaoError::PostgresQueryError("no 2nd statement in script but required".to_string())
     })?;
@@ -170,9 +182,7 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessa
                     "should have returned a result but was none".to_string(),
                 )
             })?;
-            Uuid::parse_str(uuid_str).map_err(|_| {
-                DaoError::PostgresQueryError("unable to convert str to uuid".to_string())
-            })
+            parse_fn(uuid_str)
         }
         SimpleQueryMessage::CommandComplete(_) => Err(DaoError::PostgresQueryError(
             "should have returned a result but was a command".to_string(),
@@ -183,6 +193,14 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessa
     }
 }
 
+pub fn parse_db_output_of_insert_create_and_return_json(rows: &[SimpleQueryMessage]) -> Result<Value, DaoError> {
+    let closure =|a:&str|{
+        let value = serde_json::from_str(a)
+            .context("error during deserialising db value")?;
+        Ok(value)
+    };
+    parse_rows(rows,closure)
+}
 
 pub fn flatten_errors(validation_errors: &ValidationErrors) -> anyhow::Result<Vec<ValidationError>> {
     let mut result = Vec::new();
