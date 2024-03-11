@@ -6,7 +6,8 @@ use itertools::Itertools;
 use uuid::Uuid;
 
 use invoicing_calculations::invoice_line::{compute_tax_amount, InvoiceLine};
-use pdf_doc_generator::invoice_template::{AdditionalCharge, Address, DocDate, Header, HeaderAndUnit, Invoice, InvoiceLineTable, InvoiceParty, InvoiceSummary, JsonKey, TaxLine, TaxSummary, Unit};
+use pdf_doc_generator::invoice_template::{AdditionalCharge, Address, DocDate, Invoice, InvoiceLineTable, InvoiceParty, InvoiceSummary, InvoiceTableHeaderNameEnum, TaxLine, TaxSummary};
+use pdf_doc_generator::invoice_template::InvoiceTableHeaderNameEnum::{Cgst, ItemDescription, LineTotal, Qty, SerialNo, Sgst, UnitPrice, Uqc};
 
 use crate::accounting::currency::currency_models::CurrencyMaster;
 use crate::invoicing::invoicing_dao_models::{InvoiceDb, InvoiceLineDb};
@@ -91,116 +92,102 @@ fn create_invoice_tax_summary(invoice: &InvoiceDb) -> anyhow::Result<TaxSummary>
     }
 }
 
-const SERIAL_NO: (&str, &str, &str) = ("sl no", "", "line_no");
-const ITEM_DESCRIPTION: (&str, &str, &str) = ("item", "", "item");
-const HSN: (&str, &str, &str) = ("hsn", "", "hsn_sac");
-const SAC: (&str, &str, &str) = ("sac", "", "hsn_sac");
-const BATCH_NO: (&str, &str, &str) = ("batch_no", "", "batch_no");
-
-const EXPIRY_DATE: (&str, &str, &str) = ("expiry_date", "", "expiry_date");
-const MRP: (&str, &str, &str) = ("mrp", "", "mrp");
-const UQC: (&str, &str, &str) = ("uqc", "", "uqc");
-const QTY: (&str, &str, &str) = ("qty", "", "quantity");
-const UNIT_PRICE: (&str, &str, &str) = ("unit price", "", "unit_price");
-const DISCOUNT: (&str, &str, &str) = ("discount", "%", "discount_percentage");
-const IGST: (&str, &str, &str) = ("igst", "%", "igst_percentage");
-const CGST: (&str, &str, &str) = ("cgst", "%", "cgst_percentage");
-const SGST: (&str, &str, &str) = ("sgst", "%", "sgst_percentage");
-const CESS: (&str, &str, &str) = ("cess", "%", "cess_percentage");
-const LINE_TOTAL: (&str, &str, &str) = ("line total", "", "line_total");
 
 impl InvoiceDb<'_> {
-    fn hsn_sac_header(&self) -> Option<HeaderAndUnit> {
+    fn hsn_sac_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
         if self.service_invoice {
-            Some(HeaderAndUnit(Header(SAC.0), Unit(SAC.1.to_string()), JsonKey(SAC.2)))
+            Some(InvoiceTableHeaderNameEnum::Sac("".to_string()))
         } else {
-            Some(HeaderAndUnit(Header(HSN.0), Unit(HSN.1.to_string()), JsonKey(HSN.2)))
+            Some(InvoiceTableHeaderNameEnum::Hsn("".to_string()))
         }
     }
-    fn batch_no_header(&self) -> Option<HeaderAndUnit> {
+    fn batch_no_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
         if self.invoice_lines
             .iter()
             .all(|a| a.batch_no.is_none()) {
             None
         } else {
-            Some(HeaderAndUnit(Header(BATCH_NO.0), Unit(BATCH_NO.1.to_string()), JsonKey(BATCH_NO.2)))
+            Some(InvoiceTableHeaderNameEnum::BatchNo("".to_string()))
         }
     }
-    fn expiry_date_header(&self) -> Option<HeaderAndUnit> {
+    fn expiry_date_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
         if self.invoice_lines
             .iter()
             .all(|a| a.expiry_date_ms.is_none()) {
             None
         } else {
-            Some(HeaderAndUnit(Header(EXPIRY_DATE.0), Unit(EXPIRY_DATE.1.to_string()), JsonKey(EXPIRY_DATE.2)))
+            Some(InvoiceTableHeaderNameEnum::ExpiryDate("".to_string()))
         }
     }
-    fn mrp_header(&self, display_name: String) -> Option<HeaderAndUnit> {
+    fn mrp_header(&self, currency_unit: String) -> Option<InvoiceTableHeaderNameEnum> {
         if self.invoice_lines
             .iter()
             .all(|a| a.mrp.is_none()) {
             None
         } else {
-            Some(HeaderAndUnit(Header(MRP.0), Unit(display_name), JsonKey(MRP.2)))
+            Some(InvoiceTableHeaderNameEnum::Mrp(currency_unit))
         }
     }
-    fn discount_percentage_header(&self) -> Option<HeaderAndUnit> {
+    fn discount_percentage_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
         if self.invoice_lines
             .iter()
             .all(|a| a.discount_percentage == 0.0) {
             None
         } else {
-            Some(HeaderAndUnit(Header(DISCOUNT.0), Unit(DISCOUNT.1.to_string()), JsonKey(DISCOUNT.2)))
+            Some(InvoiceTableHeaderNameEnum::Discount("%".to_string()))
         }
     }
-    fn igst_header(&self) -> Option<HeaderAndUnit> {
+    fn igst_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
         if self.igst_applicable && self.invoice_lines.iter().any(|a| a.tax_percentage != 0.0) {
-            Some(HeaderAndUnit(Header(IGST.0), Unit(IGST.1.to_string()), JsonKey(IGST.2)))
+            Some(InvoiceTableHeaderNameEnum::Igst("%".to_string()))
         } else {
             None
         }
     }
 
-    fn cgst_header(&self) -> Option<HeaderAndUnit> {
-        self.cgst_sgst_header(CGST)
+    fn cgst_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
+        let po = Cgst("%".to_string());
+        self.cgst_sgst_header(po)
     }
-    fn cgst_sgst_header(&self, h: (&'static str, &'static str, &'static str)) -> Option<HeaderAndUnit> {
+    fn cgst_sgst_header(&self, h: InvoiceTableHeaderNameEnum) -> Option<InvoiceTableHeaderNameEnum> {
+        // assert!(h==Cgst||h==Sgst,"input arg can only be one Sgst or Cgst but was {h}");
         if !self.igst_applicable &&
             self.invoice_lines.iter().any(|a| a.tax_percentage != 0.0) {
-            Some(HeaderAndUnit(Header(h.0), Unit(h.1.to_string()), JsonKey(h.2)))
+            Some(h)
         } else { None }
     }
-    fn sgst_header(&self) -> Option<HeaderAndUnit> {
-        self.cgst_sgst_header(SGST)
+    fn sgst_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
+        let po = Sgst("%".to_string());
+        self.cgst_sgst_header(po)
     }
-    fn cess_header(&self) -> Option<HeaderAndUnit> {
+    fn cess_header(&self) -> Option<InvoiceTableHeaderNameEnum> {
         if self.invoice_lines.iter()
             .all(|l| l.cess_percentage == 0.0) {
             None
         } else {
-            Some(HeaderAndUnit(Header(CESS.0), Unit(CESS.1.to_string()), JsonKey(CESS.2)))
+            Some(InvoiceTableHeaderNameEnum::Cess("%".to_string()))
         }
     }
 }
 
-fn get_header_and_units(invoice: &InvoiceDb, currency_master: Arc<CurrencyMaster>) -> Vec<HeaderAndUnit> {
+fn get_header_and_units(invoice: &InvoiceDb, currency_master: Arc<CurrencyMaster>) -> Vec<InvoiceTableHeaderNameEnum> {
     let curr_unit = currency_master.display_name.as_str();
     vec![
-        Some(HeaderAndUnit(Header(SERIAL_NO.0), Unit(SERIAL_NO.1.to_string()), JsonKey(SERIAL_NO.2))),
-        Some(HeaderAndUnit(Header(ITEM_DESCRIPTION.0), Unit(ITEM_DESCRIPTION.1.to_string()), JsonKey(ITEM_DESCRIPTION.2))),
+        Some(SerialNo("".to_string())),
+        Some(ItemDescription("".to_string())),
         invoice.hsn_sac_header(),
         invoice.batch_no_header(),
         invoice.expiry_date_header(),
         invoice.mrp_header(curr_unit.to_string()),
-        Some(HeaderAndUnit(Header(UQC.0), Unit(UQC.1.to_string()), JsonKey(UQC.2))),
-        Some(HeaderAndUnit(Header(QTY.0), Unit(QTY.1.to_string()), JsonKey(QTY.2))),
-        Some(HeaderAndUnit(Header(UNIT_PRICE.0), Unit(curr_unit.to_string()), JsonKey(UNIT_PRICE.2))),
+        Some(Uqc("".to_string())),
+        Some(Qty("".to_string())),
+        Some(UnitPrice(curr_unit.to_string())),
         invoice.discount_percentage_header(),
         invoice.igst_header(),
         invoice.cgst_header(),
         invoice.sgst_header(),
         invoice.cess_header(),
-        Some(HeaderAndUnit(Header(LINE_TOTAL.0), Unit(curr_unit.to_string()), JsonKey(LINE_TOTAL.2))),
+        Some(LineTotal(curr_unit.to_string())),
     ].into_iter().flatten().collect_vec()
 }
 
@@ -212,7 +199,7 @@ fn convert_db_line_to_doc_line(a: &InvoiceLineDb, igst_applicable: bool) -> anyh
         batch_no: a.batch_no.map(|b| b.to_string()),
         expiry_date: a.expiry_date_ms.map(|e| epoch_ms_to_doc_date(e)).transpose()?,
         mrp: a.mrp,
-        quantity:a.quantity,
+        quantity: a.quantity,
         uqc: a.uqc.to_string(),
         unit_price: a.unit_price,
         discount_percentage: a.discount_percentage,
