@@ -47,7 +47,7 @@ fn get_file_map(data:Vec<u8>) -> HashMap<&'static str, Bytes> {
 
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize,Deserialize)]
 pub struct DocDate {
     //todo derive from epoch millis or date. decide on one
     pub month: u16,
@@ -55,7 +55,7 @@ pub struct DocDate {
     pub day: u16,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize,Deserialize)]
 pub struct InvoiceLine {
     pub line_no: u16,
     pub item: String,
@@ -86,7 +86,7 @@ pub struct JsonKey(pub &'static str);
 #[derive(Debug, Serialize)]
 pub struct HeaderAndUnit(pub Header, pub Unit, pub JsonKey);
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize,Deserialize)]
 pub struct InvoiceSummary {
     pub taxable_amt: f64,
     pub tax_amt: f64,
@@ -251,7 +251,7 @@ impl InvoiceTableHeaderNameEnum {
         }
     }
 }
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize,Deserialize)]
 pub struct InvoiceLineTable {
    pub invoice_lines_total: f64,
    pub header_and_units: Vec<InvoiceTableHeaderNameEnum>,
@@ -291,7 +291,7 @@ pub struct InvoiceParty {
     pub address: Address,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize,Deserialize)]
 pub struct Invoice {
     pub invoice_number: String,
     pub invoice_date: DocDate,

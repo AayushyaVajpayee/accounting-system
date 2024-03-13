@@ -10,6 +10,8 @@ pub trait StorageService: Send + Sync {
                            expiry_time: Option<Duration>) -> anyhow::Result<String>;
     async fn create_bucket(&self, bucket_name: &str) -> anyhow::Result<()>;
     async fn get_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<Vec<u8>>;
+    
+    async fn get_object_url(&self,bucket_name:&str,asset_name:&str, expiry_time: Option<Duration>)-> anyhow::Result<String>;
     async fn delete_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<()>;
 }
 
@@ -39,6 +41,10 @@ impl StorageService for StorageServiceImpl {
 
     async fn get_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<Vec<u8>> {
         self.client.get_object(bucket_name, asset_name).await
+    }
+
+    async fn get_object_url(&self, bucket_name: &str, asset_name: &str, expiry_time: Option<Duration>) -> anyhow::Result<String> {
+        self.client.get_object_url(bucket_name,asset_name, expiry_time).await
     }
 
     async fn delete_object(&self, bucket_name: &str, asset_name: &str) -> anyhow::Result<()> {

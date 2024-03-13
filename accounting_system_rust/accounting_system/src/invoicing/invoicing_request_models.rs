@@ -10,6 +10,7 @@ use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::invoice_line::unit_price::Price;
 use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
+use pdf_doc_generator::invoice_template::Invoice;
 
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateInvoiceRequest {
@@ -185,7 +186,7 @@ impl PurchaseOrderDate {
         &self.0
     }
     pub fn epoch_millis(&self) ->Option<i64>{
-       return self.0.and_hms_milli_opt(0, 0, 0, 0)
+        return self.0.and_hms_milli_opt(0, 0, 0, 0)
             .map(|a| a.timestamp_millis())
     }
 }
@@ -245,6 +246,14 @@ impl TryFrom<String> for ExpiryDateMs {
     }
 }
 
+
+#[derive(Debug,Serialize,Deserialize)]
+pub struct InvoicePdfRequest{
+    pub tenant_id:Uuid,
+    pub invoice_id:Uuid,
+    pub invoice:Invoice,
+
+}
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
