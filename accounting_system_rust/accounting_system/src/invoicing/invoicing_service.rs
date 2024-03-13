@@ -38,7 +38,7 @@ pub enum InvoicingServiceError {
 
 #[async_trait]
 pub trait InvoicingService: Send + Sync {
-    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError>;
+    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError>;
     async fn create_invoice_pdf(&self, pdf_data: InvoicePdfRequest) -> Result<String, InvoicingServiceError>;
 }
 
@@ -50,7 +50,7 @@ struct InvoicingServiceImpl {
     invoicing_series_service: Arc<dyn InvoicingSeriesService>,
     business_entity_service: Arc<dyn BusinessEntityService>,
     invoice_template_service: Arc<dyn InvoiceTemplateService>,
-    storage_service: Arc<dyn StorageService>
+    storage_service: Arc<dyn StorageService>,
 }
 
 
@@ -196,7 +196,7 @@ fn is_gstin_from_same_state(gstin1: &GstinNo, gstin2: &GstinNo) -> anyhow::Resul
 
 #[async_trait]
 impl InvoicingService for InvoicingServiceImpl {
-    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError> {
+    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError> {
         self.validate_create_invoice_request(req, tenant_id).await?;
         let curr = self.currency_service
             .get_currency_entry(req.currency_id, tenant_id).await
@@ -207,11 +207,15 @@ impl InvoicingService for InvoicingServiceImpl {
                                                        .map(|a| a.billed_to_customer_id),
                                                    tenant_id).await?;
         let db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
-        self.dao.create_invoice(&db_model).await?;
-        todo!()
-        // req.
-        //validate
-        //calculate invoice fields
+        let invoice_id = self.dao.create_invoice(&db_model).await?;
+        let inv = convert_to_invoice_doc_model(&db_model,
+                                               invoice_id.invoice_number,
+                                               self.business_entity_service.clone(), curr).await?;
+        Ok(InvoicePdfRequest {
+            tenant_id,
+            invoice_id: invoice_id.invoice_id,
+            invoice: inv,
+        })
     }
     async fn create_invoice_pdf(&self, pdf_data: InvoicePdfRequest) -> Result<String, InvoicingServiceError> {
         let is_processed = self.dao.is_invoice_pdf_created(pdf_data.tenant_id, pdf_data.invoice_id).await?;
@@ -252,7 +256,7 @@ pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantServi
         invoicing_series_service,
         business_entity_service,
         invoice_template_service,
-        storage_service
+        storage_service,
     };
     Arc::new(service)
 }
