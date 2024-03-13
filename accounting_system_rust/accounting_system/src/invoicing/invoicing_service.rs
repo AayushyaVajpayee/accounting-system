@@ -10,18 +10,20 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use invoice_doc_generator::hsc_sac::GstItemCode::{HsnCode, SacCode};
+use pdf_doc_generator::invoice_template;
 
 use crate::accounting::currency::currency_service::CurrencyService;
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::current_indian_date;
+use crate::invoicing::doc_conversion::convert_to_invoice_doc_model;
 use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
 use crate::invoicing::invoicing_dao::{get_invoicing_dao, InvoicingDao};
 use crate::invoicing::invoicing_dao_models::convert_to_invoice_db;
-use crate::invoicing::invoicing_request_models::CreateInvoiceRequest;
+use crate::invoicing::invoicing_request_models::{CreateInvoiceRequest, InvoicePdfRequest};
 use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
-use crate::storage::storage_service::StorageService;
+use crate::storage::storage_service::{FINANCIAL_DOCS_BUCKET_NAME, StorageService};
 use crate::tenant::tenant_service::TenantService;
 
 #[derive(Debug, Error)]
@@ -35,8 +37,9 @@ pub enum InvoicingServiceError {
 }
 
 #[async_trait]
-pub trait InvoicingService:Send+Sync {
-    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError>;
+pub trait InvoicingService: Send + Sync {
+    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError>;
+    async fn create_invoice_pdf(&self, pdf_data: InvoicePdfRequest) -> Result<String, InvoicingServiceError>;
 }
 
 #[allow(dead_code)]
@@ -47,7 +50,7 @@ struct InvoicingServiceImpl {
     invoicing_series_service: Arc<dyn InvoicingSeriesService>,
     business_entity_service: Arc<dyn BusinessEntityService>,
     invoice_template_service: Arc<dyn InvoiceTemplateService>,
-    storage_service:Arc<dyn StorageService>
+    storage_service: Arc<dyn StorageService>,
 }
 
 
@@ -162,15 +165,15 @@ impl InvoicingServiceImpl {
                     .get_business_entity_by_id(&supplier_id, &tenant_id).await
                     .context("supplier fetch get_business_entity_by_id failed")?
                     .with_context(|| format!("business entity id not found for id:{}", supplier_id))?;
-            
+
             let bill_to = self.business_entity_service
                 .get_business_entity_by_id(&bill_to_id, &tenant_id).await
                 .context("bill to fetch get_business_entity_by_id failed")?
                 .with_context(|| format!("business entity id not found for id:{}", bill_to_id))?;
             let supplier_gstin = supplier.business_entity.entity_type.extract_gstin()
-                .with_context(|| format!("could not extract gstin from supplier id {}", 
+                .with_context(|| format!("could not extract gstin from supplier id {}",
                                          supplier.business_entity
-                    .base_master_fields.id))?;
+                                             .base_master_fields.id))?;
             let bill_to_gstin = bill_to.business_entity.entity_type.extract_gstin();
             if let Some(bill_to_gstin) = bill_to_gstin {
                 is_gstin_from_same_state(supplier_gstin, bill_to_gstin)
@@ -193,7 +196,7 @@ fn is_gstin_from_same_state(gstin1: &GstinNo, gstin2: &GstinNo) -> anyhow::Resul
 
 #[async_trait]
 impl InvoicingService for InvoicingServiceImpl {
-    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, InvoicingServiceError> {
+    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError> {
         self.validate_create_invoice_request(req, tenant_id).await?;
         let curr = self.currency_service
             .get_currency_entry(req.currency_id, tenant_id).await
@@ -204,18 +207,39 @@ impl InvoicingService for InvoicingServiceImpl {
                                                        .map(|a| a.billed_to_customer_id),
                                                    tenant_id).await?;
         let db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
-        self.dao.create_invoice(&db_model).await?;
-        todo!()
-        // req.
-        //validate
-        //calculate invoice fields
+        let invoice_id = self.dao.create_invoice(&db_model).await?;
+        let inv = convert_to_invoice_doc_model(&db_model,
+                                               invoice_id.invoice_number,
+                                               self.business_entity_service.clone(), curr).await?;
+        Ok(InvoicePdfRequest {
+            tenant_id,
+            invoice_id: invoice_id.invoice_id,
+            invoice: inv,
+        })
+    }
+    async fn create_invoice_pdf(&self, pdf_data: InvoicePdfRequest) -> Result<String, InvoicingServiceError> {
+        let is_processed = self.dao.is_invoice_pdf_created(pdf_data.tenant_id, pdf_data.invoice_id).await?;
+        let key = create_storage_file_key(pdf_data.tenant_id, pdf_data.invoice_id);
+        if is_processed {
+            let ds = self.storage_service.get_object_url(FINANCIAL_DOCS_BUCKET_NAME,
+                                                         key.as_str(),
+                                                         None).await?;
+            return Ok(ds);
+        }
+        let pdf_bytes = invoice_template::create_invoice_pdf(pdf_data.invoice)?;
+        let uploaded_url = self.storage_service.upload_object(FINANCIAL_DOCS_BUCKET_NAME,
+                                                              key.as_str(),
+                                                              pdf_bytes, None).await?;
+        self.dao.persist_invoice_pdf_dtl(pdf_data.tenant_id, pdf_data.invoice_id, key.as_str())
+            .await?;
+        Ok(uploaded_url)
     }
 
     //template_id,series_mst_id,currency_id,supplier_id,billed_to,shipped_to ids must exist for this tenant
 }
 
-fn create_storage_file_key(tenant_id:Uuid,invoice_id:Uuid)->String{
-    format!("{}-invoice-{}.pdf",tenant_id,invoice_id)
+fn create_storage_file_key(tenant_id: Uuid, invoice_id: Uuid) -> String {
+    format!("{}-invoice-{}.pdf", tenant_id, invoice_id)
 }
 
 pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantService>,
@@ -223,16 +247,16 @@ pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantServi
                              invoicing_series_service: Arc<dyn InvoicingSeriesService>,
                              business_entity_service: Arc<dyn BusinessEntityService>,
                              invoice_template_service: Arc<dyn InvoiceTemplateService>,
-                             storage_service:Arc<dyn StorageService>) -> Arc<dyn InvoicingService> {
+                             storage_service: Arc<dyn StorageService>) -> Arc<dyn InvoicingService> {
     let invoicing_service_dao = get_invoicing_dao(arc);
-    let service =InvoicingServiceImpl {
+    let service = InvoicingServiceImpl {
         dao: invoicing_service_dao,
         tenant_service,
         currency_service,
         invoicing_series_service,
         business_entity_service,
         invoice_template_service,
-        storage_service
+        storage_service,
     };
     Arc::new(service)
 }

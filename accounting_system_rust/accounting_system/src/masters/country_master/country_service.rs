@@ -1,11 +1,12 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use moka::future::Cache;
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::masters::country_master::country_dao::{CountryMasterDao, get_country_master_dao};
-use crate::masters::country_master::country_model::{ CountryMaster};
+use crate::masters::country_master::country_model::CountryMaster;
 
 const CACHE_ALL_KEY: i32 = 1;
 
@@ -73,10 +74,11 @@ impl CountryMasterService for CountryMasterServiceImpl {
 
 #[cfg(test)]
 mod tests{
+    use std::sync::Arc;
+
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
-    use std::sync::Arc;
     use uuid::Uuid;
 
     use crate::masters::country_master::country_dao::MockCountryMasterDao;

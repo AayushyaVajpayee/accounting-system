@@ -1,13 +1,12 @@
 use std::cell::{RefCell, RefMut};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap,};
 use std::path::PathBuf;
 
 use comemo::Prehashed;
-use time::macros::time;
 use time::OffsetDateTime;
 use typst::{Library, World};
 use typst::diag::{eco_format, FileError, FileResult, PackageError, PackageResult};
-use typst::foundations::{Bytes, Datetime, panic};
+use typst::foundations::{Bytes, Datetime,};
 use typst::syntax::{FileId, Source};
 use typst::syntax::package::PackageSpec;
 use typst::text::{Font, FontBook};

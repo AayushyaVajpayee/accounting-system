@@ -77,34 +77,35 @@ $$
 
 
 create or replace function create_invoice_number(invoicing_series_mst_id uuid, _financial_year smallint,
-                                                 _tenant_id uuid) returns text as
+                                                 _tenant_id uuid, _created_by uuid) returns text as
 $$
 DECLARE
     inv_number            text;
     zero_padding          bool;
     invoice_number_prefix text;
     invoice_counter       integer;
+    counter_updated       integer;
 BEGIN
     select zero_padded_counter, prefix
     from invoicing_series_mst
     where id = invoicing_series_mst_id
       and tenant_id = _tenant_id
     into zero_padding,invoice_number_prefix;
-    update invoicing_series_counter
-    set counter=counter + 1
-    where invoicing_series_id = invoicing_series_mst_id
-      and financial_year = _financial_year
-      and tenant_id = _tenant_id
-    returning counter into invoice_counter;
+    insert into invoicing_series_counter (id, entity_version_id, tenant_id, invoicing_series_id, financial_year,
+                                          counter, start_value, created_by, updated_by, created_at, updated_at)
+    VALUES (uuid_generate_v7(), 0, _tenant_id, invoicing_series_mst_id, _financial_year, 1, 0,
+            _created_by, _created_by, default, default) on conflict (tenant_id, invoicing_series_id, financial_year)
+                do update set counter = invoicing_series_counter.counter+1 returning invoicing_series_counter.counter into invoice_counter;
     select get_invoice_number(invoice_number_prefix,
                               invoice_counter,
                               zero_padding)
+
     into inv_number;
     return inv_number;
 END
 $$ language plpgsql;
 
-create or replace function create_invoice_table_entry(req create_invoice_request, _payment_term_id uuid) returns uuid as
+create or replace function create_invoice_table_entry(req create_invoice_request, _payment_term_id uuid) returns jsonb as
 $$
 DECLARE
     inv_number text;
@@ -112,7 +113,7 @@ DECLARE
 BEGIN
     select uuid_generate_v7() into inv_id;
     select create_invoice_number(req.invoicing_series_mst_id,
-                                 req.financial_year, req.tenant_id)
+                                 req.financial_year, req.tenant_id, req.created_by)
     into inv_number;
     insert into invoice (id, entity_version_id, tenant_id, active, approval_status, remarks, invoicing_mst_id,
                          financial_year, invoice_number, currency_id, service_invoice, invoice_date_ms,
@@ -127,7 +128,7 @@ BEGIN
             req.total_taxable_amount, req.total_tax_amount, req.total_additional_charges_amount, req.round_off,
             req.total_payable_amount, null, req.invoice_template_id, _payment_term_id, req.created_by, req.created_by,
             default, default);
-    return inv_id;
+    return jsonb_build_object('invoice_number', inv_number, 'invoice_id', inv_id);
 END
 
 $$ language plpgsql;
@@ -151,7 +152,8 @@ BEGIN
             into subtitle_id;
             insert into invoice_line (id, entity_version_id, tenant_id, active, approval_status, remarks,
                                       invoice_table_id, line_title_hsn_sac_id, line_subtitle_id, quantity,
-                                      unit_price, tax_percentage, discount_percentage, cess_percentage, line_number, line_net_total,
+                                      unit_price, tax_percentage, discount_percentage, cess_percentage, line_number,
+                                      line_net_total,
                                       mrp, batch, expiry_date_ms, uqc, created_by, updated_by,
                                       created_at, updated_at)
             values (line.line_id, 0, req.tenant_id, true, 1, null, invoice_tab_id, title_id, subtitle_id,
@@ -164,11 +166,12 @@ $$ language plpgsql;
 
 
 
-create or replace function create_invoice(req create_invoice_request) returns uuid as
+create or replace function create_invoice(req create_invoice_request) returns jsonb as
 $$
 DECLARE
     resp            jsonb;
     invoice_id      uuid;
+    invoice_id_num  jsonb;
     impacted_rows   int;
     payment_term_id uuid;
     payment_terms   create_payment_terms_request := req.payment_terms;
@@ -184,21 +187,22 @@ BEGIN
                                               req.created_by)
             into payment_term_id;
         end if;
-        select create_invoice_table_entry(req, payment_term_id) into invoice_id;
+        select create_invoice_table_entry(req, payment_term_id) into invoice_id_num;
+        select invoice_id_num ->> 'invoice_id' into invoice_id;
         call persist_invoice_lines(req, invoice_id);
         call persist_additional_charge(req.additional_charges, invoice_id, req.tenant_id, req.created_by);
         update idempotence_store
-        set response=json_build_object('id', invoice_id)
+        set response=invoice_id_num
         where idempotence_key = req.idempotence_key
           and workflow_type = 'create_invoice';
-        return invoice_id;
+        return invoice_id_num;
     else
         select response
         from idempotence_store
         where idempotence_store.idempotence_key = req.idempotence_key
           and workflow_type = 'create_invoice'
         into resp;
-        return (resp ->> 'id')::uuid;
+        return resp;
     end if;
 end;
 

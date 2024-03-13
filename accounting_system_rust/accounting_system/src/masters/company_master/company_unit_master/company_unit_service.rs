@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use anyhow::Error as AnyhowError;
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
-use std::sync::Arc;
 use thiserror::Error;
 use uuid::Uuid;
 

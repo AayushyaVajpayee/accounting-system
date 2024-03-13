@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use anyhow::Error as AnyhowError;
 use async_trait::async_trait;
@@ -5,7 +7,6 @@ use deadpool_postgres::Pool;
 use itertools::Itertools;
 #[cfg(test)]
 use mockall::automock;
-use std::sync::Arc;
 use thiserror::Error;
 use tracing::{error, instrument};
 use uuid::Uuid;
@@ -157,11 +158,12 @@ pub fn get_company_master_service(arc: Arc<Pool>, tenant_service: Arc<dyn Tenant
 
 #[cfg(test)]
 pub mod tests {
+    use std::mem::discriminant;
+    use std::sync::Arc;
+
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::{ResultAssertions, VecAssertions};
-    use std::mem::discriminant;
-    use std::sync::Arc;
     use tracing_test::traced_test;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{
@@ -246,7 +248,7 @@ pub mod tests {
         user_service.expect_get_user_by_id().returning(|_a,_| Ok(None));
         tenant_service
             .expect_get_tenant_by_id()
-            .returning(|a| Ok(Some(Arc::new(a_tenant(Default::default())))));
+            .returning(|_a| Ok(Some(Arc::new(a_tenant(Default::default())))));
         let company_request = a_create_company_request(Default::default());
         let user_service: Arc<dyn UserService> = Arc::new(user_service);
         let tenant_service: Arc<dyn TenantService> = Arc::new(tenant_service);

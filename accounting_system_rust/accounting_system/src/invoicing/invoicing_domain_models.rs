@@ -1,4 +1,5 @@
 use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use invoice_doc_generator::invoice_line::line_number::LineNumber;
@@ -10,7 +11,11 @@ use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, Disc
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::invoicing::invoicing_request_models::{BatchNo, ExpiryDateMs, PurchaseOrderNo};
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
-
+#[derive(Debug, Builder,Serialize,Deserialize)]
+pub struct CreateInvoiceDbResponse{
+    pub invoice_number:String,
+    pub invoice_id:Uuid
+}
 #[derive(Debug, Builder)]
 pub struct InvoiceLine {
     pub base_master_fields: BaseMasterFields,
@@ -31,7 +36,7 @@ pub struct InvoiceLine {
 }
 #[allow(dead_code)]
 #[derive(Debug,Builder)]
-struct AdditionalCharge {
+pub(crate) struct AdditionalCharge {
     id: Uuid,
     tenant_id: Uuid,
     invoice_table_id: Uuid,
@@ -42,7 +47,7 @@ struct AdditionalCharge {
 }
 
 #[derive(Debug,Builder)]
-struct Invoice {
+pub(crate) struct Invoice {
     base_master_fields: BaseMasterFields,
     invoicing_series_mst_id: Uuid,
     financial_year: i16,
@@ -117,7 +122,7 @@ pub mod tests {
         }
     }
 
-    pub fn an_additional_charge(builder:AdditionalChargeBuilder)->AdditionalCharge{
+    pub(crate) fn an_additional_charge(builder:AdditionalChargeBuilder)->AdditionalCharge{
         AdditionalCharge{
             id: builder.id.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
@@ -129,7 +134,7 @@ pub mod tests {
         }
     }
     #[allow(dead_code)]
-    pub fn an_invoice(builder:InvoiceBuilder)->Invoice{
+    pub(crate) fn an_invoice(builder:InvoiceBuilder)->Invoice{
         Invoice{
             base_master_fields: builder.base_master_fields.unwrap_or_else(||a_base_master_field(Default::default())),
             invoicing_series_mst_id: builder.invoicing_series_mst_id.unwrap_or(*SEED_INVOICING_SERIES_MST_ID),

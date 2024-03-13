@@ -4,8 +4,8 @@ use itertools::Itertools;
 use tokio_postgres::types::ToSql;
 use uuid::Uuid;
 use xxhash_rust::xxh32;
-use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, ToPostgresString};
 
+use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, ToPostgresString};
 use crate::common_utils::utils::current_indian_financial_year;
 use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequest, CreateInvoiceRequest, PaymentTermsValidated};
 

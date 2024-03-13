@@ -1,11 +1,12 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use actix_web::{HttpResponse, HttpResponseBuilder, Responder, web};
 use actix_web::body::BoxBody;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, Query};
 use serde::{Deserialize, Serialize};
-use std::ops::Deref;
-use std::sync::Arc;
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
@@ -91,13 +92,14 @@ setup_routes!(CompanyMasterService,"/company-master",
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use actix_web::{App, test};
     use actix_web::middleware::Logger;
     use anyhow::anyhow;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::VecAssertions;
-    use std::sync::Arc;
     use tracing::info;
     use tracing_test::traced_test;
     use uuid::Uuid;

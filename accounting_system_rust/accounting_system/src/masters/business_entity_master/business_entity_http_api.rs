@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use actix_web::{ HttpResponseBuilder, Responder, ResponseError, web};
+use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use uuid::Uuid;
 
-use crate::common_utils::utils::{ TenantId};
+use crate::common_utils::utils::TenantId;
 use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequest;
 use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, BusinessEntityServiceError};
 use crate::setup_routes;
@@ -45,7 +45,7 @@ mod tests {
 
     use crate::get_and_create_api_test_v2;
     use crate::masters::business_entity_master::business_entity_http_api::map_endpoints_to_functions;
-    use crate::masters::business_entity_master::business_entity_models::{BusinessEntityDto, BusinessEntityMaster};
+    use crate::masters::business_entity_master::business_entity_models::BusinessEntityDto;
     use crate::masters::business_entity_master::business_entity_models::tests::a_create_business_entity_request;
     use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, MockBusinessEntityService};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;

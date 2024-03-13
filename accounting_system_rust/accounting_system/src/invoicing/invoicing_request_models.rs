@@ -10,6 +10,7 @@ use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::invoice_line::unit_price::Price;
 use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
+use pdf_doc_generator::invoice_template::Invoice;
 
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateInvoiceRequest {
@@ -185,7 +186,7 @@ impl PurchaseOrderDate {
         &self.0
     }
     pub fn epoch_millis(&self) ->Option<i64>{
-       return self.0.and_hms_milli_opt(0, 0, 0, 0)
+        return self.0.and_hms_milli_opt(0, 0, 0, 0)
             .map(|a| a.timestamp_millis())
     }
 }
@@ -211,7 +212,7 @@ impl BatchNo {
         Ok(Self(value.to_owned()))
     }
     pub fn inner(&self) -> &str {
-        self.inner()
+        self.0.as_str()
     }
 }
 
@@ -245,6 +246,14 @@ impl TryFrom<String> for ExpiryDateMs {
     }
 }
 
+
+#[derive(Debug,Serialize,Deserialize)]
+pub struct InvoicePdfRequest{
+    pub tenant_id:Uuid,
+    pub invoice_id:Uuid,
+    pub invoice:Invoice,
+
+}
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
@@ -262,7 +271,7 @@ pub mod tests {
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
     use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
-    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
+    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2};
 
     lazy_static! {
         pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();

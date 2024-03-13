@@ -27,8 +27,9 @@ pub struct CityMaster {
 
 #[cfg(test)]
 pub mod tests {
-    use lazy_static::lazy_static;
     use std::str::FromStr;
+
+    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     lazy_static! {

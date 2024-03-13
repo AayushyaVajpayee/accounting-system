@@ -1,18 +1,19 @@
-use async_trait::async_trait;
-#[cfg(test)]
-use mockall::automock;
 use std::sync::Arc;
 use std::time::Duration;
+
 use anyhow::anyhow;
+use async_trait::async_trait;
 use deadpool_postgres::Pool;
+#[cfg(test)]
+use mockall::automock;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
-use crate::common_utils::cache_utils::get_or_fetch_entity;
 
+use crate::common_utils::cache_utils::get_or_fetch_entity;
 use crate::common_utils::dao_error::DaoError;
 use crate::masters::address_master::address_dao::{AddressDao, get_address_dao};
-use crate::masters::address_master::address_model::{Address, AddressDto, CreateAddressRequest};
+use crate::masters::address_master::address_model::{AddressDto, CreateAddressRequest};
 use crate::masters::city_master::city_master_service::CityMasterService;
 use crate::masters::country_master::country_service::CountryMasterService;
 use crate::masters::pincode_master::pincode_master_service::PincodeMasterService;

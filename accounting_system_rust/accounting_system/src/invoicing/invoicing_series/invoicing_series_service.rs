@@ -1,14 +1,15 @@
-use async_trait::async_trait;
-#[cfg(test)]
-use mockall::automock;
 use std::sync::Arc;
 use std::time::Duration;
+
+use async_trait::async_trait;
 use deadpool_postgres::Pool;
+#[cfg(test)]
+use mockall::automock;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
-use crate::common_utils::cache_utils::get_or_fetch_entity;
 
+use crate::common_utils::cache_utils::get_or_fetch_entity;
 use crate::common_utils::dao_error::DaoError;
 use crate::invoicing::invoicing_series::invoicing_series_dao::{get_invoicing_series_dao, InvoicingSeriesDao};
 use crate::invoicing::invoicing_series::invoicing_series_models::{CreateInvoiceNumberSeriesRequest, InvoicingSeriesMaster};

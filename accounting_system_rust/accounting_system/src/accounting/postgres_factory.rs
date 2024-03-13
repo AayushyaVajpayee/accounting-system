@@ -58,7 +58,6 @@ pub mod test_utils_postgres {
     use crate::configurations::{get_dev_conf, Setting};
     use crate::db_schema_syncer::db_struct_mapper::init_db_with_seed;
 
-    static CONNECTION_POOL: OnceCell<Pool> = OnceCell::const_new();
     static TEST_CONTAINER_CLIENT: OnceCell<Cli> = OnceCell::const_new();
     static PG_CONTAINER: OnceCell<PK<'static>> = OnceCell::const_new();
 

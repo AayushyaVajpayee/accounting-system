@@ -1,4 +1,5 @@
 use std::sync::Arc;
+
 use anyhow::{Context, ensure};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
@@ -6,9 +7,10 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
-use crate::masters::address_master::address_model::{ AddressDto};
+use crate::masters::address_master::address_model::AddressDto;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
+
 #[derive(Debug,Serialize,Deserialize,Default, PartialEq)]
 pub struct BusinessEntityDto{
     pub business_entity:BusinessEntityMaster,
@@ -196,6 +198,7 @@ impl Default for BusinessEntityType {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+
     use lazy_static::lazy_static;
     use uuid::Uuid;
 

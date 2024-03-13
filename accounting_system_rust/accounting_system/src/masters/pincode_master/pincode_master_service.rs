@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use moka::future::Cache;
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::masters::pincode_master::pincode_master_dao::{get_pincode_master_dao, PincodeMasterDao};
@@ -69,10 +70,11 @@ impl PincodeMasterService for PincodeMasterServiceImpl{
 
 #[cfg(test)]
 mod tests{
+    use std::sync::Arc;
+
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
-    use std::sync::Arc;
     use uuid::Uuid;
 
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;

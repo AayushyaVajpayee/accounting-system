@@ -45,7 +45,7 @@ mod tests {
 
 
     use crate::accounting::user::user_http_api::map_endpoints_to_functions;
-    use crate::accounting::user::user_models::{SEED_USER_ID, User};
+    use crate::accounting::user::user_models::{ User};
     use crate::accounting::user::user_models::tests::{a_create_user_request, a_user, UserTestDataBuilder};
     use crate::accounting::user::user_service::{MockUserService, UserService};
     use crate::{ get_and_create_api_test_v2};
