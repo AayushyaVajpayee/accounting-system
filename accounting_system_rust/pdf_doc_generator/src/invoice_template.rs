@@ -18,7 +18,6 @@ const SUNSET_PNG: &[u8] = include_bytes!("../typst_templates/invoice/sunset.png"
 const EINVOICE_QR: &[u8] = include_bytes!("../typst_templates/invoice/einvoice_qr.png");
 const TABLEX_PACKAGE_TYP: &[u8] =include_bytes!("../typst_templates/invoice/tablex.typ");
 const TABLEX_TOML:&[u8] = include_bytes!("../typst_templates/invoice/typst.toml");
-const JSON_DATA: &[u8] = include_bytes!("../typst_templates/invoice/invoice_data.json");
 
 fn get_file_map(data:Vec<u8>) -> HashMap<&'static str, Bytes> {
     let entry_main = Bytes::from_static(MAIN.as_bytes());
@@ -315,9 +314,9 @@ anyhow::Result<Vec<u8>> {
     let map = get_file_map(a);
     let world = InMemoryWorld::new(MAIN, map);
     let mut tracer = Tracer::default();
-    let k = std::time::SystemTime::now();
+    let _k = std::time::SystemTime::now();
     let document = typst::compile(&world, &mut tracer)
-        .map_err(|a|anyhow!("error during typst compilation"))?;
+        .map_err(|_a|anyhow!("error during typst compilation"))?;
     let pdf = typst_pdf::pdf(&document, None, None);
     //invoice creation does not have that much reusable data. also this evicts all cache everywhere
     comemo::evict(0);
@@ -329,8 +328,9 @@ mod tests{
 
     use typst::eval::Tracer;
 
-    use crate::invoice_template::{get_file_map, InvoiceTableHeaderNameEnum, JSON_DATA, MAIN};
+    use crate::invoice_template::{get_file_map, InvoiceTableHeaderNameEnum, MAIN};
     use crate::world::InMemoryWorld;
+    const JSON_DATA: &[u8] = include_bytes!("../typst_templates/invoice/invoice_data.json");
 
     #[test]
     fn test_pdf_creation() {

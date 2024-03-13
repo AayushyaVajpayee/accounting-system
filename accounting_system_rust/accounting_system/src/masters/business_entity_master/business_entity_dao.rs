@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::{GenericClient, Pool};
-use std::sync::Arc;
 use tokio_postgres::Row;
 use uuid::Uuid;
 

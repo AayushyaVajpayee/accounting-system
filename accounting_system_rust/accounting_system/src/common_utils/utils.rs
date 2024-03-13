@@ -1,5 +1,4 @@
 use std::future::{ Ready};
-use std::process::{ Output};
 use std::str::FromStr;
 use std::sync::Arc;
 use anyhow::{anyhow, bail, Context};
@@ -9,7 +8,6 @@ use actix_web::body::MessageBody;
 use actix_web::dev::{Payload, ServiceRequest, ServiceResponse};
 use actix_web::error::ErrorInternalServerError;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
 use actix_web_lab::middleware::Next;
 use chrono::{Datelike, NaiveDate, TimeZone, Utc};
 use serde_json::Value;
@@ -132,7 +130,7 @@ impl FromRequest for UserId{
     type Error = UserIdHeaderError;
     type Future = Ready<Result<UserId,Self::Error>>;
 
-    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         let p = extract_user_id_from_header(req);
         std::future::ready(p)
     }

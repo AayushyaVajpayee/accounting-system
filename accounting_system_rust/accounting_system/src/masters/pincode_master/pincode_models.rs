@@ -52,11 +52,12 @@ impl Pincode {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use lazy_static::lazy_static;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
-    use std::str::FromStr;
     use uuid::Uuid;
 
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;

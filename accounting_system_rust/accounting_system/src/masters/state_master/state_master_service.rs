@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use moka::future::Cache;
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::masters::state_master::state_master_dao::{get_state_master_dao, StateMasterDao};
@@ -70,10 +71,11 @@ impl StateMasterService for StateMasterServiceImpl {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
-    use std::sync::Arc;
     use uuid::Uuid;
 
     use crate::masters::state_master::state_master_dao::MockStateMasterDao;

@@ -1,12 +1,10 @@
 use std::fmt::Write;
 use std::sync::Arc;
-use anyhow::Context;
 
+use anyhow::Context;
 use async_trait::async_trait;
 use deadpool_postgres::{GenericClient, Pool};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use invoice_doc_generator::invoice_number::InvoiceNumber;
 
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::pg_util::pg_util::ToPostgresString;
@@ -76,6 +74,7 @@ mod tests {
     use std::fmt::Write;
     use std::str::FromStr;
     use std::sync::Arc;
+
     use deadpool_postgres::{GenericClient, Pool};
     use itertools::Itertools;
     use rstest::rstest;
@@ -83,7 +82,7 @@ mod tests {
     use spectral::boolean::BooleanAssertions;
     use spectral::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
-    use uuid::{Uuid, uuid};
+    use uuid::{Uuid};
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
@@ -95,6 +94,7 @@ mod tests {
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::invoicing::payment_term::payment_term_models::tests::SEED_PAYMENT_TERM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
+
     async fn get_dao_generic<T,F>(f:F)->T where F:FnOnce(Arc<Pool>)->T{
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;

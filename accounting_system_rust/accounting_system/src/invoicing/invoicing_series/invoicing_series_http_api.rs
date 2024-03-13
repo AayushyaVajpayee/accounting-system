@@ -1,10 +1,11 @@
-use actix_web::{ HttpResponseBuilder, Responder, ResponseError, web};
+use std::sync::Arc;
+
+use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
-use std::sync::Arc;
 use uuid::Uuid;
-use crate::common_utils::utils::{ TenantId};
 
+use crate::common_utils::utils::TenantId;
 use crate::invoicing::invoicing_series::invoicing_series_models::CreateInvoiceNumberSeriesRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::{InvoicingSeriesService, InvoicingSeriesServiceError};
 use crate::setup_routes;
@@ -43,8 +44,8 @@ setup_routes!(InvoicingSeriesService,"/invoice-no-series",
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
-    use crate::get_and_create_api_test_v2;
 
+    use crate::get_and_create_api_test_v2;
     use crate::invoicing::invoicing_series::invoicing_series_http_api::map_endpoints_to_functions;
     use crate::invoicing::invoicing_series::invoicing_series_models::InvoicingSeriesMaster;
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::a_create_invoice_number_series_request;

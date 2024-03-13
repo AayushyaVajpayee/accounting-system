@@ -1,6 +1,7 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::ledger::ledger_transfer_dao::{get_ledger_transfer_dao, LedgerTransferDao};

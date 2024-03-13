@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use const_format::concatcp;
 use deadpool_postgres::Pool;
-use std::sync::Arc;
-use tokio_postgres::{Row};
+use tokio_postgres::Row;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -161,9 +162,5 @@ mod tests {
         assert_that!(number_of_tenants_created).is_equal_to(1)
         // let tenant = tenant_dao.get_tenant_by_id(id).await.unwrap();
     }
-    async fn should_return_existing_tenant_and_create_no_new_tenant_when_idempotency_key_is_same_as_earlier_completed_request(
-    ) {
-       //hard to perform test with my current knowledge. Have performed this manually
-    }
-
+ 
 }

@@ -1,11 +1,11 @@
+use std::io;
+use std::sync::Arc;
+
 use actix_web::{App, HttpResponseBuilder, HttpServer, Responder, web};
 use actix_web::http::StatusCode;
 use actix_web::middleware::Logger;
 use actix_web_lab::middleware::from_fn;
-use std::io;
-use std::sync::Arc;
 use log::LevelFilter;
-
 
 use crate::accounting::account::account_service::get_account_service;
 use crate::accounting::account::account_type::account_type_service::get_account_type_master_service;

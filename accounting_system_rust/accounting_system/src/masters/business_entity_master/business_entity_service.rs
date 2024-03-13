@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
-use anyhow::Context;
 
+use anyhow::Context;
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 #[cfg(test)]
@@ -9,12 +9,12 @@ use mockall::automock;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
-use crate::common_utils::cache_utils::get_or_fetch_entity;
 
+use crate::common_utils::cache_utils::get_or_fetch_entity;
 use crate::common_utils::dao_error::DaoError;
 use crate::masters::address_master::address_service::AddressService;
 use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, get_business_entity_dao};
-use crate::masters::business_entity_master::business_entity_models::{BusinessEntityDto, BusinessEntityMaster, CreateBusinessEntityRequest};
+use crate::masters::business_entity_master::business_entity_models::{BusinessEntityDto, CreateBusinessEntityRequest};
 
 #[derive(Debug, Error)]
 pub enum BusinessEntityServiceError {

@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
-use std::sync::Arc;
 use tracing::instrument;
 use uuid::Uuid;
 use xxhash_rust::xxh32;

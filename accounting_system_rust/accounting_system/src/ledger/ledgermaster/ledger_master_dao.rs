@@ -1,6 +1,7 @@
+use std::sync::{Arc, OnceLock};
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
-use std::sync::{Arc, OnceLock};
 use tokio_postgres::Row;
 use uuid::Uuid;
 

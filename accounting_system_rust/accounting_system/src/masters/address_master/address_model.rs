@@ -1,4 +1,5 @@
 use std::sync::Arc;
+
 use anyhow::bail;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,7 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::city_master::city_master_models::CityMaster;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::country_master::country_model::CountryMaster;
-use crate::masters::pincode_master::pincode_models::{Pincode, PincodeMaster};
+use crate::masters::pincode_master::pincode_models::PincodeMaster;
 use crate::masters::state_master::state_models::StateMasterModel;
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Clone)]
@@ -95,16 +96,17 @@ pub struct CreateAddressRequest {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use anyhow::anyhow;
     use lazy_static::lazy_static;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
-    use std::str::FromStr;
     use uuid::Uuid;
 
+    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
-    use crate::accounting::currency::currency_models:: AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::address_master::address_model::{Address, AddressLine, CreateAddressRequest, CreateAddressRequestBuilder};
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;

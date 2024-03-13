@@ -7,7 +7,7 @@ use invoicing_calculations::invoice_line::{compute_cess_amount, compute_discount
                                            compute_line_total_amount, compute_tax_amount,
                                            compute_taxable_amount, InvoiceLine};
 
-use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequest, CreateInvoiceRequest};
+use crate::invoicing::invoicing_request_models::{CreateInvoiceLineRequest, CreateInvoiceRequest};
 
 impl CreateInvoiceLineRequest {
     pub fn taxable_amount(&self) -> anyhow::Result<f64> {

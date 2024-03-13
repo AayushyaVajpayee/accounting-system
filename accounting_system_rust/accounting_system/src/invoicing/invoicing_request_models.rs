@@ -212,7 +212,7 @@ impl BatchNo {
         Ok(Self(value.to_owned()))
     }
     pub fn inner(&self) -> &str {
-        self.inner()
+        self.0.as_str()
     }
 }
 
@@ -271,7 +271,7 @@ pub mod tests {
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
     use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
-    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2, SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1};
+    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2};
 
     lazy_static! {
         pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();

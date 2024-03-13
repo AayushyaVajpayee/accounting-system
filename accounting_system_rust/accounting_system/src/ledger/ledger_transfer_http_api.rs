@@ -1,4 +1,4 @@
-use actix_web::{ web};
+use actix_web::web;
 use actix_web::web::Data;
 
 use crate::ledger::ledger_transfer_service::LedgerTransferService;

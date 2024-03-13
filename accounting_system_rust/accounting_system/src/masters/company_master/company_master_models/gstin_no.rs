@@ -1,5 +1,6 @@
-use gstin_validator::gstin_models::{GstinValidationError, validate_gstin};
 use serde::{Deserialize, Serialize};
+
+use gstin_validator::gstin_models::{GstinValidationError, validate_gstin};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(try_from = "String")]
@@ -34,11 +35,12 @@ impl TryFrom<String> for GstinNo {
 
 #[cfg(test)]
 pub mod gstin_no_tests {
-    use gstin_validator::gstin_models::gstin_checksum;
     use rand::Rng;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
+
+    use gstin_validator::gstin_models::gstin_checksum;
 
     use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 

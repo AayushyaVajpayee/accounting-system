@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, Query};
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::common_utils::pagination::pagination_utils::{
@@ -67,9 +68,10 @@ setup_routes!(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use actix_web::{App, test};
     use actix_web_lab::middleware::from_fn;
-    use std::sync::Arc;
     use uuid::Uuid;
 
     use crate::common_utils::pagination::constants::{CURRENT_PAGE, LINKS, PER_PAGE, TOTAL_COUNT, TOTAL_PAGES};

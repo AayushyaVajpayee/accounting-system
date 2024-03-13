@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError, web};
+use actix_web::{ HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use std::sync::Arc;
@@ -51,7 +51,6 @@ setup_routes!(CurrencyService,"/currency",
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{test};
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_http_api::map_endpoints_to_functions;

@@ -1,10 +1,11 @@
+use std::sync::Arc;
+
 use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
-use std::sync::Arc;
 use uuid::Uuid;
-use crate::common_utils::utils::TenantId;
 
+use crate::common_utils::utils::TenantId;
 use crate::masters::address_master::address_model::CreateAddressRequest;
 use crate::masters::address_master::address_service::{AddressService, AddressServiceError};
 use crate::setup_routes;
@@ -38,9 +39,9 @@ setup_routes!(AddressService,"/address",
 mod tests {
     use uuid::Uuid;
 
-    use crate::{ get_and_create_api_test_v2};
+    use crate::get_and_create_api_test_v2;
     use crate::masters::address_master::address_http_api::map_endpoints_to_functions;
-    use crate::masters::address_master::address_model::{Address, AddressDto, CreateAddressRequestBuilder};
+    use crate::masters::address_master::address_model::{AddressDto, CreateAddressRequestBuilder};
     use crate::masters::address_master::address_model::tests::a_create_address_request;
     use crate::masters::address_master::address_service::{AddressService, MockAddressService};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;

@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use moka::future::Cache;
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::masters::city_master::city_master_dao::{CityMasterDao, get_city_master_dao};
@@ -67,10 +68,11 @@ impl CityMasterService for CityMasterServiceImpl {
 
 #[cfg(test)]
 mod tests{
+    use std::sync::Arc;
+
     use moka::future::Cache;
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
-    use std::sync::Arc;
     use uuid::Uuid;
 
     use crate::masters::city_master::city_master_dao::MockCityMasterDao;

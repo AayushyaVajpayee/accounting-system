@@ -1,9 +1,8 @@
-use serde::{Deserialize, Serialize};
 use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
-
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq,Builder)]
 pub struct Tenant {
@@ -31,8 +30,10 @@ pub struct CreateTenantRequest {
 #[cfg(test)]
 pub mod tests{
     use std::str::FromStr;
+
     use lazy_static::lazy_static;
     use uuid::Uuid;
+
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
     use crate::tenant::tenant_models::{CreateTenantRequest, CreateTenantRequestBuilder, Tenant, TenantBuilder};
 
