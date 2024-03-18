@@ -32,6 +32,7 @@ pub struct InvoiceLine {
     pub mrp: Option<Price>,
     pub batch_no: Option<BatchNo>,
     pub expiry_date_ms: Option<ExpiryDateMs>,
+    pub reverse_charge_applicable:bool,
     pub audit_metadata: AuditMetadataBase,
 }
 #[allow(dead_code)]
@@ -118,6 +119,7 @@ pub mod tests {
             mrp: None,
             batch_no: None,
             expiry_date_ms: None,
+            reverse_charge_applicable:builder.reverse_charge_applicable.unwrap_or(false),
             audit_metadata: an_audit_metadata_base(Default::default()),
         }
     }

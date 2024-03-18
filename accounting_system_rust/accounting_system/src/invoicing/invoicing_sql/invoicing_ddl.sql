@@ -40,29 +40,30 @@ create table invoice
 
 
 create table invoice_line
-(                                                                   --2 things to consider, we need to store what input params were and then what we computed in order to auditable unambiguously
-    id                    uuid primary key,
-    entity_version_id     integer default 0,
-    tenant_id             uuid references tenant (id)     not null,
-    active                bool,
-    approval_status       smallint                        not null,
-    remarks               varchar(70),
-    invoice_table_id      uuid references invoice (id)    not null,
-    line_title_hsn_sac_id uuid references line_title (id) not null,
-    line_subtitle_id      uuid references line_subtitle (id),
-    quantity              double precision                not null,
-    unit_price            real                            not null,
-    tax_percentage        real                            not null,
-    discount_percentage   real                            not null,
-    cess_percentage       real                            not null,
-    line_number           smallint                        not null,
-    line_net_total        double precision                not null, --double precision because quantity is in double which can cause the line total to be in double
-    mrp                   real,
-    batch                 varchar(15),
-    expiry_date_ms        bigint,
-    uqc                   varchar(15),
-    created_by            uuid references app_user (id)   not null,
-    updated_by            uuid references app_user (id),
-    created_at            bigint  default extract(epoch from now()) * 1000000,
-    updated_at            bigint  default extract(epoch from now()) * 1000000
+(                                                                       --2 things to consider, we need to store what input params were and then what we computed in order to auditable unambiguously
+    id                        uuid primary key,
+    entity_version_id         integer                                  default 0,
+    tenant_id                 uuid references tenant (id)     not null,
+    active                    bool,
+    approval_status           smallint                        not null,
+    remarks                   varchar(70),
+    invoice_table_id          uuid references invoice (id)    not null,
+    line_title_hsn_sac_id     uuid references line_title (id) not null,
+    line_subtitle_id          uuid references line_subtitle (id),
+    quantity                  double precision                not null,
+    unit_price                real                            not null,
+    tax_percentage            real                            not null,
+    discount_percentage       real                            not null,
+    cess_percentage           real                            not null,
+    line_number               smallint                        not null,
+    line_net_total            double precision                not null, --double precision because quantity is in double which can cause the line total to be in double
+    mrp                       real,
+    batch                     varchar(15),
+    expiry_date_ms            bigint,
+    uqc                       varchar(15),
+    reverse_charge_applicable bool                            not null default false,
+    created_by                uuid references app_user (id)   not null,
+    updated_by                uuid references app_user (id),
+    created_at                bigint                                   default extract(epoch from now()) * 1000000,
+    updated_at                bigint                                   default extract(epoch from now()) * 1000000
 );

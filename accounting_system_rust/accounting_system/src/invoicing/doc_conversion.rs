@@ -209,6 +209,7 @@ fn convert_db_line_to_doc_line(a: &InvoiceLineDb, igst_applicable: bool) -> anyh
         sgst_percentage: if igst_applicable { 0.0 } else { a.tax_percentage / 2.0 },
         cess_percentage: a.cess_percentage,
         line_total: a.line_net_total,
+        reverse_charge_applicable:a.reverse_charge_applicable
     };
     Ok(line)
 }

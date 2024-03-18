@@ -57,6 +57,8 @@ pub struct CreateInvoiceLineRequest {
     pub mrp: Option<Price>,
     pub batch_no: Option<BatchNo>,
     pub expiry_date: Option<ExpiryDateMs>,
+    //is the line item payable under reverse charge
+    pub reverse_charge_applicable:bool
 }
 
 
@@ -327,6 +329,7 @@ pub mod tests {
             mrp: builder.mrp.flatten(),
             batch_no: builder.batch_no.flatten(),
             expiry_date: builder.expiry_date.flatten(),
+            reverse_charge_applicable:builder.reverse_charge_applicable.unwrap_or(false)
         }
     }
 }

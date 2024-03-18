@@ -22,7 +22,8 @@ create type create_invoice_line_request as
     mrp                 real,
     batch_no            text,
     expiry_date_ms      bigint,
-    line_net_total      double precision
+    line_net_total      double precision,
+    reverse_charge_applicable bool
 );
 
 
@@ -154,11 +155,11 @@ BEGIN
                                       invoice_table_id, line_title_hsn_sac_id, line_subtitle_id, quantity,
                                       unit_price, tax_percentage, discount_percentage, cess_percentage, line_number,
                                       line_net_total,
-                                      mrp, batch, expiry_date_ms, uqc, created_by, updated_by,
+                                      mrp, batch, expiry_date_ms, uqc,reverse_charge_applicable, created_by, updated_by,
                                       created_at, updated_at)
             values (line.line_id, 0, req.tenant_id, true, 1, null, invoice_tab_id, title_id, subtitle_id,
                     line.quantity, line.unit_price, line.tax_percentage, line.discount_percentage, line.cess_percentage,
-                    line.line_no, line.line_net_total, line.mrp, line.batch_no, line.expiry_date_ms, line.uqc,
+                    line.line_no, line.line_net_total, line.mrp, line.batch_no, line.expiry_date_ms, line.uqc,line.reverse_charge_applicable,
                     req.created_by, req.created_by, default, default);
         end loop;
 end

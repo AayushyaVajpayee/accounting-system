@@ -48,6 +48,7 @@ pub struct InvoiceLineDb<'a> {
     pub batch_no: Option<&'a str>,
     pub expiry_date_ms: Option<i64>,
     pub line_net_total: f64,
+    pub reverse_charge_applicable:bool,
 }
 
 impl ToPostgresString for InvoiceLineDb<'_> {
@@ -69,7 +70,8 @@ impl ToPostgresString for InvoiceLineDb<'_> {
             &self.mrp,
             &self.batch_no,
             &self.expiry_date_ms,
-            &self.line_net_total
+            &self.line_net_total,
+            &self.reverse_charge_applicable
         ];
         create_composite_type_db_row(fields, f)
     }
@@ -216,6 +218,7 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequest, line_no: i16) -> a
         batch_no: req.batch_no.as_ref().map(|a| a.inner()),
         expiry_date_ms: req.expiry_date.as_ref().map(|a| a.epoch_millis()).flatten(),
         line_net_total: req.net_line_total()?,
+        reverse_charge_applicable:req.reverse_charge_applicable
     })
 }
 
