@@ -14,6 +14,9 @@ impl CityName {
         }
         Ok(Self(name.to_ascii_uppercase()))
     }
+    pub fn inner(&self)->&str{
+        self.0.as_str()
+    }
 }
 
 #[derive(Debug,Serialize, Deserialize, Default, PartialEq)]

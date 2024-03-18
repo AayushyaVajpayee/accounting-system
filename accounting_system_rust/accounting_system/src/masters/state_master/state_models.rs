@@ -20,6 +20,7 @@ impl StateName {
 pub struct StateMasterModel {
     pub id: Uuid,
     pub state_name: StateName,
+    ///gst state code
     pub state_code:String,
     pub audit_metadata: AuditMetadataBase,
     pub country_id: Uuid,

@@ -270,9 +270,15 @@ fn convert_business_entity_to_invoice_party(e: Arc<BusinessEntityDto>) -> Invoic
             line_2: add.address.line_2.as_ref()
                 .map(|a| a.get_inner().to_string())
                 .unwrap_or_else(|| "".to_string()),
+            city_name:add.city.city_name.inner().to_string(),
+            pincode:add.pincode.pincode.to_string(),
+            gst_state_code:add.state.state_code.clone()
         }).unwrap_or_else(|| Address {
             line_1: "".to_string(),
             line_2: "".to_string(),
+            city_name: "".to_string(),
+            pincode: "".to_string(),
+            gst_state_code: "".to_string(),
         }),
     }
 }

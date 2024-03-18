@@ -47,6 +47,17 @@ impl Pincode {
                 },
         }
     }
+    
+    pub fn to_string(&self)->String{
+        match &self {
+            Pincode::IndianPincode(a) => {
+                a.to_string()
+            }
+            Pincode::Others(a) => {
+                a.to_string()
+            }
+        }        
+    }
 }
 
 

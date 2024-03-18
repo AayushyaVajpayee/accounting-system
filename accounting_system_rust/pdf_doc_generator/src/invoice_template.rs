@@ -281,6 +281,9 @@ pub struct AdditionalCharge {
 pub struct Address {
     pub line_1: String,
     pub line_2: String,
+    pub city_name:String,
+    pub pincode:String,
+    pub gst_state_code:String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
