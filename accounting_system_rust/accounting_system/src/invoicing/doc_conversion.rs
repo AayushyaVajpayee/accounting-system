@@ -201,6 +201,7 @@ fn convert_db_line_to_doc_line(a: &InvoiceLineDb, igst_applicable: bool) -> anyh
         expiry_date: a.expiry_date_ms.map(|e| epoch_ms_to_doc_date(e)).transpose()?,
         mrp: a.mrp,
         quantity: a.quantity,
+        free_quantity:a.free_quantity,
         uqc: a.uqc.to_string(),
         unit_price: a.unit_price,
         discount_percentage: a.discount_percentage,

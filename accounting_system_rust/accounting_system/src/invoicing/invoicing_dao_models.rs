@@ -39,6 +39,7 @@ pub struct InvoiceLineDb<'a> {
     pub line_subtitle: Option<&'a str>,
     pub subtitle_hash: Option<i64>,
     pub quantity: f64,
+    pub free_quantity: f64,
     pub uqc: &'a str,
     pub unit_price: f64,
     pub tax_percentage: f32,
@@ -62,6 +63,7 @@ impl ToPostgresString for InvoiceLineDb<'_> {
             &self.line_subtitle,
             &self.subtitle_hash,
             &self.quantity,
+            &self.free_quantity,
             &self.uqc,
             &self.unit_price,
             &self.tax_percentage,
@@ -218,7 +220,8 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequest, line_no: i16) -> a
         batch_no: req.batch_no.as_ref().map(|a| a.inner()),
         expiry_date_ms: req.expiry_date.as_ref().map(|a| a.epoch_millis()).flatten(),
         line_net_total: req.net_line_total()?,
-        reverse_charge_applicable:req.reverse_charge_applicable
+        reverse_charge_applicable:req.reverse_charge_applicable,
+        free_quantity:req.free_quantity.get_quantity(),
     })
 }
 

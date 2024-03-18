@@ -51,6 +51,7 @@ create table invoice_line
     line_title_hsn_sac_id     uuid references line_title (id) not null,
     line_subtitle_id          uuid references line_subtitle (id),
     quantity                  double precision                not null,
+    free_quantity             double precision                not null,
     unit_price                real                            not null,
     tax_percentage            real                            not null,
     discount_percentage       real                            not null,

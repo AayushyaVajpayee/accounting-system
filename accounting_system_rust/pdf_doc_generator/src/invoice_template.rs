@@ -62,6 +62,7 @@ pub struct InvoiceLine {
     pub expiry_date: Option<DocDate>,
     pub mrp: Option<f32>,
     pub quantity: f64,
+    pub free_quantity: f64,
     pub uqc: String,
     pub unit_price: f64,
     pub discount_percentage: f32,
