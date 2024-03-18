@@ -34,6 +34,7 @@ pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
         payment_term: "".to_string(),//todo how to derive correct payment term. credit, cash, advance,etc?
         order_number: invoice.order_number.map(|a| a.to_string()),
         irn_no: "".to_string(),//todo without einvoicing this is garbage. how to derive it
+        service_invoice:invoice.service_invoice,
         supplier: convert_business_entity_to_invoice_party(supplier),
         billed_to: billed_to.map(|a| convert_business_entity_to_invoice_party(a)),
         shipped_to: shipped_to.map(|a| convert_business_entity_to_invoice_party(a)),

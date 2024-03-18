@@ -300,6 +300,7 @@ pub struct Invoice {
     pub order_date: Option<DocDate>,
     pub payment_term: String,
     pub order_number: Option<String>,
+    pub service_invoice:bool,
     pub irn_no: String,
     pub supplier: InvoiceParty,
     pub billed_to: Option<InvoiceParty>,
