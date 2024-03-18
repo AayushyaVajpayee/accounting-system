@@ -1,3 +1,4 @@
+use anyhow::{ ensure};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -7,11 +8,9 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 pub struct StateName(String);
 
 impl StateName {
-    pub fn new(name: &str) -> Result<Self, &'static str> {
+    pub fn new(name: &str) -> anyhow::Result<Self> {
         let name = name.trim();
-        if name.len() > 60 {
-            return Err("state name cannot be greater than 60 chars");
-        }
+        ensure!(name.len()<=60,"state name cannot be greater than {} chars",60);
         let name = name.to_ascii_uppercase();
         Ok(Self(name))
     }
@@ -21,6 +20,7 @@ impl StateName {
 pub struct StateMasterModel {
     pub id: Uuid,
     pub state_name: StateName,
+    pub state_code:String,
     pub audit_metadata: AuditMetadataBase,
     pub country_id: Uuid,
 }

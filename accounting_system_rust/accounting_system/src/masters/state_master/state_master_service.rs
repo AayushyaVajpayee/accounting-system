@@ -91,6 +91,7 @@ mod tests {
             vec![StateMasterModel {
                 id: Default::default(),
                 state_name: StateName::new("Uttarakhand").unwrap(),
+                state_code:"05".to_string(),
                 audit_metadata: Default::default(),
                 country_id:Uuid::now_v7()
             }]
@@ -111,6 +112,7 @@ mod tests {
             vec![StateMasterModel {
                 id: Default::default(),
                 state_name: StateName::new("Uttarakhand").unwrap(),
+                state_code:"05".to_string(),
                 audit_metadata: Default::default(),
                 country_id:Uuid::now_v7()
             }]

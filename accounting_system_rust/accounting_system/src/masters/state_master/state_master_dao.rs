@@ -7,11 +7,11 @@ use deadpool_postgres::Pool;
 use mockall::{automock, predicate::*};
 use tokio_postgres::Row;
 use uuid::Uuid;
-
-use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::common_utils::dao_error::DaoError;
+use crate::common_utils::db_row_conversion_utils::convert_row_to_audit_metadata_base;
 use crate::masters::state_master::state_models::{StateMasterModel, StateName};
 
-const SELECT_FIELDS: &str = "id,state_name,created_by,updated_by,created_at,updated_at,country_id";
+const SELECT_FIELDS: &str = "id,state_name,state_code,country_id,created_by,updated_by,created_at,updated_at";
 const TABLE_NAME: &str = "state_master";
 
 const FETCH_ALL_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABLE_NAME);
@@ -35,19 +35,16 @@ struct StateMasterDaoPostgresImpl {
 }
 
 impl TryFrom<&Row> for StateMasterModel {
-    type Error = &'static str;
+    type Error = DaoError;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
         Ok(StateMasterModel {
             id: row.get(0),
             state_name: StateName::new(row.get(1))?,
-            audit_metadata: AuditMetadataBase {
-                created_by: row.get(2),
-                updated_by: row.get(3),
-                created_at: row.get(4),
-                updated_at: row.get(5),
-            },
-            country_id:row.get(6)
+            state_code:row.get(2),
+            country_id:row.get(3),
+            audit_metadata:convert_row_to_audit_metadata_base(4,&row)?,
+         
         })
     }
 }
