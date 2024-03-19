@@ -55,7 +55,8 @@ create type create_invoice_request as
     total_payable_amount            double precision,
     created_by                      uuid,
     igst_applicable                 bool,
-    invoice_remarks                 text
+    invoice_remarks                 text,
+    ecommerce_gstin                 text
 );
 
 create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter integer,
@@ -124,13 +125,15 @@ BEGIN
                          e_invoicing_applicable, supplier_business_entity, b2b_invoice, billed_to_business_entity,
                          shipped_to_business_entity, purchase_order_number, einvoice_json_s3_id, total_taxable_amount,
                          total_tax_amount, total_additional_charges_amount, round_off, total_payable_amount,
-                         invoice_pdf_s3_id, invoice_template_id, payment_term_id,invoice_remarks, created_by, updated_by, created_at,
+                         invoice_pdf_s3_id, invoice_template_id, payment_term_id, invoice_remarks, ecommerce_gstin,
+                         created_by, updated_by, created_at,
                          updated_at)
     values (inv_id, 0, req.tenant_id, true, 1, null, req.invoicing_series_mst_id, req.financial_year, inv_number,
             req.currency_id, req.service_invoice, req.invoice_date_ms, req.e_invoicing_applicable, req.supplier_id,
             req.b2b_invoice, req.billed_to_customer_id, req.shipped_to_customer_id, req.order_number, null,
             req.total_taxable_amount, req.total_tax_amount, req.total_additional_charges_amount, req.round_off,
-            req.total_payable_amount, null, req.invoice_template_id, _payment_term_id,req.invoice_remarks ,req.created_by, req.created_by,
+            req.total_payable_amount, null, req.invoice_template_id, _payment_term_id, req.invoice_remarks,
+            req.ecommerce_gstin, req.created_by, req.created_by,
             default, default);
     return jsonb_build_object('invoice_number', inv_number, 'invoice_id', inv_id);
 END
@@ -155,14 +158,16 @@ BEGIN
                                                line.subtitle_hash)
             into subtitle_id;
             insert into invoice_line (id, entity_version_id, tenant_id, active, approval_status, remarks,
-                                      invoice_table_id, line_title_hsn_sac_id, line_subtitle_id, quantity,free_quantity,
+                                      invoice_table_id, line_title_hsn_sac_id, line_subtitle_id, quantity,
+                                      free_quantity,
                                       unit_price, tax_percentage, discount_percentage, cess_percentage, line_number,
                                       line_net_total,
                                       mrp, batch, expiry_date_ms, uqc, reverse_charge_applicable, created_by,
                                       updated_by,
                                       created_at, updated_at)
             values (line.line_id, 0, req.tenant_id, true, 1, null, invoice_tab_id, title_id, subtitle_id,
-                    line.quantity,line.free_quantity, line.unit_price, line.tax_percentage, line.discount_percentage, line.cess_percentage,
+                    line.quantity, line.free_quantity, line.unit_price, line.tax_percentage, line.discount_percentage,
+                    line.cess_percentage,
                     line.line_no, line.line_net_total, line.mrp, line.batch_no, line.expiry_date_ms, line.uqc,
                     line.reverse_charge_applicable,
                     req.created_by, req.created_by, default, default);

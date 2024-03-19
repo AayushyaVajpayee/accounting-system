@@ -33,6 +33,7 @@ create table invoice
     invoice_template_id             uuid references invoice_template (id)     not null,
     payment_term_id                 uuid references payment_term,
     invoice_remarks                 varchar(100),
+    ecommerce_gstin                 varchar(16),
     created_by                      uuid references app_user (id)             not null,
     updated_by                      uuid references app_user (id),
     created_at                      bigint  default extract(epoch from now()) * 1000000,

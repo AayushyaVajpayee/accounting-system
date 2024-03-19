@@ -139,6 +139,7 @@ pub struct InvoiceDb<'a> {
     pub created_by: Uuid,
     pub igst_applicable: bool,
     pub invoice_remarks:Option<&'a str>,
+    pub ecommerce_gstin:Option<&'a str>
 }
 
 impl ToPostgresString for InvoiceDb<'_> {
@@ -170,6 +171,7 @@ impl ToPostgresString for InvoiceDb<'_> {
             &self.created_by,
             &self.igst_applicable,
             &self.invoice_remarks,
+            &self.ecommerce_gstin,
         ];
         create_composite_type_db_row(fields, f)
     }
@@ -276,7 +278,9 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, ig
         created_by,
         igst_applicable,
         invoice_remarks:req.invoice_remarks.as_ref()
-            .map(|a|a.get_str())
+            .map(|a|a.get_str()),
+        ecommerce_gstin:req.ecommerce_gstin
+            .as_ref().map(|a|a.get_str())
     })
 }
 

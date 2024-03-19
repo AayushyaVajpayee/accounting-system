@@ -47,6 +47,8 @@ pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
         tax_summary: create_invoice_tax_summary(&invoice)?,
         invoice_summary: create_invoice_summary(&invoice),
         invoice_lines_table: create_invoice_line_table(&invoice, currency)?,
+        invoice_remarks:invoice.invoice_remarks.unwrap_or("").to_string(),
+        ecommerce_gstin:invoice.ecommerce_gstin.unwrap_or("").to_string()
     })
 }
 

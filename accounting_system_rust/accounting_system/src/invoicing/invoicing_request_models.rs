@@ -11,6 +11,7 @@ use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::invoice_line::unit_price::Price;
 use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
 use pdf_doc_generator::invoice_template::Invoice;
+use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateInvoiceRequest {
@@ -29,7 +30,8 @@ pub struct CreateInvoiceRequest {
     pub payment_terms: Option<PaymentTermsValidated>,
     pub invoice_lines: Vec<CreateInvoiceLineRequest>,
     pub additional_charges: Vec<CreateAdditionalChargeRequest>,
-    pub invoice_remarks:Option<InvoiceRemarks>
+    pub invoice_remarks:Option<InvoiceRemarks>,
+    pub ecommerce_gstin:Option<GstinNo>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Builder)]
@@ -324,7 +326,8 @@ pub mod tests {
                     vec![a_create_invoice_line_request(Default::default())]),
             additional_charges: builder.additional_charges
                 .unwrap_or_else(|| vec![a_create_additional_charge_request(Default::default())]),
-            invoice_remarks:builder.invoice_remarks.flatten()
+            invoice_remarks:builder.invoice_remarks.flatten(),
+            ecommerce_gstin:builder.ecommerce_gstin.flatten()
         }
     }
 

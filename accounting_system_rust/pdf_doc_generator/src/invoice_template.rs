@@ -314,6 +314,8 @@ pub struct Invoice {
     pub tax_summary: TaxSummary,
     pub invoice_summary: InvoiceSummary,
     pub invoice_lines_table: InvoiceLineTable,
+    pub invoice_remarks:String,
+    pub ecommerce_gstin:String,
 }
 
 
