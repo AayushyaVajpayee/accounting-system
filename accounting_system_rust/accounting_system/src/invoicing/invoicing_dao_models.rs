@@ -138,6 +138,7 @@ pub struct InvoiceDb<'a> {
     pub total_payable_amount: f64,
     pub created_by: Uuid,
     pub igst_applicable: bool,
+    pub invoice_remarks:Option<&'a str>,
 }
 
 impl ToPostgresString for InvoiceDb<'_> {
@@ -168,6 +169,7 @@ impl ToPostgresString for InvoiceDb<'_> {
             &self.total_payable_amount,
             &self.created_by,
             &self.igst_applicable,
+            &self.invoice_remarks,
         ];
         create_composite_type_db_row(fields, f)
     }
@@ -273,6 +275,8 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, ig
         total_payable_amount: req.total_amount(currency_scale)?,
         created_by,
         igst_applicable,
+        invoice_remarks:req.invoice_remarks.as_ref()
+            .map(|a|a.get_str())
     })
 }
 

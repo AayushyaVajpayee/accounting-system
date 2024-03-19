@@ -32,6 +32,7 @@ create table invoice
     invoice_pdf_s3_id               varchar(200),
     invoice_template_id             uuid references invoice_template (id)     not null,
     payment_term_id                 uuid references payment_term,
+    invoice_remarks                 varchar(100),
     created_by                      uuid references app_user (id)             not null,
     updated_by                      uuid references app_user (id),
     created_at                      bigint  default extract(epoch from now()) * 1000000,

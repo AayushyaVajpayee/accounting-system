@@ -1,4 +1,4 @@
-use anyhow::{Context, ensure};
+use anyhow::{ Context, ensure};
 use chrono::NaiveDate;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,7 @@ pub struct CreateInvoiceRequest {
     pub payment_terms: Option<PaymentTermsValidated>,
     pub invoice_lines: Vec<CreateInvoiceLineRequest>,
     pub additional_charges: Vec<CreateAdditionalChargeRequest>,
+    pub invoice_remarks:Option<InvoiceRemarks>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Builder)]
@@ -59,9 +60,33 @@ pub struct CreateInvoiceLineRequest {
     pub batch_no: Option<BatchNo>,
     pub expiry_date: Option<ExpiryDateMs>,
     //is the line item payable under reverse charge
-    pub reverse_charge_applicable:bool
+    pub reverse_charge_applicable:bool,
 }
 
+
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
+#[serde(try_from = "String")]
+pub struct InvoiceRemarks(String);
+impl InvoiceRemarks {
+    pub fn new(remark: &str) -> anyhow::Result<Self> {
+        let remark = remark.trim();
+        ensure!(!remark.is_empty() || remark.len() <= 100,
+            "remark cannot be empty or greater than {} chars",100);
+        Ok(Self(remark.to_string()))
+    }
+
+    pub fn get_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+impl TryFrom<String> for InvoiceRemarks{
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::new(value.as_str())
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PaymentTerms {
@@ -272,7 +297,7 @@ pub mod tests {
 
     use crate::accounting::currency::currency_models::tests::SEED_CURRENCY_ID;
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
-    use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
+    use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder, InvoiceRemarks};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2};
 
@@ -299,7 +324,7 @@ pub mod tests {
                     vec![a_create_invoice_line_request(Default::default())]),
             additional_charges: builder.additional_charges
                 .unwrap_or_else(|| vec![a_create_additional_charge_request(Default::default())]),
-
+            invoice_remarks:builder.invoice_remarks.flatten()
         }
     }
 

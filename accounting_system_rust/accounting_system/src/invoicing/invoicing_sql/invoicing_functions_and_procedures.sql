@@ -54,8 +54,8 @@ create type create_invoice_request as
     round_off                       double precision,
     total_payable_amount            double precision,
     created_by                      uuid,
-    igst_applicable                 bool
-
+    igst_applicable                 bool,
+    invoice_remarks                 text
 );
 
 create or replace function get_invoice_number(invoice_number_prefix text, invoice_counter integer,
@@ -124,13 +124,13 @@ BEGIN
                          e_invoicing_applicable, supplier_business_entity, b2b_invoice, billed_to_business_entity,
                          shipped_to_business_entity, purchase_order_number, einvoice_json_s3_id, total_taxable_amount,
                          total_tax_amount, total_additional_charges_amount, round_off, total_payable_amount,
-                         invoice_pdf_s3_id, invoice_template_id, payment_term_id, created_by, updated_by, created_at,
+                         invoice_pdf_s3_id, invoice_template_id, payment_term_id,invoice_remarks, created_by, updated_by, created_at,
                          updated_at)
     values (inv_id, 0, req.tenant_id, true, 1, null, req.invoicing_series_mst_id, req.financial_year, inv_number,
             req.currency_id, req.service_invoice, req.invoice_date_ms, req.e_invoicing_applicable, req.supplier_id,
             req.b2b_invoice, req.billed_to_customer_id, req.shipped_to_customer_id, req.order_number, null,
             req.total_taxable_amount, req.total_tax_amount, req.total_additional_charges_amount, req.round_off,
-            req.total_payable_amount, null, req.invoice_template_id, _payment_term_id, req.created_by, req.created_by,
+            req.total_payable_amount, null, req.invoice_template_id, _payment_term_id,req.invoice_remarks ,req.created_by, req.created_by,
             default, default);
     return jsonb_build_object('invoice_number', inv_number, 'invoice_id', inv_id);
 END
