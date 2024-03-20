@@ -23,6 +23,14 @@ pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
     let supplier = fetch_business_entity(Some(invoice.supplier_id), invoice.tenant_id, business_entity_service.clone())
         .await?
         .context("supplier cannot be null")?;
+    let dispatcher = if invoice.supplier_id == invoice.dispatch_from_id {
+        None
+    } else {
+        let entity = fetch_business_entity(Some(invoice.dispatch_from_id), invoice.tenant_id, business_entity_service.clone())
+            .await?
+            .context("dispatcher cannot be null")?;
+        Some(convert_business_entity_to_invoice_party(entity))
+    };
     let billed_to = fetch_business_entity(invoice.billed_to_customer_id, invoice.tenant_id, business_entity_service.clone())
         .await?;
     let shipped_to = fetch_business_entity(invoice.shipped_to_customer_id, invoice.tenant_id, business_entity_service.clone())
@@ -34,8 +42,9 @@ pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
         payment_term: "".to_string(),//todo how to derive correct payment term. credit, cash, advance,etc?
         order_number: invoice.order_number.map(|a| a.to_string()),
         irn_no: "".to_string(),//todo without einvoicing this is garbage. how to derive it
-        service_invoice:invoice.service_invoice,
+        service_invoice: invoice.service_invoice,
         supplier: convert_business_entity_to_invoice_party(supplier),
+        dispatch_from: dispatcher,
         billed_to: billed_to.map(|a| convert_business_entity_to_invoice_party(a)),
         shipped_to: shipped_to.map(|a| convert_business_entity_to_invoice_party(a)),
         additional_charges: invoice.additional_charges
@@ -47,8 +56,8 @@ pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
         tax_summary: create_invoice_tax_summary(&invoice)?,
         invoice_summary: create_invoice_summary(&invoice),
         invoice_lines_table: create_invoice_line_table(&invoice, currency)?,
-        invoice_remarks:invoice.invoice_remarks.unwrap_or("").to_string(),
-        ecommerce_gstin:invoice.ecommerce_gstin.unwrap_or("").to_string()
+        invoice_remarks: invoice.invoice_remarks.map(|a|a.to_string()),
+        ecommerce_gstin: invoice.ecommerce_gstin.map(|a|a.to_string()),
     })
 }
 
@@ -203,7 +212,7 @@ fn convert_db_line_to_doc_line(a: &InvoiceLineDb, igst_applicable: bool) -> anyh
         expiry_date: a.expiry_date_ms.map(|e| epoch_ms_to_doc_date(e)).transpose()?,
         mrp: a.mrp,
         quantity: a.quantity,
-        free_quantity:a.free_quantity,
+        free_quantity: a.free_quantity,
         uqc: a.uqc.to_string(),
         unit_price: a.unit_price,
         discount_percentage: a.discount_percentage,
@@ -212,7 +221,7 @@ fn convert_db_line_to_doc_line(a: &InvoiceLineDb, igst_applicable: bool) -> anyh
         sgst_percentage: if igst_applicable { 0.0 } else { a.tax_percentage / 2.0 },
         cess_percentage: a.cess_percentage,
         line_total: a.line_net_total,
-        reverse_charge_applicable:a.reverse_charge_applicable
+        reverse_charge_applicable: a.reverse_charge_applicable,
     };
     Ok(line)
 }
@@ -275,9 +284,9 @@ fn convert_business_entity_to_invoice_party(e: Arc<BusinessEntityDto>) -> Invoic
             line_2: add.address.line_2.as_ref()
                 .map(|a| a.get_inner().to_string())
                 .unwrap_or_else(|| "".to_string()),
-            city_name:add.city.city_name.inner().to_string(),
-            pincode:add.pincode.pincode.to_string(),
-            gst_state_code:add.state.state_code.clone()
+            city_name: add.city.city_name.inner().to_string(),
+            pincode: add.pincode.pincode.to_string(),
+            gst_state_code: add.state.state_code.clone(),
         }).unwrap_or_else(|| Address {
             line_1: "".to_string(),
             line_2: "".to_string(),

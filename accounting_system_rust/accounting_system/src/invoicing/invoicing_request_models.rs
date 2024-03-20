@@ -1,4 +1,4 @@
-use anyhow::{ Context, ensure};
+use anyhow::{Context, ensure};
 use chrono::NaiveDate;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
@@ -22,17 +22,21 @@ pub struct CreateInvoiceRequest {
     pub service_invoice: bool,
     pub einvoicing_applicable: bool,
     pub b2b_invoice: bool,
+    ///billed from id
     pub supplier_id: Uuid,
-    //if its not registered, go register first
+    ///if  none then same as that of supplier id
+    pub dispatch_from_id: Option<Uuid>,
     pub bill_ship_detail: Option<BillShipDetail>,
     pub order_number: Option<PurchaseOrderNo>,
     pub order_date: Option<PurchaseOrderDate>,
     pub payment_terms: Option<PaymentTermsValidated>,
     pub invoice_lines: Vec<CreateInvoiceLineRequest>,
     pub additional_charges: Vec<CreateAdditionalChargeRequest>,
-    pub invoice_remarks:Option<InvoiceRemarks>,
-    pub ecommerce_gstin:Option<GstinNo>
+    pub invoice_remarks: Option<InvoiceRemarks>,
+    pub ecommerce_gstin: Option<GstinNo>,
 }
+
+
 
 #[derive(Debug, Serialize, Deserialize, Clone, Builder)]
 pub struct BillShipDetail {
@@ -53,7 +57,7 @@ pub struct CreateInvoiceLineRequest {
     pub line_title: LineTitle,
     pub line_subtitle: Option<LineSubtitle>,
     pub quantity: LineQuantity,
-    pub free_quantity:LineQuantity,
+    pub free_quantity: LineQuantity,
     pub unit_price: Price,
     pub tax_rate_percentage: GSTPercentage,
     pub discount_percentage: DiscountPercentage,
@@ -62,13 +66,14 @@ pub struct CreateInvoiceLineRequest {
     pub batch_no: Option<BatchNo>,
     pub expiry_date: Option<ExpiryDateMs>,
     //is the line item payable under reverse charge
-    pub reverse_charge_applicable:bool,
+    pub reverse_charge_applicable: bool,
 }
 
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
 #[serde(try_from = "String")]
 pub struct InvoiceRemarks(String);
+
 impl InvoiceRemarks {
     pub fn new(remark: &str) -> anyhow::Result<Self> {
         let remark = remark.trim();
@@ -82,7 +87,7 @@ impl InvoiceRemarks {
     }
 }
 
-impl TryFrom<String> for InvoiceRemarks{
+impl TryFrom<String> for InvoiceRemarks {
     type Error = anyhow::Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
@@ -183,7 +188,7 @@ impl PurchaseOrderNo {
         );
         Ok(PurchaseOrderNo(value.to_owned()))
     }
-    pub fn inner(&self)->&str{
+    pub fn inner(&self) -> &str {
         self.0.as_str()
     }
 }
@@ -215,9 +220,9 @@ impl PurchaseOrderDate {
     pub fn get_date(&self) -> &NaiveDate {
         &self.0
     }
-    pub fn epoch_millis(&self) ->Option<i64>{
+    pub fn epoch_millis(&self) -> Option<i64> {
         return self.0.and_hms_milli_opt(0, 0, 0, 0)
-            .map(|a| a.timestamp_millis())
+            .map(|a| a.timestamp_millis());
     }
 }
 
@@ -277,13 +282,14 @@ impl TryFrom<String> for ExpiryDateMs {
 }
 
 
-#[derive(Debug,Serialize,Deserialize)]
-pub struct InvoicePdfRequest{
-    pub tenant_id:Uuid,
-    pub invoice_id:Uuid,
-    pub invoice:Invoice,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InvoicePdfRequest {
+    pub tenant_id: Uuid,
+    pub invoice_id: Uuid,
+    pub invoice: Invoice,
 
 }
+
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
@@ -326,8 +332,9 @@ pub mod tests {
                     vec![a_create_invoice_line_request(Default::default())]),
             additional_charges: builder.additional_charges
                 .unwrap_or_else(|| vec![a_create_additional_charge_request(Default::default())]),
-            invoice_remarks:builder.invoice_remarks.flatten(),
-            ecommerce_gstin:builder.ecommerce_gstin.flatten()
+            invoice_remarks: builder.invoice_remarks.flatten(),
+            ecommerce_gstin: builder.ecommerce_gstin.flatten(),
+            dispatch_from_id:builder.dispatch_from_id.flatten(),
         }
     }
 
@@ -351,7 +358,7 @@ pub mod tests {
             line_title: builder.line_title.unwrap_or(LineTitle::new("some random line title".to_string()).unwrap()),
             line_subtitle: builder.line_subtitle.flatten(),
             quantity: builder.quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
-            free_quantity:builder.free_quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
+            free_quantity: builder.free_quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
             unit_price: builder.unit_price.unwrap_or_else(|| Price::new(10.0).unwrap()),
             tax_rate_percentage: builder.tax_rate_percentage.unwrap_or_else(|| GSTPercentage::new(28.0).unwrap()),
             discount_percentage: builder.discount_percentage.unwrap_or_else(|| DiscountPercentage::new(0.0).unwrap()),
@@ -359,7 +366,7 @@ pub mod tests {
             mrp: builder.mrp.flatten(),
             batch_no: builder.batch_no.flatten(),
             expiry_date: builder.expiry_date.flatten(),
-            reverse_charge_applicable:builder.reverse_charge_applicable.unwrap_or(false)
+            reverse_charge_applicable: builder.reverse_charge_applicable.unwrap_or(false),
         }
     }
 }

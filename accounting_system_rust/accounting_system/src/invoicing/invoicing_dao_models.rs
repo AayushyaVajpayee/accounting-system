@@ -123,6 +123,7 @@ pub struct InvoiceDb<'a> {
     pub b2b_invoice: bool,
     pub e_invoicing_applicable: bool,
     pub supplier_id: Uuid,
+    pub dispatch_from_id:Uuid,
     pub billed_to_customer_id: Option<Uuid>,
     pub shipped_to_customer_id: Option<Uuid>,
     pub order_number: Option<&'a str>,
@@ -155,6 +156,7 @@ impl ToPostgresString for InvoiceDb<'_> {
             &self.b2b_invoice,
             &self.e_invoicing_applicable,
             &self.supplier_id,
+            &self.dispatch_from_id,
             &self.billed_to_customer_id,
             &self.shipped_to_customer_id,
             &self.order_number,
@@ -247,6 +249,7 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, ig
         b2b_invoice: req.b2b_invoice,
         e_invoicing_applicable: req.einvoicing_applicable,
         supplier_id: req.supplier_id,
+        dispatch_from_id:req.dispatch_from_id.unwrap_or(req.supplier_id),
         billed_to_customer_id: req.bill_ship_detail
             .as_ref()
             .map(|l| l.billed_to_customer_id),

@@ -17,7 +17,8 @@ create table invoice
     service_invoice                 bool                                      not null,
     invoice_date_ms                 bigint                                    not null,
     e_invoicing_applicable          bool                                      not null,
-    supplier_business_entity        uuid references business_entity (id)      not null,
+    supplier_business_entity        uuid references business_entity (id)      not null,--should we change the name to
+    dispatch_from_business_entity   uuid references business_entity (id)      not null,
     b2b_invoice                     bool                                      not null,
     billed_to_business_entity       uuid references business_entity (id),--only applicable in b2b invoices
     shipped_to_business_entity      uuid references business_entity (id),---only applicable in b2b invoices

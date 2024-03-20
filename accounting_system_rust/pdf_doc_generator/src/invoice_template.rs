@@ -308,14 +308,15 @@ pub struct Invoice {
     pub service_invoice: bool,
     pub irn_no: String,
     pub supplier: InvoiceParty,
+    pub dispatch_from: Option<InvoiceParty>,
     pub billed_to: Option<InvoiceParty>,
     pub shipped_to: Option<InvoiceParty>,
     pub additional_charges: Vec<AdditionalCharge>,
     pub tax_summary: TaxSummary,
     pub invoice_summary: InvoiceSummary,
     pub invoice_lines_table: InvoiceLineTable,
-    pub invoice_remarks:String,
-    pub ecommerce_gstin:String,
+    pub invoice_remarks:Option<String>,
+    pub ecommerce_gstin:Option<String>,
 }
 
 
