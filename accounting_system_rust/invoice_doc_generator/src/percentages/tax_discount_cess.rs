@@ -4,19 +4,21 @@ use thiserror::Error;
 
 use crate::percentages::tax_discount_cess::TaxPercentageError::NotInBounds;
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "f32")]
 pub struct GSTPercentage(f32);
 
 impl GSTPercentage {
     pub fn new(value: f32) -> anyhow::Result<Self> {
-        match value {
-            0.0 | 3.0 | 5.0 | 12.0 | 18.0 | 28.0 => Ok(GSTPercentage(value)),
-            _ => { bail!("gst tax ({})% not supported",value) }
+        if value == 0.0 || value == 3.0 || value == 5.0
+            || value == 12.0 || value == 18.0 || value == 28.0 {
+            Ok(GSTPercentage(value))
+        } else {
+            bail!("gst tax ({})% not supported",value)
         }
     }
 
-    pub fn inner(&self)->f32{
+    pub fn inner(&self) -> f32 {
         self.0
     }
 }
@@ -70,7 +72,7 @@ mod tax_percentage_tests {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "f32")]
 pub struct CessPercentage(f32);
 
@@ -87,7 +89,7 @@ impl CessPercentage {
         }
         Ok(Self(cess_percentage))
     }
-    pub fn inner(&self)->f32{
+    pub fn inner(&self) -> f32 {
         self.0
     }
 }
@@ -124,7 +126,7 @@ mod cess_percentage_tests {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "f32")]
 pub struct DiscountPercentage(f32);
 
@@ -142,7 +144,7 @@ impl DiscountPercentage {
         Ok(DiscountPercentage(discount_percentage))
     }
 
-    pub fn inner(&self)->f32{
+    pub fn inner(&self) -> f32 {
         self.0
     }
 }
