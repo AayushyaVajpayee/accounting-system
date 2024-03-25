@@ -30,7 +30,7 @@ impl TryFrom<f32> for GSTPercentage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct TaxPercentage(f32);
 
 #[derive(Debug, Error)]
@@ -45,6 +45,9 @@ impl TaxPercentage {
             return Err(NotInBounds(tax_percentage));
         }
         Ok(Self(tax_percentage))
+    }
+    pub fn inner(&self)->f32{
+        self.0
     }
 }
 
