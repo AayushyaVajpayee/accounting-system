@@ -9,7 +9,8 @@ use actix_web::dev::{Payload, ServiceRequest, ServiceResponse};
 use actix_web::error::ErrorInternalServerError;
 use actix_web::http::StatusCode;
 use actix_web_lab::middleware::Next;
-use chrono::{Datelike, NaiveDate, TimeZone, Utc};
+use chrono::{Datelike, DateTime, NaiveDate, TimeZone, Utc};
+use chrono_tz::Tz;
 use serde_json::Value;
 use thiserror::Error;
 use tokio_postgres::SimpleQueryMessage;
@@ -27,6 +28,10 @@ pub enum TimeError {
     ForwardTime(Duration)
 }
 
+pub fn get_current_indian_standard_time()->DateTime<Tz>{
+    let utc_time = Utc::now();
+    utc_time.with_timezone(&Tz::Asia__Kolkata)
+}
 ///in microseconds
 pub fn get_current_time_us() -> Result<i64, TimeError> {
     let current_time = SystemTime::now()
@@ -107,7 +112,7 @@ pub fn extract_user_id_from_header(request:&HttpRequest)->Result<UserId,UserIdHe
 }
 pub struct TenantId(Uuid);
 impl TenantId{
-   pub fn inner(&self)->Uuid{
+    pub fn inner(&self)->Uuid{
         self.0
     }
 }
@@ -137,7 +142,7 @@ impl FromRequest for UserId{
 }
 
 pub async fn tenant_user_header_middleware(
-     req: ServiceRequest,
+    req: ServiceRequest,
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
     let tenant_service:&Arc<dyn TenantService> = req.app_data()
