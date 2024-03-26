@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use uuid::Uuid;
+use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::TenantId;
 use crate::masters::product_item_master::product_item_dao::ProductItemDao;
 use crate::masters::product_item_master::product_item_db_models::convert_product_creation_request_to_product_item_db;
@@ -14,6 +15,8 @@ pub trait ProductItemService {
 struct ProductItemServiceImpl {
     dao: Box<dyn ProductItemDao>,
 }
+
+struct ProductItemDbResponse {}
 
 #[async_trait]
 impl ProductItemService for ProductItemServiceImpl {

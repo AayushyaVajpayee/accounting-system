@@ -3,10 +3,16 @@ use chrono_tz::Tz;
 use sha2::{Digest, Sha256};
 use tracing_subscriber::fmt::format;
 use uuid::Uuid;
+use invoice_doc_generator::hsc_sac::GstItemCode;
+use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
+use invoice_doc_generator::invoice_line::line_title::LineTitle;
+use invoice_doc_generator::percentages::tax_discount_cess::TaxPercentage;
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 
 use crate::common_utils::pg_util::pg_util::create_composite_type_db_row;
 use crate::common_utils::pg_util::pg_util::ToPostgresString;
 use crate::common_utils::utils::get_current_indian_standard_time;
+use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::product_item_master::product_item_models::{CessStrategy, ProductCreationRequest};
 
 #[derive(Debug)]
@@ -185,4 +191,30 @@ pub fn convert_product_creation_request_to_product_item_db(req: &ProductCreation
                                                                               tenant_id,
                                                                               created_by),
     }
+}
+
+pub struct ProductTaxRatDbResponse{
+    pub tax_rate_percentage:TaxPercentage,
+    pub start_date:DateTime<Tz>,
+    pub end_date:Option<DateTime<Tz>>,
+}
+pub struct CessTaxRateDbResponse{
+    pub cess_strategy:CessStrategy,
+    pub start_date:DateTime<Tz>,
+    pub end_date:DateTime<Tz>
+    
+}
+
+pub struct ProductItemDbResponse{
+    pub base_master_fields:BaseMasterFields,
+    pub title:LineTitle,
+    pub subtitle:LineSubtitle,
+    pub hsn_sac_code:GstItemCode,
+    pub product_hash:String,
+    pub temporal_tax_rates:Vec<ProductTaxRatDbResponse>,
+    pub temporal_cess_rates:Vec<CessTaxRateDbResponse>,
+    pub tax_rate_percentage:TaxPercentage,
+    pub tax_rate_applicable_since:DateTime<Tz>,
+    
+    pub audit_metadata:AuditMetadataBase,
 }
