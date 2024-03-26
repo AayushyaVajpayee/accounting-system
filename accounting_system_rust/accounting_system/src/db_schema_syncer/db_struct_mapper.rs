@@ -33,6 +33,7 @@ use crate::masters::company_master::company_master_db_mapping::CompanyMasterDbMa
 use crate::masters::company_master::company_unit_master::company_unit_db_mapping::CompanyUnitMasterDbMapping;
 use crate::masters::country_master::country_master_db_mapping::CountryMasterDbMapping;
 use crate::masters::pincode_master::pincode_master_db_mapping::PincodeMasterDbMapping;
+use crate::masters::product_item_master::product_item_db_mapping::ProductItemDbMapping;
 use crate::masters::state_master::state_master_db_mapping::StateMasterDbMapping;
 use crate::tenant::tenant_db_mapping::TenantDbMapping;
 
@@ -108,6 +109,7 @@ fn get_registered_table_mappings() -> Vec<Box<dyn DbStructMapping>> {
         Box::new(InvoiceTemplateDbMapping{}),
         Box::new(InvoicingDbMapping {}),
         Box::new(AdditionalChargeDbMapping {}),
+        Box::new(ProductItemDbMapping{})
 
     ];
     list
