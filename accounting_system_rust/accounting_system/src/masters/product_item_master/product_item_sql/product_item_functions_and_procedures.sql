@@ -1,17 +1,3 @@
-create type create_product_item_request as
-(
-    idempotence_key         uuid,
-    tenant_id               uuid,
-    created_by              uuid,
-    title                   text,
-    subtitle                text,
-    product_hash            text,--use xxhash?lets go with md5 where spaces are trimmed is case insensitive
-    uom                     text,
-    hsn_sac_code            text,
-    create_tax_rate_request create_tax_rate_request,
-    create_cess_request     create_cess_request
-
-);--title and subtitle should be hashed to maintain uniqueness
 
 create type create_tax_rate_request as
 (
@@ -34,6 +20,21 @@ create type create_cess_request as
     start_date           timestamp
 );
 
+create type create_product_item_request as
+(
+    idempotence_key         uuid,
+    tenant_id               uuid,
+    created_by              uuid,
+    title                   text,
+    subtitle                text,
+    product_hash            text,--use xxhash?lets go with md5 where spaces are trimmed is case insensitive
+    uom                     text,
+    hsn_sac_code            text,
+    create_tax_rate_request create_tax_rate_request,
+    create_cess_request     create_cess_request
+
+);--title and subtitle should be hashed to maintain uniqueness
+
 create or replace function create_product_item(req create_product_item_request) returns uuid as
 $$
 DECLARE
@@ -51,8 +52,8 @@ BEGIN
     if impacted_rows != 0 then
         select uuid_generate_v7() into _product_id;
         insert into product_item (id, tenant_id, entity_version_id, active, approval_status, remarks, title,
-                                  subtitle, uom, hsn_sac_code, created_by, updated_by, created_at, updated_at)
-        values (_product_id, req.tenant_id, 0, true, 1, null, req.title, req.subtitle, req.uom,
+                                  subtitle,hash, hsn_sac_code, created_by, updated_by, created_at, updated_at)
+        values (_product_id, req.tenant_id, 0, true, 1, null, req.title, req.subtitle,req.product_hash,
                 req.hsn_sac_code, req.created_by, req.created_by, default, default);
         insert into product_tax_rate (id, tenant_id, entity_version_id, active, approval_status, remarks,
                                       product_id, tax_rate_percentage, start_date, end_date, created_by,
@@ -82,6 +83,43 @@ BEGIN
     end if;
 
 end;
+$$ language plpgsql;
+
+create or replace function get_product_item(_product_id uuid, _tenant_id uuid) returns jsonb as
+$$
+DECLARE
+    cess_rates         jsonb;
+    tax_rates          jsonb;
+    product_item_jsonb jsonb;
+BEGIN
+    select id,
+           tenant_id,
+           entity_version_id,
+           active,
+           approval_status,
+           remarks,
+           title,
+           subtitle,
+           hsn_sac_code,
+           created_by,
+           updated_by,
+           created_at,
+           updated_at
+    from product_item
+    where id = _product_id
+      and tenant_id = _tenant_id
+    into product_item_jsonb;
+    select tax_rate_percentage, start_date, end_date
+    from product_tax_rate
+    where product_id = _product_id
+      and tenant_id = _tenant_id
+    into tax_rates;
+    select cess_strategy, cess_rate_percentage, cess_amount_per_unit, retail_sale_price, start_date, end_date
+    from cess_tax_rate
+    where product_id = _product_id
+      and tenant_id = _tenant_id
+    into cess_rates;
+    return json_build_object('product_item', product_item_jsonb, 'temporal_tax_rates', tax_rates,
+                             'temporal_cess_rates', cess_rates);
+end;
 $$ language plpgsql
-
-

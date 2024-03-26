@@ -1,0 +1,2 @@
+id,tenant_id,entity_version_id,active,approval_status,remarks,product_id,cess_strategy,cess_rate_percentage,cess_amount_per_unit,retail_sale_price,start_date,end_date,created_by,updated_by,created_at,updated_at
+018e7b96-df1d-764b-8b64-026e17b44dc6,018b33d9-c862-7fde-a0cd-55504d75e5e9,0,true,1,,018e7b88-65d8-7545-85c4-b41146987929,percentage_of_assessable_value,0,0,0,2024-03-26 16:25:41.976327 +00:00,,018b3444-dc75-7a3f-a4d9-02c41071d3bd,018b3444-dc75-7a3f-a4d9-02c41071d3bd,1711470563077988,1711470563077988
