@@ -169,12 +169,12 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessa
             DaoError::PostgresQueryError("unable to convert str to uuid".to_string())
         })
     };
-    parse_rows(rows,closure)
+    parse_rows(rows,1,closure)
 }
-fn parse_rows<T, F>(rows: &[SimpleQueryMessage], parse_fn: F)
+fn parse_rows<T, F>(rows: &[SimpleQueryMessage],index:usize, parse_fn: F)
                     -> Result<T, DaoError>
     where F: FnOnce(&str) -> Result<T, DaoError> {
-    let row = rows.get(1).ok_or_else(|| {
+    let row = rows.get(index).ok_or_else(|| {
         DaoError::PostgresQueryError("no 2nd statement in script but required".to_string())
     })?;
     match row {
@@ -201,9 +201,17 @@ pub fn parse_db_output_of_insert_create_and_return_json(rows: &[SimpleQueryMessa
             .context("error during deserialising db value")?;
         Ok(value)
     };
-    parse_rows(rows,closure)
+    parse_rows(rows,1,closure)
 }
 
+pub fn parse_db_output_of_insert_create_and_return_json_at_index(rows: &[SimpleQueryMessage],index:usize) -> Result<Value, DaoError> {
+    let closure =|a:&str|{
+        let value = serde_json::from_str(a)
+            .context("error during deserialising db value")?;
+        Ok(value)
+    };
+    parse_rows(rows,index,closure)
+}
 pub fn flatten_errors(validation_errors: &ValidationErrors) -> anyhow::Result<Vec<ValidationError>> {
     let mut result = Vec::new();
     let mut stack = vec![(validation_errors, 0)]; // Each element is a tuple (errors, depth)
