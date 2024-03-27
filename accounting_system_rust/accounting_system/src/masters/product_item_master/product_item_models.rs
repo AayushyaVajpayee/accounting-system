@@ -91,9 +91,10 @@ pub enum CessStrategy {
         retail_sale_price: f64,
     },
 }
-impl CessStrategy{
-   pub fn get_strategy_name(&self)->&'static str{
-        match self{
+
+impl CessStrategy {
+    pub fn get_strategy_name(&self) -> &'static str {
+        match self {
             CessStrategy::PercentageOfAssessableValue { .. } => {
                 "percentage_of_assessable_value"
             }
@@ -111,7 +112,7 @@ impl CessStrategy{
             }
         }
     }
-    pub fn get_default_strategy_name()->&'static str {
+    pub fn get_default_strategy_name() -> &'static str {
         "percentage_of_assessable_value"
     }
     //cess_rate_percentage: a,
@@ -164,4 +165,18 @@ impl CessStrategy{
             }
         }
     }
+}
+
+
+#[cfg(test)]
+pub mod tests {
+    use std::str::FromStr;
+    use lazy_static::lazy_static;
+    use uuid::Uuid;
+    lazy_static! {
+        pub static ref SEED_PRODUCT_ITEM_ID:Uuid = Uuid::
+        from_str("018e7b88-65d8-7545-85c4-b41146987929").unwrap();
+    }
+    
+    
 }
