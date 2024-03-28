@@ -1,5 +1,5 @@
 use std::fmt::Write;
-use chrono::{DateTime, SecondsFormat};
+use chrono::{DateTime, SecondsFormat, Utc};
 use chrono_tz::Tz;
 
 use uuid::Uuid;
@@ -164,6 +164,18 @@ impl ToPostgresString for &str {
 
 
 impl ToPostgresString for DateTime<Tz> {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        let representation = self.to_rfc3339_opts(SecondsFormat::Micros, false);
+        write!(f, "'{}'", &representation)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "timestamp with timezone"
+    }
+}
+
+
+impl ToPostgresString for DateTime<Utc> {
     fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
         let representation = self.to_rfc3339_opts(SecondsFormat::Micros, false);
         write!(f, "'{}'", &representation)

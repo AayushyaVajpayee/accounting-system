@@ -9,13 +9,14 @@ use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::pg_util::pg_util::ToPostgresString;
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_json_at_index;
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
-use crate::masters::product_item_master::product_item_db_models::{convert_db_resp_to_product_item_db_resp, ProductItemDb, ProductItemDbResponse};
+use crate::masters::product_item_master::product_item_db_models::{convert_db_resp_to_product_item_db_resp, ProductItemDb};
+use crate::masters::product_item_master::product_item_models::ProductItemResponse;
 
 #[async_trait]
 pub trait ProductItemDao: Send + Sync {
     async fn create_product_item(&self, item: &ProductItemDb) -> Result<Uuid, DaoError>;
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
-                         -> Result<ProductItemDbResponse, DaoError>;
+                         -> Result<ProductItemResponse, DaoError>;
 }
 
 
@@ -45,7 +46,7 @@ impl ProductItemDao for ProductItemDaoImpl {
     }
 
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
-                         -> Result<ProductItemDbResponse, DaoError> {
+                         -> Result<ProductItemResponse, DaoError> {
         let j = format!(r#"
             select get_product_item('{}','{}');
         "#, product_id, tenant_id);

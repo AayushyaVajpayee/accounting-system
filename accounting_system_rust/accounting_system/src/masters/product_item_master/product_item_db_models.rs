@@ -10,7 +10,7 @@ use uuid::Uuid;
 use invoice_doc_generator::hsc_sac::GstItemCode;
 use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
-use invoice_doc_generator::percentages::tax_discount_cess::TaxPercentage;
+use invoice_doc_generator::percentages::tax_discount_cess::{GSTPercentage, TaxPercentage};
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::pg_util::pg_util::create_composite_type_db_row;
@@ -19,7 +19,7 @@ use crate::common_utils::utils::get_current_indian_standard_time;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
 use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
-use crate::masters::product_item_master::product_item_models::{CessStrategy, ProductCreationRequest};
+use crate::masters::product_item_master::product_item_models::{CessStrategy, CessTaxRateResponse, ProductCreationRequest, ProductItemResponse, ProductTaxRateResponse};
 
 #[derive(Debug)]
 pub struct ProductItemDb<'a> {
@@ -41,7 +41,7 @@ pub struct CreateTaxRateRequestDb {
     tenant_id: Uuid,
     created_by: Uuid,
     tax_percentage: f32,
-    start_date: DateTime<Tz>,
+    start_date: DateTime<Utc>,
 }
 
 #[derive(Debug)]
@@ -53,8 +53,7 @@ pub struct CreateCessRequestDb<'a> {
     cess_rate_percentage: f32,
     cess_amount_per_unit: f64,
     retail_sale_price: f64,
-    //keep it zero when not required
-    start_date: DateTime<Tz>,
+    start_date: DateTime<Utc>,
 }
 
 impl ToPostgresString for CreateCessRequestDb<'_> {
@@ -198,30 +197,7 @@ pub fn convert_product_creation_request_to_product_item_db(req: &ProductCreation
                                                                               created_by),
     }
 }
-#[derive(Debug)]
-pub struct ProductTaxRatDbResponse {
-    pub tax_rate_percentage: TaxPercentage,
-    pub start_date: DateTime<Tz>,
-    pub end_date: Option<DateTime<Tz>>,
-}
-#[derive(Debug)]
-pub struct CessTaxRateDbResponse {
-    pub cess_strategy: CessStrategy,
-    pub start_date: DateTime<Tz>,
-    pub end_date: Option<DateTime<Tz>>,
-}
-#[derive(Debug)]
 
-pub struct ProductItemDbResponse {
-    pub base_master_fields: BaseMasterFields,
-    pub title: LineTitle,
-    pub subtitle: Option<LineSubtitle>,
-    pub hsn_sac_code: GstItemCode,
-    pub product_hash: String,
-    pub temporal_tax_rates: Vec<ProductTaxRatDbResponse>,
-    pub temporal_cess_rates: Vec<CessTaxRateDbResponse>,
-    pub audit_metadata: AuditMetadataBase,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProductItemDbRawRsp {
@@ -264,10 +240,10 @@ pub struct GetProductItemDbRsp {
     temporal_cess_rates: Vec<CessRateDbRawRsp>,
 }
 
-pub fn convert_db_resp_to_product_item_db_resp(value: Value) -> anyhow::Result<ProductItemDbResponse> {
+pub fn convert_db_resp_to_product_item_db_resp(value: Value) -> anyhow::Result<ProductItemResponse> {
     let pi: GetProductItemDbRsp = serde_json::from_value(value)?;
     Ok(
-        ProductItemDbResponse {
+        ProductItemResponse {
             base_master_fields: BaseMasterFields {
                 id: pi.product_item.id,
                 entity_version_id: pi.product_item.entity_version_id,
@@ -290,11 +266,11 @@ pub fn convert_db_resp_to_product_item_db_resp(value: Value) -> anyhow::Result<P
             temporal_tax_rates: pi.temporal_tax_rates
                 .into_iter()
                 .map(|tax_rt_db| {
-                    let tax_perc = TaxPercentage::new(tax_rt_db.tax_rate_percentage);
-                    tax_perc.map(|tp| ProductTaxRatDbResponse {
+                    let tax_perc = GSTPercentage::new(tax_rt_db.tax_rate_percentage);
+                    tax_perc.map(|tp| ProductTaxRateResponse {
                         tax_rate_percentage: tp,
-                        start_date: tax_rt_db.start_date.with_timezone(&Tz::Asia__Kolkata),
-                        end_date: tax_rt_db.end_date.map(|d| d.with_timezone(&Tz::Asia__Kolkata)),
+                        start_date: tax_rt_db.start_date,
+                        end_date: tax_rt_db.end_date,
                     })
                 })
                 .try_collect()?,
@@ -306,10 +282,10 @@ pub fn convert_db_resp_to_product_item_db_resp(value: Value) -> anyhow::Result<P
                         cess_db.cess_rate_percentage,
                         cess_db.retail_sale_price,
                         cess_db.cess_amount_per_unit,
-                    ).map(|st| CessTaxRateDbResponse {
+                    ).map(|st| CessTaxRateResponse {
                         cess_strategy: st,
-                        start_date: cess_db.start_date.with_timezone(&Tz::Asia__Kolkata),
-                        end_date: cess_db.end_date.map(|d| d.with_timezone(&Tz::Asia__Kolkata)),
+                        start_date: cess_db.start_date,
+                        end_date: cess_db.end_date,
                     })
                 })
                 .try_collect()?,

@@ -1,7 +1,7 @@
 use anyhow::bail;
-use chrono::DateTime;
-use chrono_tz::Tz;
+use chrono::{DateTime, Utc};
 use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use invoice_doc_generator::hsc_sac::GstItemCode;
@@ -9,10 +9,34 @@ use invoice_doc_generator::invoice_line1::UOM;
 use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::invoice_line::unit_price::Price;
-use invoice_doc_generator::percentages::tax_discount_cess::TaxPercentage;
+use invoice_doc_generator::percentages::tax_discount_cess::{GSTPercentage, TaxPercentage};
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
+
+#[derive(Debug,Serialize,Deserialize)]
+pub struct ProductItemResponse {
+    pub base_master_fields: BaseMasterFields,
+    pub title: LineTitle,
+    pub subtitle: Option<LineSubtitle>,
+    pub hsn_sac_code: GstItemCode,
+    pub product_hash: String,
+    pub temporal_tax_rates: Vec<ProductTaxRateResponse>,
+    pub temporal_cess_rates: Vec<CessTaxRateResponse>,
+    pub audit_metadata: AuditMetadataBase,
+}
+#[derive(Debug,Serialize,Deserialize)]
+pub struct ProductTaxRateResponse {
+    pub tax_rate_percentage: GSTPercentage,
+    pub start_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>,
+}
+#[derive(Debug,Serialize,Deserialize)]
+pub struct CessTaxRateResponse {
+    pub cess_strategy: CessStrategy,
+    pub start_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>,
+}
 
 #[derive(Debug, Builder)]
 pub(crate) struct ProductItem {
@@ -29,8 +53,8 @@ pub(crate) struct ProductTaxRate {
     pub base_master_fields: BaseMasterFields,
     pub product_item_id: Uuid,
     pub tax_rate_percentage: TaxPercentage,
-    pub start_date: DateTime<Tz>,
-    pub end_date: Option<DateTime<Tz>>,
+    pub start_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>,
     pub audit_metadata: AuditMetadataBase,
 }
 
@@ -42,8 +66,8 @@ pub(crate) struct CessTaxRate {
     pub cess_rate_percentage: f32,
     pub cess_amount_per_unit: f64,
     pub retail_sale_price: Price,
-    pub start_date: DateTime<Tz>,
-    pub end_date: Option<DateTime<Tz>>,
+    pub start_date: DateTime<Utc>,
+    pub end_date: Option<DateTime<Utc>>,
     pub audit_metadata: AuditMetadataBase,
 }
 
@@ -58,20 +82,20 @@ pub struct ProductCreationRequest {
     pub create_cess_request: Option<CreateCessRequest>,
 }
 
-#[derive(Debug, Builder, Clone)]
+#[derive(Debug, Builder, Clone,Serialize,Deserialize)]
 pub struct CreateTaxRateRequest {
-    pub tax_rate_percentage: TaxPercentage,
-    pub start_date: DateTime<Tz>,//todo ensure that it is not in past more than 24 hours
+    pub tax_rate_percentage: GSTPercentage,
+    pub start_date: DateTime<Utc>,//todo ensure that it is not in past more than 24 hours
 }
 
-#[derive(Debug, Builder, Clone)]
+#[derive(Debug, Builder, Clone,Serialize,Deserialize)]
 pub struct CreateCessRequest {
     pub cess_strategy: CessStrategy,
-    pub start_date: DateTime<Tz>,//todo ensure that it is not in past more than 24 hours
+    pub start_date: DateTime<Utc>,//todo ensure that it is not in past more than 24 hours
 }
 
 ///create tagged serialisation and deserialization so that there is no ambiguity
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone,Serialize,Deserialize)]
 pub enum CessStrategy {
     PercentageOfAssessableValue {
         cess_rate_percentage: f32

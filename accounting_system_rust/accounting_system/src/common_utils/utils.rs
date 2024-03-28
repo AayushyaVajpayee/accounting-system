@@ -1,4 +1,4 @@
-use std::future::{ Ready};
+use std::future::{Ready};
 use std::str::FromStr;
 use std::sync::Arc;
 use anyhow::{anyhow, bail, Context};
@@ -28,10 +28,11 @@ pub enum TimeError {
     ForwardTime(Duration)
 }
 
-pub fn get_current_indian_standard_time()->DateTime<Tz>{
-    let utc_time = Utc::now();
-    utc_time.with_timezone(&Tz::Asia__Kolkata)
+pub fn get_current_indian_standard_time() -> DateTime<Utc> {
+    Utc::now()
+    // utc_time.with_timezone(&Tz::Asia__Kolkata)
 }
+
 ///in microseconds
 pub fn get_current_time_us() -> Result<i64, TimeError> {
     let current_time = SystemTime::now()
@@ -42,6 +43,7 @@ pub fn get_current_time_us() -> Result<i64, TimeError> {
         })?.as_micros() as i64;
     Ok(current_time)
 }
+
 pub fn current_indian_financial_year() -> u32 {
     let utc_now = Utc::now().naive_utc();
     let current_date = chrono_tz::Asia::Kolkata.from_utc_datetime(&utc_now).date_naive();
@@ -71,16 +73,17 @@ pub enum TenantIdHeaderError {
     #[error("x-acc-tenant-id header does not have a valid uuid")]
     NotUuid,
     #[error("tenant id not found in system")]
-    NotInDb
+    NotInDb,
 }
+
 #[derive(Debug, Error)]
-pub enum UserIdHeaderError{
+pub enum UserIdHeaderError {
     #[error("x-acc-user-id header not present in request")]
     NotPresent,
     #[error("x-acc-user-id header does not have a valid uuid")]
     NotUuid,
     #[error("user id not found in system")]
-    NotInDb
+    NotInDb,
 }
 
 impl ResponseError for UserIdHeaderError {
@@ -88,6 +91,7 @@ impl ResponseError for UserIdHeaderError {
         StatusCode::BAD_REQUEST
     }
 }
+
 impl ResponseError for TenantIdHeaderError {
     fn status_code(&self) -> StatusCode {
         StatusCode::BAD_REQUEST
@@ -102,7 +106,8 @@ pub fn extract_tenant_id_from_header(request: &HttpRequest) -> Result<TenantId, 
     let tenant_uuid = Uuid::from_str(tenant_id_str).map_err(|_| TenantIdHeaderError::NotUuid)?;
     Ok(TenantId(tenant_uuid))
 }
-pub fn extract_user_id_from_header(request:&HttpRequest)->Result<UserId,UserIdHeaderError>{
+
+pub fn extract_user_id_from_header(request: &HttpRequest) -> Result<UserId, UserIdHeaderError> {
     let p = request.headers()
         .get("x-acc-user-id")
         .ok_or(UserIdHeaderError::NotPresent)?;
@@ -110,30 +115,36 @@ pub fn extract_user_id_from_header(request:&HttpRequest)->Result<UserId,UserIdHe
     let tenant_uuid = Uuid::from_str(tenant_id_str).map_err(|_| UserIdHeaderError::NotUuid)?;
     Ok(UserId(tenant_uuid))
 }
+
 pub struct TenantId(Uuid);
-impl TenantId{
-    pub fn inner(&self)->Uuid{
+
+impl TenantId {
+    pub fn inner(&self) -> Uuid {
         self.0
     }
 }
+
 pub struct UserId(Uuid);
-impl UserId{
-    pub fn inner(&self)->Uuid{
+
+impl UserId {
+    pub fn inner(&self) -> Uuid {
         self.0
     }
 }
+
 impl FromRequest for TenantId {
     type Error = TenantIdHeaderError;
-    type Future = Ready<Result<TenantId,Self::Error>>;
+    type Future = Ready<Result<TenantId, Self::Error>>;
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         let p = extract_tenant_id_from_header(req);
         std::future::ready(p)
     }
 }
-impl FromRequest for UserId{
+
+impl FromRequest for UserId {
     type Error = UserIdHeaderError;
-    type Future = Ready<Result<UserId,Self::Error>>;
+    type Future = Ready<Result<UserId, Self::Error>>;
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         let p = extract_user_id_from_header(req);
@@ -145,16 +156,16 @@ pub async fn tenant_user_header_middleware(
     req: ServiceRequest,
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
-    let tenant_service:&Arc<dyn TenantService> = req.app_data()
+    let tenant_service: &Arc<dyn TenantService> = req.app_data()
         .ok_or(ErrorInternalServerError(anyhow!("tenant service not found")))?;
-    let user_service:&Arc<dyn UserService> = req.app_data()
+    let user_service: &Arc<dyn UserService> = req.app_data()
         .ok_or(ErrorInternalServerError(anyhow!("user service not found")))?;
-    let tenant_id =extract_tenant_id_from_header(req.request())?;
+    let tenant_id = extract_tenant_id_from_header(req.request())?;
     let user_id = extract_user_id_from_header(req.request())?;
-    let _tenant =tenant_service.get_tenant_by_id(tenant_id.0)
+    let _tenant = tenant_service.get_tenant_by_id(tenant_id.0)
         .await?
         .ok_or(TenantIdHeaderError::NotInDb)?;
-    let _user=user_service.get_user_by_id(user_id.0,tenant_id.inner())
+    let _user = user_service.get_user_by_id(user_id.0, tenant_id.inner())
         .await?
         .ok_or(UserIdHeaderError::NotInDb)?;
     // pre-processing
@@ -164,14 +175,15 @@ pub async fn tenant_user_header_middleware(
 }
 
 pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessage]) -> Result<Uuid, DaoError> {
-    let closure =|a:&str|{
+    let closure = |a: &str| {
         Uuid::parse_str(a).map_err(|_| {
             DaoError::PostgresQueryError("unable to convert str to uuid".to_string())
         })
     };
-    parse_rows(rows,1,closure)
+    parse_rows(rows, 1, closure)
 }
-fn parse_rows<T, F>(rows: &[SimpleQueryMessage],index:usize, parse_fn: F)
+
+fn parse_rows<T, F>(rows: &[SimpleQueryMessage], index: usize, parse_fn: F)
                     -> Result<T, DaoError>
     where F: FnOnce(&str) -> Result<T, DaoError> {
     let row = rows.get(index).ok_or_else(|| {
@@ -196,22 +208,23 @@ fn parse_rows<T, F>(rows: &[SimpleQueryMessage],index:usize, parse_fn: F)
 }
 
 pub fn parse_db_output_of_insert_create_and_return_json(rows: &[SimpleQueryMessage]) -> Result<Value, DaoError> {
-    let closure =|a:&str|{
+    let closure = |a: &str| {
         let value = serde_json::from_str(a)
             .context("error during deserialising db value")?;
         Ok(value)
     };
-    parse_rows(rows,1,closure)
+    parse_rows(rows, 1, closure)
 }
 
-pub fn parse_db_output_of_insert_create_and_return_json_at_index(rows: &[SimpleQueryMessage],index:usize) -> Result<Value, DaoError> {
-    let closure =|a:&str|{
+pub fn parse_db_output_of_insert_create_and_return_json_at_index(rows: &[SimpleQueryMessage], index: usize) -> Result<Value, DaoError> {
+    let closure = |a: &str| {
         let value = serde_json::from_str(a)
             .context("error during deserialising db value")?;
         Ok(value)
     };
-    parse_rows(rows,index,closure)
+    parse_rows(rows, index, closure)
 }
+
 pub fn flatten_errors(validation_errors: &ValidationErrors) -> anyhow::Result<Vec<ValidationError>> {
     let mut result = Vec::new();
     let mut stack = vec![(validation_errors, 0)]; // Each element is a tuple (errors, depth)
