@@ -81,7 +81,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn kk() {
+    async fn test_get_product_item() {
         let d = get_dao().await;
         let jj=d.get_product(*SEED_PRODUCT_ITEM_ID,*SEED_TENANT_ID).await.unwrap();
     }
