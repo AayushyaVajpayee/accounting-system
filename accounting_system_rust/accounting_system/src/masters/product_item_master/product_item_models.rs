@@ -1,3 +1,4 @@
+use anyhow::bail;
 use chrono::DateTime;
 use chrono_tz::Tz;
 use derive_builder::Builder;
@@ -112,12 +113,41 @@ impl CessStrategy {
             }
         }
     }
+    pub fn new(strategy_name: &str, cess_rate_percentage: f32, retail_sale_price: f64, cess_amount_per_unit: f64) -> anyhow::Result<Self> {
+        let strategy = match strategy_name {
+            "percentage_of_assessable_value" => {
+                CessStrategy::PercentageOfAssessableValue {
+                    cess_rate_percentage,
+                }
+            }
+            "amount_per_unit" => {
+                CessStrategy::AmountPerUnit { cess_amount_per_unit }
+            }
+            "percentage_of_assessable_value_and_amount_per_unit" => {
+                CessStrategy::PercentageOfAssessableValueAndAmountPerUnit {
+                    cess_rate_percentage,
+                    cess_amount_per_unit,
+                }
+            }
+            "max_of_percentage_of_assessable_value_and_amount_per_unit" => {
+                CessStrategy::MaxOfPercentageOfAssessableValueAndAmountPerUnit {
+                    cess_rate_percentage,
+                    cess_amount_per_unit,
+                }
+            }
+            "percentage_of_retail_sale_price" => {
+                CessStrategy::PercentageOfRetailSalePrice {
+                    cess_rate_percentage,
+                    retail_sale_price,
+                }
+            }
+            _ => bail!("{} does not match any cess calculation strategy",strategy_name)
+        };
+        Ok(strategy)
+    }
     pub fn get_default_strategy_name() -> &'static str {
         "percentage_of_assessable_value"
     }
-    //cess_rate_percentage: a,
-    //             cess_amount_per_unit: 0.0,
-    //             retail_sale_price: 0.0,
     pub fn get_cess_rate_percentage(&self) -> Option<f32> {
         match self {
             CessStrategy::PercentageOfAssessableValue { cess_rate_percentage, .. } => {
@@ -177,6 +207,4 @@ pub mod tests {
         pub static ref SEED_PRODUCT_ITEM_ID:Uuid = Uuid::
         from_str("018e7b88-65d8-7545-85c4-b41146987929").unwrap();
     }
-    
-    
 }
