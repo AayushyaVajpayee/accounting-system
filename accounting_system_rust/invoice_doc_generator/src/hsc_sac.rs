@@ -7,22 +7,31 @@ use thiserror::Error;
 use crate::hsn_code_generated::HSN_SET;
 use crate::sac_code_generated::SAC_SET;
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum GstItemCode {
     HsnCode(Hsn),
     SacCode(Sac),
 }
-impl GstItemCode{
-    pub fn as_str(&self)->&str{
+
+impl GstItemCode {
+    pub fn as_str(&self) -> &str {
         match self {
-            GstItemCode::HsnCode(a) => {a.0.as_str()}
-            GstItemCode::SacCode(a) => {a.0.as_str()}
+            GstItemCode::HsnCode(a) => { a.0.as_str() }
+            GstItemCode::SacCode(a) => { a.0.as_str() }
         }
+    }
+
+    pub fn new(a: String) -> anyhow::Result<Self> {
+        return if Hsn::is_hsn(a.as_str()) {
+            Ok(GstItemCode::HsnCode(Hsn::new(a)?))
+        } else {
+            Ok(GstItemCode::SacCode(Sac::new(a)?))
+        };
     }
 }
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "String")]
 pub struct Hsn(String);
 
@@ -50,6 +59,15 @@ impl Hsn {
         }
         Ok(Self(hsn))
     }
+
+    pub fn is_hsn(value: &str) -> bool {
+        let parsed_hsn = value.parse::<u32>();
+        if let Ok(p) = parsed_hsn {
+            return HSN_SET.contains(&p);
+        };
+
+        return false;
+    }
 }
 
 impl TryFrom<String> for Hsn {
@@ -60,7 +78,7 @@ impl TryFrom<String> for Hsn {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "String")]
 pub struct Sac(String);
 
