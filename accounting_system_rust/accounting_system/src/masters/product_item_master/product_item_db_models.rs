@@ -1,18 +1,24 @@
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
+use itertools::Itertools;
+use serde::{Deserialize, Deserializer, Serialize};
+use serde::de::{MapAccess, SeqAccess, Visitor};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
-use tracing_subscriber::fmt::format;
 use uuid::Uuid;
+
 use invoice_doc_generator::hsc_sac::GstItemCode;
 use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::percentages::tax_discount_cess::TaxPercentage;
-use crate::accounting::currency::currency_models::AuditMetadataBase;
 
+use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::common_utils::pg_util::pg_util::create_composite_type_db_row;
 use crate::common_utils::pg_util::pg_util::ToPostgresString;
 use crate::common_utils::utils::get_current_indian_standard_time;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
+use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
+use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
 use crate::masters::product_item_master::product_item_models::{CessStrategy, ProductCreationRequest};
 
 #[derive(Debug)]
@@ -165,15 +171,15 @@ fn convert_product_creation_request_to_create_tax_request(req: &ProductCreationR
 }
 
 pub fn convert_product_creation_request_to_product_item_db(req: &ProductCreationRequest,
-                                                       tenant_id: Uuid,
-                                                       created_by: Uuid) -> ProductItemDb {
+                                                           tenant_id: Uuid,
+                                                           created_by: Uuid) -> ProductItemDb {
     let mut hasher = Sha256::new();
     hasher.update(req.line_title.inner().as_bytes());
-    if let Some(a) = req.line_subtitle.as_ref(){
+    if let Some(a) = req.line_subtitle.as_ref() {
         hasher.update(a.inner().as_bytes());
     }
     let result = hasher.finalize();
-    let product_hash = format!("{:x}",result);
+    let product_hash = format!("{:x}", result);
 
     ProductItemDb {
         idempotence_key: req.idempotence_key,
@@ -192,29 +198,127 @@ pub fn convert_product_creation_request_to_product_item_db(req: &ProductCreation
                                                                               created_by),
     }
 }
-
-pub struct ProductTaxRatDbResponse{
-    pub tax_rate_percentage:TaxPercentage,
-    pub start_date:DateTime<Tz>,
-    pub end_date:Option<DateTime<Tz>>,
+#[derive(Debug)]
+pub struct ProductTaxRatDbResponse {
+    pub tax_rate_percentage: TaxPercentage,
+    pub start_date: DateTime<Tz>,
+    pub end_date: Option<DateTime<Tz>>,
 }
-pub struct CessTaxRateDbResponse{
-    pub cess_strategy:CessStrategy,
-    pub start_date:DateTime<Tz>,
-    pub end_date:DateTime<Tz>
-    
+#[derive(Debug)]
+pub struct CessTaxRateDbResponse {
+    pub cess_strategy: CessStrategy,
+    pub start_date: DateTime<Tz>,
+    pub end_date: Option<DateTime<Tz>>,
+}
+#[derive(Debug)]
+
+pub struct ProductItemDbResponse {
+    pub base_master_fields: BaseMasterFields,
+    pub title: LineTitle,
+    pub subtitle: Option<LineSubtitle>,
+    pub hsn_sac_code: GstItemCode,
+    pub product_hash: String,
+    pub temporal_tax_rates: Vec<ProductTaxRatDbResponse>,
+    pub temporal_cess_rates: Vec<CessTaxRateDbResponse>,
+    pub audit_metadata: AuditMetadataBase,
 }
 
-pub struct ProductItemDbResponse{
-    pub base_master_fields:BaseMasterFields,
-    pub title:LineTitle,
-    pub subtitle:LineSubtitle,
-    pub hsn_sac_code:GstItemCode,
-    pub product_hash:String,
-    pub temporal_tax_rates:Vec<ProductTaxRatDbResponse>,
-    pub temporal_cess_rates:Vec<CessTaxRateDbResponse>,
-    pub tax_rate_percentage:TaxPercentage,
-    pub tax_rate_applicable_since:DateTime<Tz>,
-    
-    pub audit_metadata:AuditMetadataBase,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProductItemDbRawRsp {
+    id: Uuid,
+    tenant_id: Uuid,
+    entity_version_id: i32,
+    active: bool,
+    approval_status: i16,
+    remarks: Option<String>,
+    title: String,
+    subtitle: Option<String>,
+    hsn_sac_code: String,
+    created_by: Uuid,
+    updated_by: Uuid,
+    created_at: i64,
+    updated_at: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaxRateDbRawRsp {
+    tax_rate_percentage: f32,
+    start_date: DateTime<Utc>,
+    end_date: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CessRateDbRawRsp {
+    cess_strategy: String,
+    cess_rate_percentage: f32,
+    cess_amount_per_unit: f64,
+    retail_sale_price: f64,
+    start_date: DateTime<Utc>,
+    end_date: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GetProductItemDbRsp {
+    product_item: ProductItemDbRawRsp,
+    temporal_tax_rates: Vec<TaxRateDbRawRsp>,
+    temporal_cess_rates: Vec<CessRateDbRawRsp>,
+}
+
+pub fn convert_db_resp_to_product_item_db_resp(value: Value) -> anyhow::Result<ProductItemDbResponse> {
+    let pi: GetProductItemDbRsp = serde_json::from_value(value)?;
+    Ok(
+        ProductItemDbResponse {
+            base_master_fields: BaseMasterFields {
+                id: pi.product_item.id,
+                entity_version_id: pi.product_item.entity_version_id,
+                tenant_id: pi.product_item.tenant_id,
+                active: pi.product_item.active,
+                approval_status: MasterStatusEnum::
+                get_enum_for_value(pi
+                    .product_item
+                    .approval_status as usize
+                )?,
+                remarks: pi.product_item.remarks.as_ref()
+                    .map(|a| MasterUpdationRemarks::new(a)).transpose()?,
+            },
+            title: LineTitle::new(pi.product_item.title)?,
+            subtitle: pi.product_item.subtitle
+                .map(|a| LineSubtitle::new(a))
+                .transpose()?,
+            hsn_sac_code: GstItemCode::new(pi.product_item.hsn_sac_code)?,
+            product_hash: "".to_string(),
+            temporal_tax_rates: pi.temporal_tax_rates
+                .into_iter()
+                .map(|tax_rt_db| {
+                    let tax_perc = TaxPercentage::new(tax_rt_db.tax_rate_percentage);
+                    tax_perc.map(|tp| ProductTaxRatDbResponse {
+                        tax_rate_percentage: tp,
+                        start_date: tax_rt_db.start_date.with_timezone(&Tz::Asia__Kolkata),
+                        end_date: tax_rt_db.end_date.map(|d| d.with_timezone(&Tz::Asia__Kolkata)),
+                    })
+                })
+                .try_collect()?,
+            temporal_cess_rates: pi.temporal_cess_rates
+                .into_iter()
+                .map(|cess_db| {
+                    CessStrategy::new(
+                        cess_db.cess_strategy.as_str(),
+                        cess_db.cess_rate_percentage,
+                        cess_db.retail_sale_price,
+                        cess_db.cess_amount_per_unit,
+                    ).map(|st| CessTaxRateDbResponse {
+                        cess_strategy: st,
+                        start_date: cess_db.start_date.with_timezone(&Tz::Asia__Kolkata),
+                        end_date: cess_db.end_date.map(|d| d.with_timezone(&Tz::Asia__Kolkata)),
+                    })
+                })
+                .try_collect()?,
+            audit_metadata: AuditMetadataBase {
+                created_by: pi.product_item.created_by,
+                updated_by: pi.product_item.updated_by,
+                created_at: pi.product_item.created_at,
+                updated_at: pi.product_item.updated_at,
+            },
+        }
+    )
 }

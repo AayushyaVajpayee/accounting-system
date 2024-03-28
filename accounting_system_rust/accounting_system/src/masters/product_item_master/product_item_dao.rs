@@ -1,18 +1,21 @@
+use std::fmt::Write;
 use std::sync::Arc;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 use uuid::Uuid;
+
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::pg_util::pg_util::ToPostgresString;
-use crate::masters::product_item_master::product_item_db_models::{ProductItemDb, ProductItemDbResponse};
-use std::fmt::Write;
+use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_json_at_index;
 use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_uuid;
+use crate::masters::product_item_master::product_item_db_models::{convert_db_resp_to_product_item_db_resp, ProductItemDb, ProductItemDbResponse};
 
 #[async_trait]
 pub trait ProductItemDao: Send + Sync {
     async fn create_product_item(&self, item: &ProductItemDb) -> Result<Uuid, DaoError>;
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
-                         -> Result<ProductItemDbResponse, DaoError> ;
+                         -> Result<ProductItemDbResponse, DaoError>;
 }
 
 
@@ -42,10 +45,44 @@ impl ProductItemDao for ProductItemDaoImpl {
     }
 
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
-                         -> Result<ProductItemDbResponse, DaoError>  {
-        let j =r#"
+                         -> Result<ProductItemDbResponse, DaoError> {
+        let j = format!(r#"
+            select get_product_item('{}','{}');
+        "#, product_id, tenant_id);
+        let conn = self.postgres_client.get().await?;
+        let rows = conn.simple_query(&j).await?;
         
-        "#;
-        todo!()
+        println!("{:?}",&rows);
+        let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows,0)?;
+        let product =convert_db_resp_to_product_item_db_resp(value)?;
+        Ok(product)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use deadpool_postgres::Pool;
+
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::masters::product_item_master::product_item_dao::{ProductItemDao, ProductItemDaoImpl};
+    use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
+
+    async fn get_dao_generic<T, F>(f: F) -> T where F: FnOnce(Arc<Pool>) -> T {
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port, None).await;
+        f(postgres_client)
+    }
+
+    async fn get_dao() -> ProductItemDaoImpl {
+        get_dao_generic(|c| ProductItemDaoImpl { postgres_client: c }).await
+    }
+
+    #[tokio::test]
+    async fn kk() {
+        let d = get_dao().await;
+        let jj=d.get_product(*SEED_PRODUCT_ITEM_ID,*SEED_TENANT_ID).await.unwrap();
     }
 }
