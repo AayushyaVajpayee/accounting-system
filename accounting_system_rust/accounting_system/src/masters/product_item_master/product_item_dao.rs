@@ -62,15 +62,11 @@ impl ProductItemDao for ProductItemDaoImpl {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use deadpool_postgres::Pool;
-
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::get_dao_generic;
     use crate::masters::product_item_master::product_item_dao::{ProductItemDao, ProductItemDaoImpl};
     use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
-    
+
     async fn get_dao() -> ProductItemDaoImpl {
         get_dao_generic(|c| ProductItemDaoImpl { postgres_client: c },None).await
     }
