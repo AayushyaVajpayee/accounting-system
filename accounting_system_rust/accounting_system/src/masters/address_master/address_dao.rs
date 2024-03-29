@@ -87,7 +87,7 @@ mod tests {
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::address_master::address_dao::{AddressDao, AddressDaoImpl};
     use crate::masters::address_master::address_model::CreateAddressRequestBuilder;
     use crate::masters::address_master::address_model::tests::a_create_address_request;
@@ -95,9 +95,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_insert_and_get_address() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let dao = AddressDaoImpl { postgres_client: postgres_client.clone() };
+        let dao = get_dao_generic(|a|AddressDaoImpl { postgres_client: a.clone() },None)
+            .await;
         let address = a_create_address_request(CreateAddressRequestBuilder::default());
         let id = dao.create_address(&address).await.unwrap();
         let k = dao.get_address_by_id(*SEED_TENANT_ID,id).await.unwrap();
@@ -108,17 +107,16 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_address_when_idempotency_key_is_same_as_earlier_completed_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, Some("address_t1")).await;
+        let dao = get_dao_generic(|a|AddressDaoImpl { postgres_client: a.clone() },Some("address_t1"))
+            .await;
         let name = "address_t1";
         let mut ab = CreateAddressRequestBuilder::default();
         ab.line_1(name.to_string());
         let address = a_create_address_request(ab);
-        let dao = AddressDaoImpl { postgres_client: postgres_client.clone() };
         let id = dao.create_address(&address).await.unwrap();
         let id2 = dao.create_address(&address).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
-        let number_of_addr_created: i64 = postgres_client
+        let number_of_addr_created: i64 =dao.postgres_client
             .get()
             .await
             .unwrap()

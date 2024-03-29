@@ -36,7 +36,7 @@ const ALL_TYPES_FOR_TENANT: &str = concatcp!(
 #[async_trait]
 pub trait AccountTypeDao: Send + Sync {
     async fn get_account_type_by_id(&self, id: &Uuid)
-        -> Result<Option<AccountTypeMaster>, DaoError>;
+                                    -> Result<Option<AccountTypeMaster>, DaoError>;
     async fn create_account_type(
         &self,
         request: &CreateAccountTypeMasterRequest,
@@ -147,6 +147,7 @@ impl AccountTypeDao for AccountTypeDaoPostgresImpl {
         account_types
     }
 }
+
 #[allow(dead_code)]
 pub fn get_account_type_dao(pool: Arc<Pool>) -> Arc<dyn AccountTypeDao> {
     let dao = AccountTypeDaoPostgresImpl {
@@ -165,17 +166,12 @@ mod account_type_tests {
     };
     use crate::accounting::account::account_type::account_type_models::CreateAccountTypeMasterRequestBuilder;
     use crate::accounting::account::account_type::account_type_models::tests::a_create_account_type_master_request;
-    use crate::accounting::postgres_factory::test_utils_postgres::{
-        get_postgres_conn_pool, get_postgres_image_port,
-    };
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn tests() {
-        let port = get_postgres_image_port().await;
-        let account_type_dao = AccountTypeDaoPostgresImpl {
-            postgres_client: get_postgres_conn_pool(port, None).await,
-        };
+        let account_type_dao = get_dao_generic(|a| AccountTypeDaoPostgresImpl { postgres_client: a.clone() }, None).await;
         let an_account_type =
             a_create_account_type_master_request(Default::default());
         let account_type_id = account_type_dao.create_account_type(&an_account_type).await.unwrap();
@@ -191,10 +187,8 @@ mod account_type_tests {
 
     #[tokio::test]
     async fn should_create_account_type_mst_when_only_1_new_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
         let account_type_mst_request = a_create_account_type_master_request(Default::default());
-        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client: postgres_client.clone() };
+        let account_type_dao = get_dao_generic(|a| AccountTypeDaoPostgresImpl { postgres_client: a.clone() }, None).await;
         let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         let acc = account_type_dao.get_account_type_by_id(&id).await.unwrap();
         assert_that!(acc).is_some();
@@ -202,19 +196,17 @@ mod account_type_tests {
 
     #[tokio::test]
     async fn should_return_existing_account_type_when_idempotency_key_is_same_as_earlier_completed_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let account_type_dao = get_dao_generic(|a| AccountTypeDaoPostgresImpl { postgres_client: a.clone() }, None).await;
         let name = "tsting";
         let mut builder = CreateAccountTypeMasterRequestBuilder::default();
         builder.display_name(name.to_string());
         let account_type_mst_request =
             a_create_account_type_master_request(
                 builder);
-        let account_type_dao = AccountTypeDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         let id2 = account_type_dao.create_account_type(&account_type_mst_request).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
-        let number_of_acc_types_created: i64 = postgres_client
+        let number_of_acc_types_created: i64 = account_type_dao.postgres_client
             .get()
             .await
             .unwrap()

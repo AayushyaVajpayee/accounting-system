@@ -142,16 +142,14 @@ mod tests {
     use spectral::option::OptionAssertions;
     use uuid::Uuid;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, BusinessEntityDaoImpl};
     use crate::masters::business_entity_master::business_entity_models::tests::{a_create_business_entity_request, SEED_BUSINESS_ENTITY_ID2};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_is_business_entity_exist() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let dao = BusinessEntityDaoImpl { postgres_client: postgres_client.clone() };
+        let dao = get_dao_generic(|a| BusinessEntityDaoImpl { postgres_client: a.clone() },None).await;
         let exist = dao.is_business_entity_exist(&SEED_BUSINESS_ENTITY_ID2, &SEED_TENANT_ID).await.unwrap();
         let not_exist = dao.is_business_entity_exist(&Uuid::now_v7(), &SEED_TENANT_ID).await.unwrap();
         assert!(exist);
@@ -160,9 +158,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_and_get_dao() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let dao = BusinessEntityDaoImpl { postgres_client: postgres_client.clone() };
+        let dao = get_dao_generic(|a| BusinessEntityDaoImpl { postgres_client: a.clone() },None).await;
         let be = a_create_business_entity_request(Default::default());
         let p = dao.create_business_entity(&be).await.unwrap();
         let k = dao.get_business_entity(&p, &be.tenant_id).await.unwrap();

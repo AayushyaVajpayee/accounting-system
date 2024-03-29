@@ -82,9 +82,9 @@ mod tests {
     use spectral::boolean::BooleanAssertions;
     use spectral::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
-    use uuid::{Uuid};
+    use uuid::Uuid;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::common_utils::pg_util::pg_util::ToPostgresString;
     use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_json;
@@ -95,13 +95,8 @@ mod tests {
     use crate::invoicing::payment_term::payment_term_models::tests::SEED_PAYMENT_TERM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
-    async fn get_dao_generic<T,F>(f:F)->T where F:FnOnce(Arc<Pool>)->T{
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        f(postgres_client)
-    }
     async fn get_dao()->InvoicingDaoImpl{
-        get_dao_generic(|c|InvoicingDaoImpl { postgres_client: c}).await
+        get_dao_generic(|c|InvoicingDaoImpl { postgres_client: c},None).await
 
     }
     #[tokio::test]

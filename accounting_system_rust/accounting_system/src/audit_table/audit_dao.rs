@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::audit_table::audit_model::AuditEntry;
 
 #[async_trait]
-pub trait AuditDao:Send+Sync {
+pub trait AuditDao: Send + Sync {
     async fn get_audit_logs_for_id_and_table(&self, id: Uuid, table_name: &str) -> Vec<AuditEntry>;
 }
 
@@ -64,19 +64,18 @@ mod tests {
     use deadpool_postgres::GenericClient;
     use uuid::Uuid;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::audit_table::audit_dao::{AuditDao, AuditDaoImpl};
     use crate::audit_table::audit_model::AuditEntry;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let audit_dao = AuditDaoImpl { postgres_client: postgres_client.clone() };
+        let audit_dao = get_dao_generic(|a| AuditDaoImpl { postgres_client: a.clone() }, None).await;
+
         {
             let conn = audit_dao.postgres_client.get().await.unwrap();
-            let raw_script =format!( r#"
+            let raw_script = format!(r#"
             create table test_audit_trigger(
                 id uuid primary key,
                 tenant_id uuid,
@@ -90,7 +89,7 @@ mod tests {
             execute function create_audit_entry();
             insert into test_audit_trigger(id,tenant_id,name) values(uuid_generate_v7(),'{}','something');
             update test_audit_trigger set name='something updated';
-        "#,*SEED_TENANT_ID);
+        "#, *SEED_TENANT_ID);
             conn.batch_execute(&raw_script).await.unwrap();
         }
         let entry_id: Option<Uuid>;

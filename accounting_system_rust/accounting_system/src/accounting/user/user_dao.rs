@@ -102,22 +102,21 @@ mod tests {
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_dao::{UserDao, UserDaoPostgresImpl};
     use crate::accounting::user::user_models::tests::{a_create_user_request, CreateUserRequestTestBuilder};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_users() {
-        let port = get_postgres_image_port().await;
+        let user_dao = get_dao_generic(|a| UserDaoPostgresImpl { postgres_client: a.clone() },None)
+            .await;
         let user = a_create_user_request(
             CreateUserRequestTestBuilder {
                 tenant_id: Some(*SEED_TENANT_ID),
                 ..Default::default()
             }
         );
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let user_id = user_dao.create_user(&user).await.unwrap();
         let user = user_dao.get_user_by_id(user_id,*SEED_TENANT_ID).await.unwrap().unwrap();
         assert_eq!(user.id, user_id);
@@ -126,10 +125,9 @@ mod tests {
 
     #[tokio::test]
     async fn should_create_account_when_only_1_new_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let user_dao = get_dao_generic(|a| UserDaoPostgresImpl { postgres_client: a.clone() },None)
+            .await;
         let user_request = a_create_user_request(Default::default());
-        let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = user_dao.create_user(&user_request).await.unwrap();
         let acc = user_dao.get_user_by_id(id,*SEED_TENANT_ID).await.unwrap();
         assert_that!(acc).is_some();
@@ -137,8 +135,8 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_existing_account_when_idempotency_key_is_same_as_earlier_completed_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let user_dao = get_dao_generic(|a| UserDaoPostgresImpl { postgres_client: a.clone() },None)
+            .await;
         let name = "tsting";
         let user_request =
             a_create_user_request(
@@ -146,11 +144,10 @@ mod tests {
                     first_name: Some(name.to_string()),
                     ..Default::default()
                 });
-        let user_dao = UserDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = user_dao.create_user(&user_request).await.unwrap();
         let id2 = user_dao.create_user(&user_request).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
-        let number_of_users_created: i64 = postgres_client
+        let number_of_users_created: i64 = user_dao.postgres_client
             .get()
             .await
             .unwrap()
