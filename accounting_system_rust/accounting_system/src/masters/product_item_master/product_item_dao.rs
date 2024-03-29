@@ -66,19 +66,13 @@ mod tests {
 
     use deadpool_postgres::Pool;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::product_item_master::product_item_dao::{ProductItemDao, ProductItemDaoImpl};
     use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
-
-    async fn get_dao_generic<T, F>(f: F) -> T where F: FnOnce(Arc<Pool>) -> T {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        f(postgres_client)
-    }
-
+    
     async fn get_dao() -> ProductItemDaoImpl {
-        get_dao_generic(|c| ProductItemDaoImpl { postgres_client: c }).await
+        get_dao_generic(|c| ProductItemDaoImpl { postgres_client: c },None).await
     }
 
     #[tokio::test]
