@@ -68,6 +68,11 @@ pub mod test_utils_postgres {
     unsafe impl Send for PK<'_> {}
 
     unsafe impl Sync for PK<'_> {}
+    pub async fn get_dao_generic<T,F>(f:F,dbname:Option<&str>)->T where F:FnOnce(Arc<Pool>)->T{
+        let port = get_postgres_image_port().await;
+        let postgres_client = get_postgres_conn_pool(port, dbname).await;
+        f(postgres_client)
+    }
 
     pub async fn get_postgres_conn_pool(port: u16, dbname: Option<&str>) -> Arc<Pool> {
         init_pool(port, dbname).await

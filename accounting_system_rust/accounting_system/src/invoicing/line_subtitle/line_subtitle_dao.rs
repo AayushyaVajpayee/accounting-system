@@ -15,14 +15,13 @@ mod tests{
     use uuid::Uuid;
     use xxhash_rust::xxh32;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::invoicing::line_subtitle::line_subtitle_models::tests::SEED_SUBTITLE_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_retrieve_existing_line_subtitle(){
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let postgres_client = get_dao_generic(|a|a,None).await;
         let mut hasher = xxh32::Xxh32::new(0);
         hasher.update("line subtitle".as_bytes());
         let xxhash = hasher.digest();
@@ -49,8 +48,7 @@ mod tests{
 
     #[tokio::test]
     async fn should_create_new_line_subtitle(){
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let postgres_client = get_dao_generic(|a|a,None).await;
         let mut hasher = xxh32::Xxh32::new(0);
         hasher.update("some subtitle".as_bytes());
         let xxhash = hasher.digest();

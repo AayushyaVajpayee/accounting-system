@@ -88,16 +88,14 @@ mod tests {
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::invoicing::invoicing_series::invoicing_series_dao::{InvoicingSeriesDao, InvoicingSeriesDaoImpl};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::a_create_invoice_number_series_request;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_insert_invoicing_series() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let dao = InvoicingSeriesDaoImpl { postgres_client: postgres_client.clone() };
+        let dao = get_dao_generic(|a|InvoicingSeriesDaoImpl { postgres_client: a.clone() },None).await;
         let in_series = a_create_invoice_number_series_request(Default::default());
         let p = dao.create_invoice_series(&in_series).await.unwrap();
         let jj = dao.get_invoicing_series_by_id(p,*SEED_TENANT_ID).await.unwrap();

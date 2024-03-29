@@ -84,21 +84,20 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
+    use actix_web::web::get;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::CreateCurrencyMasterRequestBuilder;
     use crate::accounting::currency::currency_models::tests::a_create_currency_master_request;
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn should_be_able_to_create_and_fetch_currency() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let currency_dao = get_dao_generic(|a|CurrencyDaoPostgresImpl { postgres_client: a.clone() },None).await;
         let currency_master = a_create_currency_master_request(Default::default());
-        let currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let curr_id = currency_dao.create_currency_entry(&currency_master,*SEED_TENANT_ID).await.unwrap();
         let fetched_curr = currency_dao.get_currency_entry_by_id(curr_id,*SEED_TENANT_ID).await.unwrap().unwrap();
         assert_eq!(curr_id, fetched_curr.base_master_fields.id)
@@ -107,10 +106,8 @@ mod tests {
 
     #[tokio::test]
     async fn should_create_account_when_only_1_new_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let currency_dao = get_dao_generic(|a|CurrencyDaoPostgresImpl { postgres_client: a.clone() },None).await;
         let currency_request = a_create_currency_master_request(Default::default());
-        let currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = currency_dao.create_currency_entry(&currency_request,*SEED_TENANT_ID).await.unwrap();
         let curr = currency_dao.get_currency_entry_by_id(id,*SEED_TENANT_ID).await.unwrap();
         assert_that!(curr).is_some();
@@ -118,18 +115,16 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_existing_account_when_idempotency_key_is_same_as_earlier_completed_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let currency_dao = get_dao_generic(|a|CurrencyDaoPostgresImpl { postgres_client: a.clone() },None).await;
         let name = "tsting";
         let mut builder = CreateCurrencyMasterRequestBuilder::default();
         builder.display_name(name.to_string());
         let currency_request =
             a_create_currency_master_request(builder);
-        let currency_dao = CurrencyDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = currency_dao.create_currency_entry(&currency_request,*SEED_TENANT_ID).await.unwrap();
         let id2 = currency_dao.create_currency_entry(&currency_request,*SEED_TENANT_ID).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
-        let number_of_currs_created: i64 = postgres_client
+        let number_of_currs_created: i64 = currency_dao.postgres_client
             .get()
             .await
             .unwrap()

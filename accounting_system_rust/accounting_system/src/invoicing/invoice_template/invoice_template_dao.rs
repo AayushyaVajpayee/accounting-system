@@ -59,16 +59,14 @@ mod tests{
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::invoicing::invoice_template::invoice_template_dao::{InvoiceTemplateDao, InvoiceTemplateDaoImpl};
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_get_invoice_template(){
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let dao= InvoiceTemplateDaoImpl{postgres_client};
+        let dao = get_dao_generic(|a| InvoiceTemplateDaoImpl { postgres_client: a.clone() }, None).await;
         let template_id=*SEED_INVOICE_TEMPLATE_ID;
         let tenant_id = *SEED_TENANT_ID;
         let a = dao

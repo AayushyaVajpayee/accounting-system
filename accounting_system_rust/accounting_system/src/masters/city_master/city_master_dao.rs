@@ -85,24 +85,20 @@ mod tests{
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::masters::city_master::city_master_dao::{CityMasterDao, CityMasterDaoImpl};
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
 
     #[tokio::test]
     async fn should_be_able_to_fetch_all_cities(){
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let city_master_dao = CityMasterDaoImpl{postgres_client};
+        let city_master_dao =get_dao_generic(|a|CityMasterDaoImpl{postgres_client:a.clone()},None).await;
         let cities = city_master_dao.get_all_cities().await;
         assert!(!cities.is_empty());
     }
 
     #[tokio::test]
     async fn should_be_able_to_fetch_city_by_id(){
-        let port =get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
-        let city_master_dao = CityMasterDaoImpl{postgres_client};
+        let city_master_dao =get_dao_generic(|a|CityMasterDaoImpl{postgres_client:a.clone()},None).await;
         let city = city_master_dao.get_city_by_id(&SEED_CITY_ID).await;
         assert_that!(city).is_some();
     }

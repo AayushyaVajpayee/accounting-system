@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod tests {
+    use log::kv::Source;
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::invoicing::additional_charge::additional_charge_models::CreateAdditionalChargeRequestDbModel;
     use crate::invoicing::additional_charge::additional_charge_models::tests::a_create_additional_charge_request_db_model;
@@ -21,8 +22,7 @@ mod tests {
 
     #[tokio::test]
     async fn test() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let postgres_client= get_dao_generic(|a|a,None).await;
         let charges = vec![
             a_create_additional_charge_request_db_model(Default::default()),
        /*     a_create_additional_charge_request_db_model(Default::default())*/];

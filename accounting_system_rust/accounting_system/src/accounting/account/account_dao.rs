@@ -105,15 +105,14 @@ mod account_tests {
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::tests::{a_create_account_request, CreateAccountRequestTestBuilder};
     use crate::accounting::account::account_type::account_type_models::tests::SEED_ACCOUNT_TYPE_ID;
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_account() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let account_dao=get_dao_generic(|a|AccountDaoPostgresImpl { postgres_client: a.clone() },None).await;
         let an_account_request = a_create_account_request(CreateAccountRequestTestBuilder {
             tenant_id: Some(*SEED_TENANT_ID),
             ledger_master_id: Some(*SEED_LEDGER_MASTER_ID),
@@ -121,7 +120,6 @@ mod account_tests {
             user_id: Some(*SEED_USER_ID),
             ..Default::default()
         });
-        let account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let account_id = account_dao.create_account(&an_account_request).await.unwrap();
         let account_fetched = account_dao.get_account_by_id(&account_id).await
             .unwrap()
@@ -131,10 +129,8 @@ mod account_tests {
 
     #[tokio::test]
     async fn should_create_account_when_only_1_new_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let account_dao=get_dao_generic(|a|AccountDaoPostgresImpl { postgres_client: a.clone() },None).await;
         let account_request = a_create_account_request(Default::default());
-        let account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = account_dao.create_account(&account_request).await.unwrap();
         let acc = account_dao.get_account_by_id(&id).await.unwrap();
         assert_that!(acc).is_some();
@@ -142,8 +138,7 @@ mod account_tests {
 
     #[tokio::test]
     async fn should_return_existing_account_when_idempotency_key_is_same_as_earlier_completed_request() {
-        let port = get_postgres_image_port().await;
-        let postgres_client = get_postgres_conn_pool(port, None).await;
+        let account_dao=get_dao_generic(|a|AccountDaoPostgresImpl { postgres_client: a.clone() },None).await;
         let name = "tsting";
         let account_request =
             a_create_account_request(
@@ -151,11 +146,10 @@ mod account_tests {
                     display_code: Some(name.to_string()),
                     ..Default::default()
                 });
-        let account_dao = AccountDaoPostgresImpl { postgres_client: postgres_client.clone() };
         let id = account_dao.create_account(&account_request).await.unwrap();
         let id2 = account_dao.create_account(&account_request).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
-        let number_of_accs_created: i64 = postgres_client
+        let number_of_accs_created: i64 = account_dao.postgres_client
             .get()
             .await
             .unwrap()
