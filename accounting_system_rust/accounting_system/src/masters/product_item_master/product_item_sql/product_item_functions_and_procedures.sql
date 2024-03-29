@@ -59,7 +59,7 @@ BEGIN
                                       updated_by, created_at, updated_at)
         values (uuid_generate_v7(), req.tenant_id, 0, true, 1, null, _product_id, tax_request.tax_percentage,
                 tax_request.start_date, null, tax_request.created_by, tax_request.created_by, default, default)
-        into _tax_rate_id;
+        returning id into _tax_rate_id;
         insert into cess_tax_rate (id, tenant_id, entity_version_id, active, approval_status, remarks, product_id,
                                    cess_strategy, cess_rate_percentage, cess_amount_per_unit, retail_sale_price,
                                    start_date, end_date, created_by, updated_by, created_at, updated_at)

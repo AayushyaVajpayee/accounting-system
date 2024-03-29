@@ -52,10 +52,10 @@ impl ProductItemDao for ProductItemDaoImpl {
         "#, product_id, tenant_id);
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(&j).await?;
-        
-        println!("{:?}",&rows);
-        let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows,0)?;
-        let product =convert_db_resp_to_product_item_db_resp(value)?;
+
+        println!("{:?}", &rows);
+        let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows, 0)?;
+        let product = convert_db_resp_to_product_item_db_resp(value)?;
         Ok(product)
     }
 }
@@ -63,17 +63,31 @@ impl ProductItemDao for ProductItemDaoImpl {
 #[cfg(test)]
 mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::get_dao_generic;
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::product_item_master::product_item_dao::{ProductItemDao, ProductItemDaoImpl};
-    use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
+    use crate::masters::product_item_master::product_item_db_models::convert_product_creation_request_to_product_item_db;
+    use crate::masters::product_item_master::product_item_models::tests::{a_product_creation_request, SEED_PRODUCT_ITEM_ID};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     async fn get_dao() -> ProductItemDaoImpl {
-        get_dao_generic(|c| ProductItemDaoImpl { postgres_client: c },None).await
+        get_dao_generic(|c| ProductItemDaoImpl { postgres_client: c }, None).await
     }
 
     #[tokio::test]
     async fn test_get_product_item() {
-        let d = get_dao().await;
-        let jj=d.get_product(*SEED_PRODUCT_ITEM_ID,*SEED_TENANT_ID).await.unwrap();
+        let dao = get_dao().await;
+        let jj = dao.get_product(*SEED_PRODUCT_ITEM_ID, *SEED_TENANT_ID).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_create_product_item() {
+        let dao = get_dao().await;
+        let req = a_product_creation_request(Default::default());
+        let product_item_db = convert_product_creation_request_to_product_item_db(&req, *SEED_TENANT_ID, *SEED_USER_ID);
+        let product_id = dao.create_product_item(&product_item_db).await.unwrap();
+        let product_item = dao.get_product(product_id, *SEED_TENANT_ID).await.unwrap();
+        assert_eq!(product_item.temporal_cess_rates.len(), 1);
+        assert_eq!(product_item.temporal_tax_rates.len(), 1);
+        assert_eq!(product_item.base_master_fields.id, product_id);
     }
 }

@@ -9,11 +9,12 @@ create table product_item
     title             varchar(80)                   not null,
     subtitle          varchar(80),
     hsn_sac_code      varchar(10)                   not null,
-    hash              varchar(20)                   not null,--hash of title subtitle todo put unique constraint on tenant_id,hash
+    hash              varchar(70)                   not null,
     created_by        uuid references app_user (id) not null,
     updated_by        uuid references app_user (id),
     created_at        bigint  default extract(epoch from now()) * 1000000,
-    updated_at        bigint  default extract(epoch from now()) * 1000000
+    updated_at        bigint  default extract(epoch from now()) * 1000000,
+    CONSTRAINT unique_product_per_tenant UNIQUE (tenant_id, hash)
 );
 
 create table product_tax_rate

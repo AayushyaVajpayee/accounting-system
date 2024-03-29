@@ -14,7 +14,7 @@ use invoice_doc_generator::percentages::tax_discount_cess::{GSTPercentage, TaxPe
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProductItemResponse {
     pub base_master_fields: BaseMasterFields,
     pub title: LineTitle,
@@ -25,13 +25,15 @@ pub struct ProductItemResponse {
     pub temporal_cess_rates: Vec<CessTaxRateResponse>,
     pub audit_metadata: AuditMetadataBase,
 }
-#[derive(Debug,Serialize,Deserialize)]
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProductTaxRateResponse {
     pub tax_rate_percentage: GSTPercentage,
     pub start_date: DateTime<Utc>,
     pub end_date: Option<DateTime<Utc>>,
 }
-#[derive(Debug,Serialize,Deserialize)]
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CessTaxRateResponse {
     pub cess_strategy: CessStrategy,
     pub start_date: DateTime<Utc>,
@@ -82,20 +84,20 @@ pub struct ProductCreationRequest {
     pub create_cess_request: Option<CreateCessRequest>,
 }
 
-#[derive(Debug, Builder, Clone,Serialize,Deserialize)]
+#[derive(Debug, Builder, Clone, Serialize, Deserialize)]
 pub struct CreateTaxRateRequest {
     pub tax_rate_percentage: GSTPercentage,
     pub start_date: DateTime<Utc>,//todo ensure that it is not in past more than 24 hours
 }
 
-#[derive(Debug, Builder, Clone,Serialize,Deserialize)]
+#[derive(Debug, Builder, Clone, Serialize, Deserialize)]
 pub struct CreateCessRequest {
     pub cess_strategy: CessStrategy,
     pub start_date: DateTime<Utc>,//todo ensure that it is not in past more than 24 hours
 }
 
 ///create tagged serialisation and deserialization so that there is no ambiguity
-#[derive(Debug, Clone,Serialize,Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CessStrategy {
     PercentageOfAssessableValue {
         cess_rate_percentage: f32
@@ -227,8 +229,24 @@ pub mod tests {
     use std::str::FromStr;
     use lazy_static::lazy_static;
     use uuid::Uuid;
+    use invoice_doc_generator::hsc_sac::{GstItemCode, Hsn};
+    use invoice_doc_generator::invoice_line1::UOM;
+    use invoice_doc_generator::invoice_line::line_title::LineTitle;
+    use crate::masters::product_item_master::product_item_models::{ProductCreationRequest, ProductCreationRequestBuilder};
     lazy_static! {
         pub static ref SEED_PRODUCT_ITEM_ID:Uuid = Uuid::
         from_str("018e7b88-65d8-7545-85c4-b41146987929").unwrap();
+    }
+
+    pub fn a_product_creation_request(builder: ProductCreationRequestBuilder) -> ProductCreationRequest {
+        ProductCreationRequest {
+            idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
+            line_title: builder.line_title.unwrap_or_else(|| LineTitle::new("some title".to_string()).unwrap()),
+            line_subtitle: builder.line_subtitle.flatten(),
+            hsn_sac_code: builder.hsn_sac_code.unwrap_or_else(|| GstItemCode::HsnCode(Hsn::new("38220011".to_string()).unwrap())),
+            uom: builder.uom.unwrap_or(UOM::MilliLitre),
+            create_tax_rate_request: builder.create_tax_rate_request.flatten(),
+            create_cess_request: builder.create_cess_request.flatten(),
+        }
     }
 }
