@@ -14,7 +14,7 @@ use invoice_doc_generator::percentages::tax_discount_cess::{GSTPercentage, TaxPe
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Builder,Clone,PartialEq)]
 pub struct ProductItemResponse {
     pub base_master_fields: BaseMasterFields,
     pub title: LineTitle,
@@ -26,14 +26,14 @@ pub struct ProductItemResponse {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone,PartialEq)]
 pub struct ProductTaxRateResponse {
     pub tax_rate_percentage: GSTPercentage,
     pub start_date: DateTime<Utc>,
     pub end_date: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize,Clone,PartialEq)]
 pub struct CessTaxRateResponse {
     pub cess_strategy: CessStrategy,
     pub start_date: DateTime<Utc>,
@@ -73,7 +73,7 @@ pub(crate) struct CessTaxRate {
     pub audit_metadata: AuditMetadataBase,
 }
 
-#[derive(Debug, Builder)]
+#[derive(Debug, Builder, Deserialize, Serialize)]
 pub struct ProductCreationRequest {
     pub idempotence_key: Uuid,
     pub line_title: LineTitle,
@@ -97,7 +97,7 @@ pub struct CreateCessRequest {
 }
 
 ///create tagged serialisation and deserialization so that there is no ambiguity
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
 pub enum CessStrategy {
     PercentageOfAssessableValue {
         cess_rate_percentage: f32
@@ -232,7 +232,10 @@ pub mod tests {
     use invoice_doc_generator::hsc_sac::{GstItemCode, Hsn};
     use invoice_doc_generator::invoice_line1::UOM;
     use invoice_doc_generator::invoice_line::line_title::LineTitle;
-    use crate::masters::product_item_master::product_item_models::{ProductCreationRequest, ProductCreationRequestBuilder};
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
+    use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
+    use crate::masters::product_item_master::product_item_models::{ProductCreationRequest, ProductCreationRequestBuilder, ProductItemResponse, ProductItemResponseBuilder};
+
     lazy_static! {
         pub static ref SEED_PRODUCT_ITEM_ID:Uuid = Uuid::
         from_str("018e7b88-65d8-7545-85c4-b41146987929").unwrap();
@@ -247,6 +250,22 @@ pub mod tests {
             uom: builder.uom.unwrap_or(UOM::MilliLitre),
             create_tax_rate_request: builder.create_tax_rate_request.flatten(),
             create_cess_request: builder.create_cess_request.flatten(),
+        }
+    }
+
+    pub fn a_product_item_response(builder: ProductItemResponseBuilder)->ProductItemResponse {
+        ProductItemResponse {
+            base_master_fields: builder.base_master_fields
+                .unwrap_or_else(|| a_base_master_field(Default::default())),
+            title: builder.title
+                .unwrap_or_else(|| LineTitle::new("some title".to_string()).unwrap()),
+            subtitle: builder.subtitle.flatten(),
+            hsn_sac_code: builder.hsn_sac_code.
+                unwrap_or_else(|| GstItemCode::HsnCode(Hsn::new("38220011".to_string()).unwrap())),
+            product_hash: builder.product_hash.unwrap_or_else(|| "hash".to_string()),
+            temporal_tax_rates: builder.temporal_tax_rates.unwrap_or(vec![]),
+            temporal_cess_rates: builder.temporal_cess_rates.unwrap_or(vec![]),
+            audit_metadata: builder.audit_metadata.unwrap_or_else(|| an_audit_metadata_base(Default::default())),
         }
     }
 }

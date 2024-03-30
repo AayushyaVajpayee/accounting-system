@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::percentages::tax_discount_cess::TaxPercentageError::NotInBounds;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
 #[serde(try_from = "f32")]
 pub struct GSTPercentage(f32);
 

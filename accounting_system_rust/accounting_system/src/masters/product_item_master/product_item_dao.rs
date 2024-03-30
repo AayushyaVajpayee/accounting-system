@@ -16,7 +16,7 @@ use crate::masters::product_item_master::product_item_models::ProductItemRespons
 pub trait ProductItemDao: Send + Sync {
     async fn create_product_item(&self, item: &ProductItemDb) -> Result<Uuid, DaoError>;
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
-                         -> Result<ProductItemResponse, DaoError>;
+                         -> Result<Option<ProductItemResponse>, DaoError>;
 }
 
 
@@ -46,7 +46,7 @@ impl ProductItemDao for ProductItemDaoImpl {
     }
 
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
-                         -> Result<ProductItemResponse, DaoError> {
+                         -> Result<Option<ProductItemResponse>, DaoError> {
         let j = format!(r#"
             select get_product_item('{}','{}');
         "#, product_id, tenant_id);
@@ -55,13 +55,19 @@ impl ProductItemDao for ProductItemDaoImpl {
 
         println!("{:?}", &rows);
         let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows, 0)?;
-        let product = convert_db_resp_to_product_item_db_resp(value)?;
-        Ok(product)
+        if let Some(value) = value {
+            let product = convert_db_resp_to_product_item_db_resp(value)?;
+            Ok(Some(product))
+        } else {
+            Ok(None)
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
+
     use crate::accounting::postgres_factory::test_utils_postgres::get_dao_generic;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::product_item_master::product_item_dao::{ProductItemDao, ProductItemDaoImpl};
@@ -76,7 +82,14 @@ mod tests {
     #[tokio::test]
     async fn test_get_product_item() {
         let dao = get_dao().await;
-        let jj = dao.get_product(*SEED_PRODUCT_ITEM_ID, *SEED_TENANT_ID).await.unwrap();
+        let _product_item = dao.get_product(*SEED_PRODUCT_ITEM_ID, *SEED_TENANT_ID).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_product_item_for_null_entry() {
+        let dao = get_dao().await;
+        let product_item = dao.get_product(Uuid::now_v7(), *SEED_TENANT_ID).await.unwrap();
+        assert!(product_item.is_none())
     }
 
     #[tokio::test]
@@ -85,7 +98,7 @@ mod tests {
         let req = a_product_creation_request(Default::default());
         let product_item_db = convert_product_creation_request_to_product_item_db(&req, *SEED_TENANT_ID, *SEED_USER_ID);
         let product_id = dao.create_product_item(&product_item_db).await.unwrap();
-        let product_item = dao.get_product(product_id, *SEED_TENANT_ID).await.unwrap();
+        let product_item = dao.get_product(product_id, *SEED_TENANT_ID).await.unwrap().unwrap();
         assert_eq!(product_item.temporal_cess_rates.len(), 1);
         assert_eq!(product_item.temporal_tax_rates.len(), 1);
         assert_eq!(product_item.base_master_fields.id, product_id);

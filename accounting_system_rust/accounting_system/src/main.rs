@@ -26,6 +26,7 @@ use crate::masters::city_master::city_master_service::get_city_master_service;
 use crate::masters::company_master::company_master_service::get_company_master_service;
 use crate::masters::country_master::country_service::get_country_master_service;
 use crate::masters::pincode_master::pincode_master_service::get_pincode_master_service;
+use crate::masters::product_item_master::product_item_service::get_product_item_service;
 use crate::masters::state_master::state_master_service::get_state_master_service;
 use crate::storage::storage_service::get_storage_service;
 use crate::tenant::tenant_http_api;
@@ -78,9 +79,9 @@ async fn healthcheck() -> actix_web::Result<impl Responder> {
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "error");
     env_logger::builder()
-        .filter(Some("actix"),LevelFilter::Info)
-        .filter(Some("actix_web"),LevelFilter::Info)
-        .filter(Some("accounting_system"),LevelFilter::Info)
+        .filter(Some("actix"), LevelFilter::Info)
+        .filter(Some("actix_web"), LevelFilter::Info)
+        .filter(Some("accounting_system"), LevelFilter::Info)
         .format_module_path(true)
         .format_timestamp_micros().init();
     let storage = get_storage_service().await;
@@ -114,8 +115,9 @@ async fn main() -> io::Result<()> {
         invoicing_series_service.clone(),
         business_entity_service.clone(),
         invoice_template_service.clone(),
-        storage.clone()
+        storage.clone(),
     );
+    let product_item_serv = get_product_item_service(pool);
     // let invoice_template_service= get_invoice_template_service();
     println!("{}", std::process::id());
     HttpServer::new(move || {
@@ -139,7 +141,8 @@ async fn main() -> io::Result<()> {
             .configure(|conf| accounting::account::account_type::account_type_http_api::init_routes(conf, account_type_master_service.clone()))
             .configure(|conf| accounting::account::account_http_api::init_routes(conf, account_service.clone()))
             .configure(|conf| ledger::ledger_transfer_http_api::init_routes(conf, ledger_service.clone()))
-            .configure(|conf| invoicing::invoicing_http_api::init_routes(conf,invoicing_service.clone()))
+            .configure(|conf| invoicing::invoicing_http_api::init_routes(conf, invoicing_service.clone()))
+            .configure(|conf| masters::product_item_master::product_item_http_api::init_routes(conf, product_item_serv.clone()))
             .route("/healthcheck", web::get().to(healthcheck))
     })
         .bind(("0.0.0.0", 8090))?
@@ -147,5 +150,3 @@ async fn main() -> io::Result<()> {
         .await.expect("TODO: panic message");
     Ok(())
 }
-
-

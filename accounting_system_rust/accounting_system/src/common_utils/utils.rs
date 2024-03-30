@@ -183,6 +183,25 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(rows: &[SimpleQueryMessa
     parse_rows(rows, 1, closure)
 }
 
+fn parse_rows_nullable<T, F>(rows: &[SimpleQueryMessage], index: usize, parse_fn: F)
+                             -> Result<Option<T>, DaoError> where F: FnOnce(Option<&str>) -> Result<Option<T>, DaoError> {
+    let row = rows.get(index).ok_or_else(|| {
+        DaoError::PostgresQueryError("no 2nd statement in script but required".to_string())
+    })?;
+    match row {
+        SimpleQueryMessage::Row(a) => {
+            let uuid_str = a.get(0);
+            parse_fn(uuid_str)
+        }
+        SimpleQueryMessage::CommandComplete(_) => Err(DaoError::PostgresQueryError(
+            "should have returned a result but was a command".to_string(),
+        )),
+        _ => Err(DaoError::PostgresQueryError(
+            "should have returned a result but was a command".to_string(),
+        )),
+    }
+}
+
 fn parse_rows<T, F>(rows: &[SimpleQueryMessage], index: usize, parse_fn: F)
                     -> Result<T, DaoError>
     where F: FnOnce(&str) -> Result<T, DaoError> {
@@ -216,14 +235,19 @@ pub fn parse_db_output_of_insert_create_and_return_json(rows: &[SimpleQueryMessa
     parse_rows(rows, 1, closure)
 }
 
-pub fn parse_db_output_of_insert_create_and_return_json_at_index(rows: &[SimpleQueryMessage], index: usize) -> Result<Value, DaoError> {
-    let closure = |a: &str| {
-        let value = serde_json::from_str(a)
-            .context("error during deserialising db value")?;
-        Ok(value)
+pub fn parse_db_output_of_insert_create_and_return_json_at_index(rows: &[SimpleQueryMessage], index: usize) -> Result<Option<Value>, DaoError> {
+    let closure = |a: Option<&str>| {
+        if let Some(a)=a {
+            let value = serde_json::from_str(a)
+                .context("error during deserialising db value")?;
+            Ok(value)
+        }else{
+            Ok(None)
+        }
     };
-    parse_rows(rows, index, closure)
+    parse_rows_nullable(rows, index, closure)
 }
+
 
 pub fn flatten_errors(validation_errors: &ValidationErrors) -> anyhow::Result<Vec<ValidationError>> {
     let mut result = Vec::new();

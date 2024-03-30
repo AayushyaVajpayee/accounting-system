@@ -109,7 +109,9 @@ BEGIN
     where id = _product_id
       and tenant_id = _tenant_id
     into product_item_row;
-
+    if product_item_row is null then
+        return null;
+    end if;
     select jsonb_agg(jsonb_build_object(
             'tax_rate_percentage', tax_rate_percentage,
             'start_date', start_date,

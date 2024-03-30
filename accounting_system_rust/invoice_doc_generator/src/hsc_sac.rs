@@ -7,7 +7,7 @@ use thiserror::Error;
 use crate::hsn_code_generated::HSN_SET;
 use crate::sac_code_generated::SAC_SET;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum GstItemCode {
     HsnCode(Hsn),
@@ -31,7 +31,7 @@ impl GstItemCode {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
 #[serde(try_from = "String")]
 pub struct Hsn(String);
 
@@ -78,7 +78,7 @@ impl TryFrom<String> for Hsn {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
 #[serde(try_from = "String")]
 pub struct Sac(String);
 
