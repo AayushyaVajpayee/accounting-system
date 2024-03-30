@@ -1,12 +1,15 @@
 use std::sync::Arc;
-use actix_web::{HttpResponseBuilder, Responder, ResponseError, Route, web};
+
+use actix_web::{HttpResponseBuilder, Responder, ResponseError, web};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use uuid::Uuid;
+
 use crate::common_utils::utils::{TenantId, UserId};
-use crate::setup_routes;
 use crate::masters::product_item_master::product_item_models::ProductCreationRequest;
 use crate::masters::product_item_master::product_item_service::{ProductItemService, ProductItemServiceError};
+use crate::setup_routes;
+
 impl ResponseError for ProductItemServiceError{
 
 }
@@ -43,11 +46,13 @@ setup_routes!(ProductItemService,"/product-item",
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
+
     use crate::get_and_create_api_test_v2;
     use crate::masters::product_item_master::product_item_models::ProductItemResponse;
     use crate::masters::product_item_master::product_item_models::tests::{a_product_creation_request, a_product_item_response};
     use crate::masters::product_item_master::product_item_service::{MockProductItemService, ProductItemService};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
+
     use super::map_endpoints_to_functions;
 
     #[tokio::test]
