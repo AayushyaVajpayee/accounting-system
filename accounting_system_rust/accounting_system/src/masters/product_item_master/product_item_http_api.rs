@@ -60,7 +60,7 @@ mod tests {
             product_service.expect_create_product()
                 .returning(|_,_,_|Ok(Default::default()));
             product_service.expect_get_product()
-                .return_once(|_,_|Ok(Some(cloned_resp)));
+                .return_once(|_,_|Ok(Some(Arc::new(cloned_resp))));
             product_service
         };
         let id = Uuid::now_v7();
