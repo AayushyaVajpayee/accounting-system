@@ -52,7 +52,7 @@ impl ProductItemDao for ProductItemDaoImpl {
             select get_product_item('{}','{}');
         "#, product_id, tenant_id);
         let conn = self.postgres_client.get().await?;
-        let rows = conn.simple_query(&q).await?;
+        let rows = conn.simple_query(&query).await?;
         let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows, 0)?;
         if let Some(value) = value {
             let product = convert_db_resp_to_product_item_db_resp(value)?;
