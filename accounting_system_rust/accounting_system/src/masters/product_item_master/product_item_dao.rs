@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::sync::Arc;
+use actix_web::http::header::q;
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
@@ -47,13 +48,11 @@ impl ProductItemDao for ProductItemDaoImpl {
 
     async fn get_product(&self, product_id: Uuid, tenant_id: Uuid)
                          -> Result<Option<ProductItemResponse>, DaoError> {
-        let j = format!(r#"
+        let query = format!(r#"
             select get_product_item('{}','{}');
         "#, product_id, tenant_id);
         let conn = self.postgres_client.get().await?;
-        let rows = conn.simple_query(&j).await?;
-
-        println!("{:?}", &rows);
+        let rows = conn.simple_query(&q).await?;
         let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows, 0)?;
         if let Some(value) = value {
             let product = convert_db_resp_to_product_item_db_resp(value)?;
