@@ -240,8 +240,7 @@ pub struct GetProductItemDbRsp {
     temporal_cess_rates: Vec<CessRateDbRawRsp>,
 }
 
-pub fn convert_db_resp_to_product_item_db_resp(value: Value) -> anyhow::Result<ProductItemResponse> {
-    let pi: GetProductItemDbRsp = serde_json::from_value(value)?;
+pub fn convert_db_resp_to_product_item_db_resp(pi: GetProductItemDbRsp) -> anyhow::Result<ProductItemResponse> {
     Ok(
         ProductItemResponse {
             base_master_fields: BaseMasterFields {

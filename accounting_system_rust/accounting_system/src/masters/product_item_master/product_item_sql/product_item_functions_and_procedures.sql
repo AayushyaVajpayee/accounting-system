@@ -143,3 +143,70 @@ BEGIN
     return resp;
 end;
 $$ language plpgsql;
+
+
+create or replace function get_product_items(_product_ids uuid[], _tenant_id uuid) returns jsonb as
+$$
+DECLARE
+    product_items_json jsonb;
+BEGIN
+    with product_items as (
+        select id,
+               tenant_id,
+               entity_version_id,
+               active,
+               approval_status,
+               remarks,
+               title,
+               subtitle,
+               hsn_sac_code,
+               created_by,
+               updated_by,
+               created_at,
+               updated_at
+        from product_item
+        where id = any(_product_ids)
+          and tenant_id = _tenant_id
+    ),
+         tax_rates as (
+             select product_id,
+                    jsonb_agg(jsonb_build_object(
+                            'tax_rate_percentage', tax_rate_percentage,
+                            'start_date', start_date,
+                            'end_date', end_date
+                              )) as tax_rates_records
+             from product_tax_rate
+             where product_id = any(_product_ids)
+               and tenant_id = _tenant_id
+             group by product_id
+         ),
+         cess_rates as (
+             select product_id,
+                    jsonb_agg(jsonb_build_object(
+                            'cess_strategy', cess_strategy,
+                            'cess_rate_percentage', cess_rate_percentage,
+                            'cess_amount_per_unit', cess_amount_per_unit,
+                            'retail_sale_price', retail_sale_price,
+                            'start_date', start_date,
+                            'end_date', end_date
+                              )) as cess_rates_records
+             from cess_tax_rate
+             where product_id = any(_product_ids)
+               and tenant_id = _tenant_id
+             group by product_id
+         )
+    select jsonb_agg(
+                   jsonb_build_object(
+                           'product_item', to_jsonb(pi),
+                           'temporal_tax_rates', tr.tax_rates_records,
+                           'temporal_cess_rates', cr.cess_rates_records
+                   )
+           )
+    from product_items pi
+             left join tax_rates tr on pi.id = tr.product_id
+             left join cess_rates cr on pi.id = cr.product_id
+    into product_items_json;
+
+    return coalesce(product_items_json, '[]'::jsonb);
+end;
+$$ language plpgsql;

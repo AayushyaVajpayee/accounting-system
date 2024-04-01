@@ -228,6 +228,8 @@ impl CessStrategy {
 pub mod tests {
     use std::str::FromStr;
     use lazy_static::lazy_static;
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
     use uuid::Uuid;
     use invoice_doc_generator::hsc_sac::{GstItemCode, Hsn};
     use invoice_doc_generator::invoice_line1::UOM;
@@ -242,9 +244,14 @@ pub mod tests {
     }
 
     pub fn a_product_creation_request(builder: ProductCreationRequestBuilder) -> ProductCreationRequest {
+        let rng = rand::thread_rng();
+       let title= rng.sample_iter(Alphanumeric)
+            .take(19)
+            .map(|a| a as char)
+            .collect::<String>();
         ProductCreationRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            line_title: builder.line_title.unwrap_or_else(|| LineTitle::new("some title".to_string()).unwrap()),
+            line_title: builder.line_title.unwrap_or_else(|| LineTitle::new(title).unwrap()),
             line_subtitle: builder.line_subtitle.flatten(),
             hsn_sac_code: builder.hsn_sac_code.unwrap_or_else(|| GstItemCode::HsnCode(Hsn::new("38220011".to_string()).unwrap())),
             uom: builder.uom.unwrap_or(UOM::MilliLitre),
