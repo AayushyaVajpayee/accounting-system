@@ -6,25 +6,28 @@ create type create_payment_terms_request as
 );
 create type create_invoice_line_request as
 (
-    line_id                   uuid,
-    line_no                   smallint,
-    hsn_sac_code              text,
-    line_title                text,
-    title_hsn_sac_hash        bigint,
-    line_subtitle             text,
-    subtitle_hash             bigint,
-    quantity                  double precision,
-    free_quantity             double precision,
-    uqc                       text,
-    unit_price                double precision,
-    tax_percentage            real,
-    discount_percentage       real,
-    cess_percentage           real,
-    mrp                       real,
-    batch_no                  text,
-    expiry_date_ms            bigint,
-    line_net_total            double precision,
-    reverse_charge_applicable bool
+    line_id                    uuid,
+    line_no                    smallint,
+    hsn_sac_code               text,
+    line_title                 text,
+    title_hsn_sac_hash         bigint,
+    line_subtitle              text,
+    subtitle_hash              bigint,
+    quantity                   double precision,
+    free_quantity              double precision,
+    uqc                        text,
+    unit_price                 double precision,
+    tax_percentage             real,
+    discount_percentage        real,
+    cess_percentage            real,
+    cess_amount_per_unit       double precision,
+    retail_sale_price_for_cess double precision,
+    cess_calculation_strategy  cess_calculation_strategy,
+    mrp                        real,
+    batch_no                   text,
+    expiry_date_ms             bigint,
+    line_net_total             double precision,
+    reverse_charge_applicable  bool
 );
 
 
@@ -161,15 +164,14 @@ BEGIN
             into subtitle_id;
             insert into invoice_line (id, entity_version_id, tenant_id, active, approval_status, remarks,
                                       invoice_table_id, line_title_hsn_sac_id, line_subtitle_id, quantity,
-                                      free_quantity,
-                                      unit_price, tax_percentage, discount_percentage, cess_percentage, line_number,
-                                      line_net_total,
-                                      mrp, batch, expiry_date_ms, uqc, reverse_charge_applicable, created_by,
-                                      updated_by,
-                                      created_at, updated_at)
+                                      free_quantity, unit_price, tax_percentage, discount_percentage, cess_percentage,
+                                      cess_amount_per_unit, retail_sale_price_for_cess, cess_calculation_strategy,
+                                      line_number, line_net_total, mrp, batch, expiry_date_ms, uqc,
+                                      reverse_charge_applicable, created_by, updated_by, created_at, updated_at)
             values (line.line_id, 0, req.tenant_id, true, 1, null, invoice_tab_id, title_id, subtitle_id,
                     line.quantity, line.free_quantity, line.unit_price, line.tax_percentage, line.discount_percentage,
-                    line.cess_percentage,
+                    line.cess_percentage,line.cess_amount_per_unit,line.retail_sale_price_for_cess,
+                    line.cess_calculation_strategy,
                     line.line_no, line.line_net_total, line.mrp, line.batch_no, line.expiry_date_ms, line.uqc,
                     line.reverse_charge_applicable,
                     req.created_by, req.created_by, default, default);

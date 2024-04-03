@@ -9,6 +9,7 @@ edition = "2021"
 lazy_static = "1.4.0"
 thiserror = "1.0.56"
 anyhow = "1.0.79"
+cess_models={path = "../cess_models"}
 [dev-dependencies]
 rstest = "0.18.2"
 spectral = "0.6.0"

@@ -4,8 +4,10 @@ use std::ops::Not;
 use anyhow::anyhow;
 use thiserror::Error;
 
+use cess_models::CessStrategy;
+
 use crate::invoice_line::InvoiceLineError::{
-    CessPercentageNegative, CessPercentageTooLarge, OuantityTooLarge, QuantityNegative,
+    OuantityTooLarge, QuantityNegative,
     TaxPercentageNotInBounds, UnitPriceNegative, UnitPriceToolarge,
 };
 
@@ -15,7 +17,7 @@ pub struct InvoiceLine {
     unit_price: f64,
     discount_percentage: f32,
     tax_percentage: f32,
-    cess_percentage: f32,
+    cess_percentage: CessStrategy,
 }
 
 
@@ -56,7 +58,7 @@ impl InvoiceLine {
         unit_price: f64,
         discount_percentage: f32,
         tax_percentage: f32,
-        cess_percentage: f32,
+        cess_percentage: CessStrategy,
     ) -> anyhow::Result<Self> {
         let mut vec: Vec<InvoiceLineError> = Vec::new();
         if quantity < 0.0 {
@@ -74,12 +76,7 @@ impl InvoiceLine {
         if !(0.0..=100.0).contains(&tax_percentage) {
             vec.push(TaxPercentageNotInBounds);
         }
-        if cess_percentage < 0.0 {
-            vec.push(CessPercentageNegative);
-        }
-        if cess_percentage > 500.00 {
-            vec.push(CessPercentageTooLarge(500.00))
-        }
+
         if vec.is_empty().not() {
             Err(anyhow!(ErrorList(vec).to_string()))
         } else {
@@ -93,89 +90,91 @@ impl InvoiceLine {
         }
     }
 }
+impl InvoiceLine{
+    pub fn compute_discount_amount(&self) -> f64 {
+        self.quantity * self.unit_price * (self.discount_percentage as f64) / 100.00
+    }
 
-pub fn compute_discount_amount(line: &InvoiceLine) -> f64 {
-    line.quantity * line.unit_price * (line.discount_percentage as f64) / 100.00
+
+    pub fn compute_taxable_amount(&self) -> f64 {
+        self.quantity * self.unit_price * (100.0 - self.discount_percentage as f64) / 100.00
+    }
+
+    pub fn compute_tax_amount(&self) -> f64 {
+        self.compute_taxable_amount() * (self.tax_percentage as f64) / 100.0
+    }
+
+    pub fn compute_cess_amount(&self) -> f64 {
+       self.cess_percentage.calculate_cess_amount(self.compute_taxable_amount(),self.quantity)
+    }
+
+    pub fn compute_line_total_amount(&self) -> f64 {
+       self.compute_taxable_amount() + self.compute_tax_amount() +self.compute_cess_amount()
+    }
+
 }
 
-pub fn compute_taxable_amount(line: &InvoiceLine) -> f64 {
-    line.quantity * line.unit_price * (100.0 - line.discount_percentage as f64) / 100.00
-}
-
-pub fn compute_tax_amount(line: &InvoiceLine) -> f64 {
-    compute_taxable_amount(line) * (line.tax_percentage as f64) / 100.0
-}
-
-pub fn compute_cess_amount(line: &InvoiceLine) -> f64 {
-    compute_taxable_amount(line) * (line.cess_percentage as f64) / 100.00
-}
-
-pub fn compute_line_total_amount(line: &InvoiceLine) -> f64 {
-    compute_taxable_amount(line) + compute_tax_amount(line) + compute_cess_amount(line)
-}
 
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::FloatAssertions;
-
-    use crate::invoice_line::{compute_cess_amount, compute_discount_amount, compute_line_total_amount, compute_tax_amount, compute_taxable_amount, InvoiceLine};
+    use cess_models::CessStrategy;
+    use crate::invoice_line::InvoiceLine;
 
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(1.0, 100.0, 10.0, 0.0, 0.0).unwrap(), 10.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 10.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(100.0, 100.0, 10.0, 0.0, 0.0).unwrap(), 1000.0)]
-    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 10.0, 0.0, 0.0).unwrap()
-    , 100_000_000_000_000_000.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 100.0, 10.0, 0.0,CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 10.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 10.0, 0.0,CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(100.0, 100.0, 10.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 1000.0)]
+    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 10.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 100_000_000_000_000_000.0)]
     fn test_compute_discount_amount(#[case] line: InvoiceLine, #[case] discount: f64) {
-        let p = compute_discount_amount(&line);
+        let p = line.compute_discount_amount();
         assert_that!(p).is_equal_to(discount);
     }
 
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 0.0).unwrap(), 1.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 1.0, 0.0, 0.0).unwrap(), 0.99)]
-    #[case(InvoiceLine::new(1.0, 0.0, 1.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(1_000_000_000.00
-    , 1_000_000_000.00, 1.0, 0.0, 0.0).unwrap(), 990_000_000_000_000_000.00)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 1.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 1.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.99)]
+    #[case(InvoiceLine::new(1.0, 0.0, 1.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1_000_000_000.00, 1_000_000_000.00, 1.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 990_000_000_000_000_000.00)]
     fn test_compute_taxable_amount(#[case] line: InvoiceLine, #[case] taxable_amount: f64) {
-        let p = compute_taxable_amount(&line);
+        let p = line.compute_taxable_amount();
         assert_that!(p).is_equal_to(taxable_amount);
     }
 
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 10.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 10.0, 0.0).unwrap(), 0.1)]
-    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 10.0, 0.0).unwrap(), 1_000_000_000_000_000_00.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 10.0,CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 10.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.1)]
+    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 10.0,CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 1_000_000_000_000_000_00.0)]
     fn test_compute_tax_amount(#[case] line: InvoiceLine, #[case] tax_amount: f64) {
-        let p = compute_tax_amount(&line);
+        let p = line.compute_tax_amount();
         assert_that!(p).is_equal_to(tax_amount);
     }
 
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 10.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, 10.0).unwrap(), 0.1)]
-    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 0.0, 10.0).unwrap(), 1_000_000_000_000_000_00.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 10.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(1.0, 1.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 10.0}).unwrap(), 0.1)]
+    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 10.0}).unwrap(), 1_000_000_000_000_000_00.0)]
     fn test_compute_cess_amount(#[case] line: InvoiceLine, #[case] cess_amount: f64) {
-        let p = compute_cess_amount(&line);
+        let p = line.compute_cess_amount();
         assert_that!(p).is_equal_to(cess_amount);
     }
 
     #[rstest]
-    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, 0.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(0.0, 0.0, 01.0, 01.0, 01.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(100.0, 0.0, 01.0, 01.0, 01.0).unwrap(), 0.0)]
-    #[case(InvoiceLine::new(100.0, 1.0, 01.0, 01.0, 01.0).unwrap(), 100.98)]
-    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 40.0, 300.0).unwrap()
+    #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(0.0, 0.0, 01.0, 01.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 01.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(100.0, 0.0, 01.0, 01.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 01.0}).unwrap(), 0.0)]
+    #[case(InvoiceLine::new(100.0, 1.0, 01.0, 01.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 01.0}).unwrap(), 100.98)]
+    #[case(InvoiceLine::new(1_000_000_000.0, 1_000_000_000.0, 0.0, 40.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 300.0}).unwrap()
     , 4_400_000_000_000_000_000.00)]
     fn test_line_total_amount(#[case] line: InvoiceLine, #[case] total_amount: f64) {
-        let p = compute_line_total_amount(&line);
+        let p = line.compute_line_total_amount();
         assert_that!(p).
             is_close_to(total_amount, 0.0000000000001);
     }

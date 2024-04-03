@@ -6,16 +6,16 @@ use std::sync::Arc;
 use anyhow::Context;
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
+use itertools::Itertools;
 use thiserror::Error;
 use uuid::Uuid;
 
-use invoice_doc_generator::hsc_sac::GstItemCode::{HsnCode, SacCode};
 use pdf_doc_generator::invoice_template;
 
 use crate::accounting::currency::currency_service::CurrencyService;
 use crate::common_utils::dao_error::DaoError;
 use crate::common_utils::utils::current_indian_date;
-use crate::invoicing::doc_conversion::convert_to_invoice_doc_model;
+use crate::invoicing::doc_conversion::{convert_to_invoice_doc_model, InvoiceDocCreationDataInput};
 use crate::invoicing::invoice_template::invoice_template_service::InvoiceTemplateService;
 use crate::invoicing::invoicing_dao::{get_invoicing_dao, InvoicingDao};
 use crate::invoicing::invoicing_dao_models::convert_to_invoice_db;
@@ -23,6 +23,7 @@ use crate::invoicing::invoicing_request_models::{CreateInvoiceRequest, InvoicePd
 use crate::invoicing::invoicing_series::invoicing_series_service::InvoicingSeriesService;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
+use crate::masters::product_item_master::product_item_service::ProductItemService;
 use crate::storage::storage_service::{FINANCIAL_DOCS_BUCKET_NAME, StorageService};
 use crate::tenant::tenant_service::TenantService;
 
@@ -38,7 +39,7 @@ pub enum InvoicingServiceError {
 
 #[async_trait]
 pub trait InvoicingService: Send + Sync {
-    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError>;
+    async fn create_invoice(&self, req: CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError>;
     async fn create_invoice_pdf(&self, pdf_data: InvoicePdfRequest) -> Result<String, InvoicingServiceError>;
 }
 
@@ -51,16 +52,16 @@ struct InvoicingServiceImpl {
     business_entity_service: Arc<dyn BusinessEntityService>,
     invoice_template_service: Arc<dyn InvoiceTemplateService>,
     storage_service: Arc<dyn StorageService>,
+    product_item_service: Arc<dyn ProductItemService>,
 }
 
 
 impl InvoicingServiceImpl {
     async fn validate_create_invoice_request(&self, req: &CreateInvoiceRequest, tenant_id: Uuid) -> Result<(), InvoicingServiceError> {
         let mut errors: Vec<String> = vec![];
-        Self::validate_invoice_lines(req, &mut errors);
+        self.validate_invoice_lines(req, tenant_id, &mut errors).await?;
         Self::validate_order_date(req, &mut errors);
         Self::validate_invoice_bill_ship_detail(req, &mut errors);
-        Self::validate_invoice_lines_gst_codes(req, &mut errors);
         self.validate_ids(req, tenant_id, &mut errors).await?;
         if !errors.is_empty() {
             Err(InvoicingServiceError::Validation(errors))
@@ -68,28 +69,7 @@ impl InvoicingServiceImpl {
             Ok(())
         }
     }
-    fn validate_invoice_lines_gst_codes(req: &CreateInvoiceRequest, errors: &mut Vec<String>) {
-        req.invoice_lines.iter().for_each(|a| {
-            match a.gst_item_code {
-                HsnCode(_) => {
-                    if req.service_invoice {
-                        let p =
-                            format!("hsn code found for service invoice.Use sac code instead.Line title: {}",
-                                    a.line_title.inner());
-                        errors.push(p);
-                    }
-                }
-                SacCode(_) => {
-                    if !req.service_invoice {
-                        let p =
-                            format!("sac code found for non service invoice.Use hsn code instead.Line title: {}",
-                                    a.line_title.inner());
-                        errors.push(p);
-                    }
-                }
-            };
-        });
-    }
+
     fn validate_invoice_bill_ship_detail(req: &CreateInvoiceRequest, errors: &mut Vec<String>) {
         if req.b2b_invoice && req.bill_ship_detail.is_none() {
             errors.push("bill_ship_detail is mandatory if b2b_invoice".to_string())
@@ -103,10 +83,20 @@ impl InvoicingServiceImpl {
             }
         }
     }
-    fn validate_invoice_lines(req: &CreateInvoiceRequest, errors: &mut Vec<String>) {
+    async fn validate_invoice_lines(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, errors: &mut Vec<String>) -> anyhow::Result<()> {
         if req.invoice_lines.is_empty() {
             errors.push("atleast one invoice line is required".to_string());
         }
+        let product_ids = req.invoice_lines.iter().map(|a| a.product_item_id)
+            .collect_vec();
+        let set: std::collections::HashSet<Uuid> = self.product_item_service.get_products(product_ids.clone(), tenant_id)
+            .await?.into_iter().map(|a| a.base_master_fields.id).collect();
+        for x in product_ids {
+            if !set.contains(&x) {
+                errors.push(format!("product id {} not found in system", x))
+            }
+        }
+        Ok(())
     }
     fn validate_order_date(req: &CreateInvoiceRequest, errors: &mut Vec<String>) {
         if let Some(date) = req.order_date.as_ref() {
@@ -196,8 +186,8 @@ fn is_gstin_from_same_state(gstin1: &GstinNo, gstin2: &GstinNo) -> anyhow::Resul
 
 #[async_trait]
 impl InvoicingService for InvoicingServiceImpl {
-    async fn create_invoice(&self, req: &CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError> {
-        self.validate_create_invoice_request(req, tenant_id).await?;
+    async fn create_invoice(&self, req: CreateInvoiceRequest, tenant_id: Uuid, user_id: Uuid) -> Result<InvoicePdfRequest, InvoicingServiceError> {
+        self.validate_create_invoice_request(&req, tenant_id).await?;
         let curr = self.currency_service
             .get_currency_entry(req.currency_id, tenant_id).await
             .context("err while fetching currency from db")?
@@ -206,9 +196,16 @@ impl InvoicingService for InvoicingServiceImpl {
                                                    req.bill_ship_detail.as_ref()
                                                        .map(|a| a.billed_to_customer_id),
                                                    tenant_id).await?;
-        let db_model = convert_to_invoice_db(req, curr.scale, igst_applicable, user_id, tenant_id)?;
+        let p = req.invoice_lines.iter().map(|a| a.product_item_id).collect_vec();
+        let po = self.product_item_service.get_products(p, tenant_id).await.unwrap();
+        let new_req = req.to_create_invoice_with_all_details_included(po)?;
+        let db_model = convert_to_invoice_db(&new_req, curr.scale, igst_applicable, user_id, tenant_id)?;
         let invoice_id = self.dao.create_invoice(&db_model).await?;
-        let inv = convert_to_invoice_doc_model(&db_model,
+        let pdaf = InvoiceDocCreationDataInput {
+            invoice: &db_model,
+            req: &new_req,
+        };
+        let inv = convert_to_invoice_doc_model(&pdaf,
                                                invoice_id.invoice_number,
                                                self.business_entity_service.clone(), curr).await?;
         Ok(InvoicePdfRequest {
@@ -247,7 +244,7 @@ pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantServi
                              invoicing_series_service: Arc<dyn InvoicingSeriesService>,
                              business_entity_service: Arc<dyn BusinessEntityService>,
                              invoice_template_service: Arc<dyn InvoiceTemplateService>,
-                             storage_service: Arc<dyn StorageService>) -> Arc<dyn InvoicingService> {
+                             storage_service: Arc<dyn StorageService>, product_item_service: Arc<dyn ProductItemService>) -> Arc<dyn InvoicingService> {
     let invoicing_service_dao = get_invoicing_dao(arc);
     let service = InvoicingServiceImpl {
         dao: invoicing_service_dao,
@@ -257,6 +254,7 @@ pub fn get_invoicing_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantServi
         business_entity_service,
         invoice_template_service,
         storage_service,
+        product_item_service,
     };
     Arc::new(service)
 }
@@ -292,53 +290,6 @@ mod tests {
         assert_that!(errors[0])
             .is_equal_to("purchase order date cannot be of future while generating invoice".to_string());
         assert_that!(errors2).is_empty();
-    }
-
-    #[tokio::test]
-    async fn test_validate_invoice_lines() {
-        let mut req = a_create_invoice_request(Default::default());
-        req.invoice_lines = vec![];
-        let mut errors: Vec<String> = vec![];
-        InvoicingServiceImpl::validate_invoice_lines(&req, &mut errors);
-        assert_that!(errors).has_length(1);
-        assert_that!(errors[0]).
-            is_equal_to("atleast one invoice line is required".to_string());
-        let req = a_create_invoice_request(Default::default());
-        let mut errors: Vec<String> = vec![];
-        InvoicingServiceImpl::validate_invoice_lines(&req, &mut errors);
-        assert_that!(errors).is_empty();
-    }
-
-    #[tokio::test]
-    async fn test_validate_invoice_lines_gst_codes() {
-        let mut req = a_create_invoice_request(Default::default());
-        let mut line = a_create_invoice_line_request(Default::default());
-        line.gst_item_code = HsnCode(Hsn::new("01011090".to_string()).unwrap());
-        req.invoice_lines = vec![line];
-        req.service_invoice = true;
-        let mut errors: Vec<String> = vec![];
-        InvoicingServiceImpl::validate_invoice_lines_gst_codes(&req, &mut errors);
-        assert_that!(errors).has_length(1);
-        assert_that!(errors[0])
-            .is_equal_to(
-                "hsn code found for service invoice.Use sac code instead.Line title: some random line title"
-                    .to_string());
-        req.service_invoice = false;
-        let mut errors: Vec<String> = vec![];
-        InvoicingServiceImpl::validate_invoice_lines_gst_codes(&req, &mut errors);
-        assert_that!(errors).is_empty();
-        let mut line = a_create_invoice_line_request(Default::default());
-        line.gst_item_code = SacCode(Sac::new("995425".to_string()).unwrap());
-        req.invoice_lines = vec![line];
-        req.service_invoice = true;
-        errors = vec![];
-        InvoicingServiceImpl::validate_invoice_lines_gst_codes(&req, &mut errors);
-        assert_that!(errors).is_empty();
-        req.service_invoice = false;
-        errors = vec![];
-        InvoicingServiceImpl::validate_invoice_lines_gst_codes(&req, &mut errors);
-        assert_that!(errors).has_length(1);
-        assert_that!(errors[0]).is_equal_to("sac code found for non service invoice.Use hsn code instead.Line title: some random line title".to_string())
     }
 
     #[tokio::test]

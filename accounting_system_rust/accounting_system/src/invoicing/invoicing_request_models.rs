@@ -1,18 +1,99 @@
+use std::collections::HashMap;
+use std::sync::Arc;
 use anyhow::{Context, ensure};
 use chrono::NaiveDate;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use invoice_doc_generator::hsc_sac::GstItemCode;
 use invoice_doc_generator::invoice_line::line_quantity::LineQuantity;
-use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::invoice_line::unit_price::Price;
-use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
+use invoice_doc_generator::percentages::tax_discount_cess::DiscountPercentage;
 use pdf_doc_generator::invoice_template::Invoice;
-use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
+use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
+use crate::masters::product_item_master::product_item_models::ProductItemResponse;
+#[derive(Debug)]
+pub struct CreateInvoiceWithAllDetailsIncluded{
+    pub idempotence_key: Uuid,
+    pub invoice_template_id: Uuid,
+    pub invoicing_series_mst_id: Uuid,
+    pub currency_id: Uuid,
+    pub service_invoice: bool,
+    pub einvoicing_applicable: bool,
+    pub b2b_invoice: bool,
+    ///billed from id
+    pub supplier_id: Uuid,
+    ///if  none then same as that of supplier id
+    pub dispatch_from_id: Option<Uuid>,
+    pub bill_ship_detail: Option<BillShipDetail>,
+    pub order_number: Option<PurchaseOrderNo>,
+    pub order_date: Option<PurchaseOrderDate>,
+    pub payment_terms: Option<PaymentTermsValidated>,
+    pub invoice_lines: Vec<CreateInvoiceLineRequestWithAllDetails>,
+    pub additional_charges: Vec<CreateAdditionalChargeRequest>,
+    pub invoice_remarks: Option<InvoiceRemarks>,
+    pub ecommerce_gstin: Option<GstinNo>,
+}
+#[derive(Debug)]
+pub struct CreateInvoiceLineRequestWithAllDetails{
+    pub product_item_id:Arc<ProductItemResponse>,
+    pub quantity: LineQuantity,
+    pub free_quantity: LineQuantity,
+    pub unit_price: Price,
+    pub discount_percentage: DiscountPercentage,
+    pub mrp: Option<Price>,
+    pub batch_no: Option<BatchNo>,
+    pub expiry_date: Option<ExpiryDateMs>,
+    //is the line item payable under reverse charge
+    pub reverse_charge_applicable: bool,
+}
+
+impl CreateInvoiceRequest{
+    pub fn to_create_invoice_with_all_details_included(self,product_items:Vec<Arc<ProductItemResponse>>)->anyhow::Result<CreateInvoiceWithAllDetailsIncluded>{
+        let map:HashMap<Uuid,Arc<ProductItemResponse>> =product_items.into_iter()
+            .map(|a|(a.base_master_fields.id,a))
+            .collect();
+        let mut invoice_lines:Vec<CreateInvoiceLineRequestWithAllDetails> = Vec::with_capacity(self.invoice_lines.len());
+        for il in self.invoice_lines.into_iter() {
+            let pr =CreateInvoiceLineRequestWithAllDetails{
+                product_item_id: map.get(&il.product_item_id)
+                    .context("product item not found for product id during invoice creation request")?
+                    .clone(),
+                quantity: il.quantity,
+                free_quantity: il.free_quantity,
+                unit_price: il.unit_price,
+                discount_percentage: il.discount_percentage,
+                mrp: il.mrp,
+                batch_no: il.batch_no,
+                expiry_date: il.expiry_date,
+                reverse_charge_applicable: il.reverse_charge_applicable,
+            };
+            invoice_lines.push(pr);
+        }
+        
+        Ok(CreateInvoiceWithAllDetailsIncluded{
+            idempotence_key: self.idempotence_key,
+            invoice_template_id: self.invoice_template_id,
+            invoicing_series_mst_id: self.invoicing_series_mst_id,
+            currency_id: self.currency_id,
+            service_invoice: self.service_invoice,
+            einvoicing_applicable: self.einvoicing_applicable,
+            b2b_invoice: self.b2b_invoice,
+            supplier_id: self.supplier_id,
+            dispatch_from_id: self.dispatch_from_id,
+            bill_ship_detail: self.bill_ship_detail,
+            order_number: self.order_number,
+            order_date: self.order_date,
+            payment_terms: self.payment_terms,
+            invoice_lines,
+            additional_charges: self.additional_charges,
+            invoice_remarks: self.invoice_remarks,
+            ecommerce_gstin: self.ecommerce_gstin,
+        })
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateInvoiceRequest {
     pub idempotence_key: Uuid,
@@ -52,22 +133,18 @@ pub struct CreateAdditionalChargeRequest {
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateInvoiceLineRequest {
-    #[serde(flatten)]
-    pub gst_item_code: GstItemCode,
-    pub line_title: LineTitle,
-    pub line_subtitle: Option<LineSubtitle>,
+    pub product_item_id:Uuid,
     pub quantity: LineQuantity,
     pub free_quantity: LineQuantity,
     pub unit_price: Price,
-    pub tax_rate_percentage: GSTPercentage,
     pub discount_percentage: DiscountPercentage,
-    pub cess_percentage: CessPercentage,
     pub mrp: Option<Price>,
     pub batch_no: Option<BatchNo>,
     pub expiry_date: Option<ExpiryDateMs>,
     //is the line item payable under reverse charge
     pub reverse_charge_applicable: bool,
 }
+
 
 
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
@@ -297,17 +374,17 @@ pub mod tests {
     use lazy_static::lazy_static;
     use uuid::Uuid;
 
-    use invoice_doc_generator::hsc_sac::{GstItemCode, Hsn};
     use invoice_doc_generator::invoice_line::line_quantity::test_utils::a_line_quantity;
     use invoice_doc_generator::invoice_line::line_title::LineTitle;
     use invoice_doc_generator::invoice_line::unit_price::Price;
-    use invoice_doc_generator::percentages::tax_discount_cess::{CessPercentage, DiscountPercentage, GSTPercentage};
+    use invoice_doc_generator::percentages::tax_discount_cess::DiscountPercentage;
 
     use crate::accounting::currency::currency_models::tests::SEED_CURRENCY_ID;
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
-    use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder, InvoiceRemarks};
+    use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2};
+    use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
 
     lazy_static! {
         pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
@@ -354,15 +431,11 @@ pub mod tests {
 
     pub fn a_create_invoice_line_request(builder: CreateInvoiceLineRequestBuilder) -> CreateInvoiceLineRequest {
         CreateInvoiceLineRequest {
-            gst_item_code: builder.gst_item_code.unwrap_or(GstItemCode::HsnCode(Hsn::new("38220011".to_string()).unwrap())),
-            line_title: builder.line_title.unwrap_or(LineTitle::new("some random line title".to_string()).unwrap()),
-            line_subtitle: builder.line_subtitle.flatten(),
+            product_item_id:builder.product_item_id.unwrap_or(*SEED_PRODUCT_ITEM_ID),
             quantity: builder.quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
             free_quantity: builder.free_quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
             unit_price: builder.unit_price.unwrap_or_else(|| Price::new(10.0).unwrap()),
-            tax_rate_percentage: builder.tax_rate_percentage.unwrap_or_else(|| GSTPercentage::new(28.0).unwrap()),
             discount_percentage: builder.discount_percentage.unwrap_or_else(|| DiscountPercentage::new(0.0).unwrap()),
-            cess_percentage: builder.cess_percentage.unwrap_or_else(|| CessPercentage::new(0.0).unwrap()),
             mrp: builder.mrp.flatten(),
             batch_no: builder.batch_no.flatten(),
             expiry_date: builder.expiry_date.flatten(),

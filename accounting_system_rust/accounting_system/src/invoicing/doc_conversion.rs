@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
@@ -5,21 +6,27 @@ use chrono::{Datelike, NaiveDateTime};
 use itertools::Itertools;
 use uuid::Uuid;
 
-use invoicing_calculations::invoice_line::{compute_tax_amount, InvoiceLine};
 use pdf_doc_generator::invoice_template::{AdditionalCharge, Address, DocDate, Invoice, InvoiceLineTable, InvoiceParty, InvoiceSummary, InvoiceTableHeaderNameEnum, TaxLine, TaxSummary};
 use pdf_doc_generator::invoice_template::InvoiceTableHeaderNameEnum::{Cgst, ItemDescription, LineTotal, Qty, SerialNo, Sgst, UnitPrice, Uqc};
 
 use crate::accounting::currency::currency_models::CurrencyMaster;
 use crate::invoicing::invoicing_dao_models::{InvoiceDb, InvoiceLineDb};
+use crate::invoicing::invoicing_request_models::{CreateInvoiceLineRequestWithAllDetails, CreateInvoiceWithAllDetailsIncluded};
 use crate::masters::business_entity_master::business_entity_models::BusinessEntityDto;
 use crate::masters::business_entity_master::business_entity_service::BusinessEntityService;
 
-pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
+pub(crate) struct InvoiceDocCreationDataInput<'a> {
+    pub invoice: &'a InvoiceDb<'a>,
+    pub req: &'a CreateInvoiceWithAllDetailsIncluded,
+}
+
+pub async fn convert_to_invoice_doc_model<'a>(data_input: &'a InvoiceDocCreationDataInput<'a>,
                                               invoice_number: String,
                                               business_entity_service: Arc<dyn BusinessEntityService>,
                                               currency: Arc<CurrencyMaster>,
 )
                                               -> anyhow::Result<Invoice> {
+    let invoice = data_input.invoice;
     let supplier = fetch_business_entity(Some(invoice.supplier_id), invoice.tenant_id, business_entity_service.clone())
         .await?
         .context("supplier cannot be null")?;
@@ -53,15 +60,16 @@ pub async fn convert_to_invoice_doc_model<'a>(invoice: &InvoiceDb<'a>,
                 name: a.line_title.to_string(),
                 rate: a.rate,
             }).collect_vec(),
-        tax_summary: create_invoice_tax_summary(&invoice)?,
+        tax_summary: create_invoice_tax_summary(data_input)?,
         invoice_summary: create_invoice_summary(&invoice),
-        invoice_lines_table: create_invoice_line_table(&invoice, currency)?,
-        invoice_remarks: invoice.invoice_remarks.map(|a|a.to_string()),
-        ecommerce_gstin: invoice.ecommerce_gstin.map(|a|a.to_string()),
+        invoice_lines_table: create_invoice_line_table(&data_input, currency)?,
+        invoice_remarks: invoice.invoice_remarks.map(|a| a.to_string()),
+        ecommerce_gstin: invoice.ecommerce_gstin.map(|a| a.to_string()),
     })
 }
 
-fn create_invoice_line_table(invoice: &InvoiceDb, currency: Arc<CurrencyMaster>) -> anyhow::Result<InvoiceLineTable> {
+fn create_invoice_line_table<'a>(data: &'a InvoiceDocCreationDataInput<'a>, currency: Arc<CurrencyMaster>) -> anyhow::Result<InvoiceLineTable> {
+    let invoice = data.invoice;
     Ok(InvoiceLineTable {
         invoice_lines_total: invoice.invoice_lines
             .iter()
@@ -84,11 +92,12 @@ fn create_invoice_summary(invoice: &InvoiceDb) -> InvoiceSummary {
     }
 }
 
-fn create_invoice_tax_summary(invoice: &InvoiceDb) -> anyhow::Result<TaxSummary> {
+fn create_invoice_tax_summary<'a>(data: &'a InvoiceDocCreationDataInput<'a>) -> anyhow::Result<TaxSummary> {
+    let invoice = data.invoice;
     if invoice.igst_applicable {
         Ok(
             TaxSummary {
-                igst_lines: convert_to_tax_lines(&invoice.invoice_lines, invoice.igst_applicable)?,
+                igst_lines: convert_to_tax_lines(data.req, invoice.igst_applicable)?,
                 cgst_lines: vec![],
                 sgst_lines: vec![],
                 total_tax_amount: invoice.total_tax_amount,
@@ -97,8 +106,8 @@ fn create_invoice_tax_summary(invoice: &InvoiceDb) -> anyhow::Result<TaxSummary>
     } else {
         Ok(TaxSummary {
             igst_lines: vec![],
-            cgst_lines: convert_to_tax_lines(&invoice.invoice_lines, invoice.igst_applicable)?,
-            sgst_lines: convert_to_tax_lines(&invoice.invoice_lines, invoice.igst_applicable)?,
+            cgst_lines: convert_to_tax_lines(data.req, invoice.igst_applicable)?,
+            sgst_lines: convert_to_tax_lines(data.req, invoice.igst_applicable)?,
             total_tax_amount: invoice.total_tax_amount,
         })
     }
@@ -245,29 +254,27 @@ async fn fetch_business_entity(id: Option<Uuid>, tenant_id: Uuid, service: Arc<d
     }
 }
 
-fn convert_to_tax_lines(lines: &Vec<InvoiceLineDb>, igst_applicable: bool) -> anyhow::Result<Vec<TaxLine>> {
-    let lines_and_tax_amt: Vec<(&InvoiceLineDb, f64)> = lines.iter()
-        .map(|l|
-            {
-                let line = InvoiceLine::new(
-                    l.quantity,
-                    l.unit_price,
-                    l.discount_percentage,
-                    l.tax_percentage,
-                    l.cess_percentage,
-                );
-                line.map(|a| (l, compute_tax_amount(&a)))
-            }).try_collect()?;
-    let tax_lines = lines_and_tax_amt.iter()
-        .group_by(|a| a.0.tax_percentage)
+fn convert_to_tax_lines(data: &CreateInvoiceWithAllDetailsIncluded, igst_applicable: bool) -> anyhow::Result<Vec<TaxLine>> {
+    let mut lines_and_tax_amt: Vec<(&CreateInvoiceLineRequestWithAllDetails, f64)> = Vec::with_capacity(data.invoice_lines.len());
+    for line in data.invoice_lines.iter() {
+        lines_and_tax_amt.push((line, line.tax_amount()?));
+    }
+    let mut grouped_tax_bps_with_tax_amt_lines: HashMap<u32, f64> = HashMap::new();
+    for line in lines_and_tax_amt.iter() {
+        let req = line.0;
+        let tax_amt = line.1;
+        let tax_bps = (req.product_item_id.get_tax_rate()?
+            .tax_rate_percentage.inner() * 100.0).round() as u32;
+        grouped_tax_bps_with_tax_amt_lines.entry(tax_bps)
+            .and_modify(|a| *a += tax_amt)
+            .or_insert(tax_amt);
+    }
+    let tax_lines = grouped_tax_bps_with_tax_amt_lines
         .into_iter()
-        .map(|(tax_percentage, lines)| {
-            let total_tax_amt: f64 = lines.into_iter()
-                .map(|(_, tax_amt)| tax_amt)
-                .sum();
+        .map(|a| {
             TaxLine {
-                tax_slab: if igst_applicable { tax_percentage } else { tax_percentage / 2.0 },
-                tax_amount: if igst_applicable { total_tax_amt } else { total_tax_amt / 2.0 },
+                tax_slab: if igst_applicable { a.0 as f32 / 100.0 } else { a.0 as f32 / 200.0 },
+                tax_amount: if igst_applicable { a.1 } else { a.1 / 2.0 },
             }
         }).collect_vec();
     Ok(tax_lines)

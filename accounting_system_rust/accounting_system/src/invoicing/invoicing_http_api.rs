@@ -20,7 +20,7 @@ async fn create_invoice(
     user_id: UserId
 )-> actix_web::Result<impl Responder>{
     let ap = data
-        .create_invoice(&request,tenant_id.inner(),user_id.inner())
+        .create_invoice(request.into_inner(),tenant_id.inner(),user_id.inner())
         .await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }

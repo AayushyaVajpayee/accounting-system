@@ -108,6 +108,7 @@ async fn main() -> io::Result<()> {
     let business_entity_service = get_business_entity_master_service(pool.clone(), address_service.clone());
     let invoice_template_service = get_invoice_template_master_service(pool.clone());
     let invoicing_series_service = get_invoicing_series_service(pool.clone());
+    let product_item_serv = get_product_item_service(pool.clone());
     let invoicing_service = get_invoicing_service(
         pool.clone(),
         tenant_service.clone(),
@@ -116,8 +117,8 @@ async fn main() -> io::Result<()> {
         business_entity_service.clone(),
         invoice_template_service.clone(),
         storage.clone(),
+        product_item_serv.clone()
     );
-    let product_item_serv = get_product_item_service(pool);
     // let invoice_template_service= get_invoice_template_service();
     println!("{}", std::process::id());
     HttpServer::new(move || {

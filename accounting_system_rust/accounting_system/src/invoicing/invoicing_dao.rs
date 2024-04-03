@@ -83,6 +83,8 @@ mod tests {
     use spectral::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
     use uuid::Uuid;
+    use crate::masters::product_item_master::product_item_models::ProductItemResponse;
+    use crate::masters::product_item_master::product_item_models::tests::a_product_item_response;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
     use crate::accounting::user::user_models::SEED_USER_ID;
@@ -93,16 +95,24 @@ mod tests {
     use crate::invoicing::invoicing_request_models::tests::{a_create_invoice_request, SEED_INVOICE_ID};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
     use crate::invoicing::payment_term::payment_term_models::tests::SEED_PAYMENT_TERM_ID;
+    use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     async fn get_dao()->InvoicingDaoImpl{
         get_dao_generic(|c|InvoicingDaoImpl { postgres_client: c},None).await
 
     }
+    fn get_products()->Vec<Arc<ProductItemResponse>>{
+        let mut d=a_product_item_response(Default::default());
+        d.base_master_fields.id=*SEED_PRODUCT_ITEM_ID;
+        vec![Arc::new(d)]
+    }
     #[tokio::test]
     async fn persist_invoice_pdf_dtl() {
         let dao=get_dao().await;
         let req = a_create_invoice_request(Default::default());
+        let pids=get_products();
+        let req=req.to_create_invoice_with_all_details_included(pids).unwrap();
         let p = convert_to_invoice_db(&req, 2,
                                       false, *SEED_USER_ID,
                                       *SEED_TENANT_ID).unwrap();
@@ -124,6 +134,8 @@ mod tests {
     async fn test_is_invoice_created() {
         let dao=get_dao().await;
         let req = a_create_invoice_request(Default::default());
+        let pids=get_products();
+        let req=req.to_create_invoice_with_all_details_included(pids).unwrap();
         let p = convert_to_invoice_db(&req, 2,
                                       false, *SEED_USER_ID,
                                       *SEED_TENANT_ID).unwrap();
@@ -148,6 +160,8 @@ mod tests {
     async fn test_create_invoice() {
         let dao=get_dao().await;
         let req = a_create_invoice_request(Default::default());
+        let pids=get_products();
+        let req=req.to_create_invoice_with_all_details_included(pids).unwrap();
         let p = convert_to_invoice_db(&req, 2,
                                       false, *SEED_USER_ID,
                                       *SEED_TENANT_ID).unwrap();
@@ -162,6 +176,8 @@ mod tests {
     async fn test_persist_invoice_lines() {
         let dao=get_dao().await;
         let req = a_create_invoice_request(Default::default());
+        let pids=get_products();
+        let req=req.to_create_invoice_with_all_details_included(pids).unwrap();
         let p = convert_to_invoice_db(&req, 2,
                                       false, *SEED_USER_ID,
                                       *SEED_TENANT_ID).unwrap();
@@ -184,6 +200,8 @@ mod tests {
     async fn test_create_invoice_table_entry() {
         let dao=get_dao().await;
         let req = a_create_invoice_request(Default::default());
+        let pids=get_products();
+        let req=req.to_create_invoice_with_all_details_included(pids).unwrap();
         let p = convert_to_invoice_db(&req, 2,
                                       false, *SEED_USER_ID,
                                       *SEED_TENANT_ID).unwrap();
@@ -201,26 +219,6 @@ mod tests {
             .query_opt("select id from invoice where id=$1", &[&uuid])
             .await.unwrap();
         assert_that!(persisted_id).is_some();
-    }
-
-    #[tokio::test]
-    async fn test_create_invoice_request_rust_struct_to_db_composite_type_mapping() {
-        let postgres_client =get_dao().await.postgres_client;
-        let req = a_create_invoice_request(Default::default());
-        let invoice_db =
-            convert_to_invoice_db(&req, 2,
-                                  false,
-                                  *SEED_USER_ID, *SEED_TENANT_ID)
-                .unwrap();
-        let mut invoice_db_str = String::with_capacity(1000);
-
-        let _ = postgres_client.get().await.unwrap()
-            .query("select $1::create_invoice_request", &[&invoice_db])
-            .await.unwrap();
-        invoice_db.fmt_postgres(&mut invoice_db_str).unwrap();
-        let m = format!("select {}::create_invoice_request", invoice_db_str);
-        let _ = postgres_client.get().await.unwrap()
-            .simple_query(&m).await.unwrap();
     }
 
     #[rstest]

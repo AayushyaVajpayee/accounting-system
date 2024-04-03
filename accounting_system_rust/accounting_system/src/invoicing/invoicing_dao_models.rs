@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use chrono::TimeZone;
 use itertools::Itertools;
 use tokio_postgres::types::ToSql;
@@ -7,7 +7,7 @@ use xxhash_rust::xxh32;
 
 use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, ToPostgresString};
 use crate::common_utils::utils::current_indian_financial_year;
-use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequest, CreateInvoiceRequest, PaymentTermsValidated};
+use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequestWithAllDetails, CreateInvoiceWithAllDetailsIncluded, PaymentTermsValidated};
 
 #[derive(Debug, ToSql)]
 #[postgres(name = "create_payment_terms_request")]
@@ -45,11 +45,14 @@ pub struct InvoiceLineDb<'a> {
     pub tax_percentage: f32,
     pub discount_percentage: f32,
     pub cess_percentage: f32,
+    pub cess_amount_per_unit: f64,
+    pub retail_sale_price_for_cess: f64,
+    pub cess_calculation_strategy: &'static str,
     pub mrp: Option<f32>,
     pub batch_no: Option<&'a str>,
     pub expiry_date_ms: Option<i64>,
     pub line_net_total: f64,
-    pub reverse_charge_applicable:bool,
+    pub reverse_charge_applicable: bool,
 }
 
 impl ToPostgresString for InvoiceLineDb<'_> {
@@ -69,6 +72,9 @@ impl ToPostgresString for InvoiceLineDb<'_> {
             &self.tax_percentage,
             &self.discount_percentage,
             &self.cess_percentage,
+            &self.cess_amount_per_unit,
+            &self.retail_sale_price_for_cess,
+            &self.cess_calculation_strategy,
             &self.mrp,
             &self.batch_no,
             &self.expiry_date_ms,
@@ -123,7 +129,7 @@ pub struct InvoiceDb<'a> {
     pub b2b_invoice: bool,
     pub e_invoicing_applicable: bool,
     pub supplier_id: Uuid,
-    pub dispatch_from_id:Uuid,
+    pub dispatch_from_id: Uuid,
     pub billed_to_customer_id: Option<Uuid>,
     pub shipped_to_customer_id: Option<Uuid>,
     pub order_number: Option<&'a str>,
@@ -139,8 +145,8 @@ pub struct InvoiceDb<'a> {
     pub total_payable_amount: f64,
     pub created_by: Uuid,
     pub igst_applicable: bool,
-    pub invoice_remarks:Option<&'a str>,
-    pub ecommerce_gstin:Option<&'a str>
+    pub invoice_remarks: Option<&'a str>,
+    pub ecommerce_gstin: Option<&'a str>,
 }
 
 impl ToPostgresString for InvoiceDb<'_> {
@@ -202,36 +208,45 @@ fn convert_to_additional_charge_db(req: &CreateAdditionalChargeRequest, line_no:
     }
 }
 
-fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequest, line_no: i16) -> anyhow::Result<InvoiceLineDb> {
+fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequestWithAllDetails, line_no: i16) -> anyhow::Result<InvoiceLineDb> {
     let mut hasher = xxh32::Xxh32::new(0);
-    hasher.update(req.line_title.inner().as_bytes());
-    hasher.update(req.gst_item_code.as_str().as_bytes());
+    hasher.update(req.product_item_id.title.inner().as_bytes());
+    hasher.update(req.product_item_id.hsn_sac_code.as_str().as_bytes());
     let hash = hasher.digest() as i64;
+    let cess_strategy = req.product_item_id.get_cess_rate()?;
     Ok(InvoiceLineDb {
         line_id: Uuid::now_v7(),
         line_no,
-        hsn_sac_code: req.gst_item_code.as_str(),
-        line_title: req.line_title.inner(),
+        hsn_sac_code: req.product_item_id.hsn_sac_code.as_str(),
+        line_title: req.product_item_id.title.inner(),
         title_hsn_sac_hash: hash,
-        line_subtitle: req.line_subtitle.as_ref().map(|a| a.inner()),
-        subtitle_hash: req.line_subtitle.as_ref()
+        line_subtitle: req.product_item_id.subtitle.as_ref().map(|a| a.inner()),
+        subtitle_hash: req.product_item_id.subtitle.as_ref()
             .map(|a| compute_32_bit_xx_hash(a.inner())),
         quantity: req.quantity.get_quantity(),
         uqc: req.quantity.uom_as_str(),
         unit_price: req.unit_price.inner(),
-        tax_percentage: req.tax_rate_percentage.inner(),
+        tax_percentage: req.product_item_id.get_tax_rate()?.tax_rate_percentage.inner(),
         discount_percentage: req.discount_percentage.inner(),
-        cess_percentage: req.cess_percentage.inner(),
+        cess_percentage: cess_strategy.cess_strategy.get_cess_rate_percentage()
+            .context("cess percentage cannot be none")?,
+        cess_amount_per_unit: cess_strategy.cess_strategy
+            .get_cess_amount_per_unit()
+            .unwrap_or(0.0),
+        retail_sale_price_for_cess: cess_strategy.cess_strategy
+            .get_retail_sale_price()
+            .unwrap_or(0.0),
+        cess_calculation_strategy: cess_strategy.cess_strategy.get_strategy_name(),
         mrp: req.mrp.as_ref().map(|a| a.inner() as f32),
         batch_no: req.batch_no.as_ref().map(|a| a.inner()),
         expiry_date_ms: req.expiry_date.as_ref().map(|a| a.epoch_millis()).flatten(),
         line_net_total: req.net_line_total()?,
-        reverse_charge_applicable:req.reverse_charge_applicable,
-        free_quantity:req.free_quantity.get_quantity(),
+        reverse_charge_applicable: req.reverse_charge_applicable,
+        free_quantity: req.free_quantity.get_quantity(),
     })
 }
 
-pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, igst_applicable: bool,
+pub fn convert_to_invoice_db(req: &CreateInvoiceWithAllDetailsIncluded, currency_scale: i16, igst_applicable: bool,
                              created_by: Uuid, tenant_id: Uuid) -> anyhow::Result<InvoiceDb> {
     let date = chrono::Utc::now().naive_utc();
     Ok(InvoiceDb {
@@ -249,7 +264,7 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, ig
         b2b_invoice: req.b2b_invoice,
         e_invoicing_applicable: req.einvoicing_applicable,
         supplier_id: req.supplier_id,
-        dispatch_from_id:req.dispatch_from_id.unwrap_or(req.supplier_id),
+        dispatch_from_id: req.dispatch_from_id.unwrap_or(req.supplier_id),
         billed_to_customer_id: req.bill_ship_detail
             .as_ref()
             .map(|l| l.billed_to_customer_id),
@@ -262,10 +277,10 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, ig
             .map(|a| a.epoch_millis()).flatten(),
         payment_terms: req.payment_terms.as_ref()
             .map(|a| convert_to_payment_terms_db(&a)),
-        invoice_lines: req.invoice_lines
-            .iter()
-            .enumerate()
-            .map(|a| convert_to_invoice_line_db(a.1, a.0 as i16))
+        invoice_lines: req.invoice_lines.iter().enumerate()
+            .map(|a| {
+                convert_to_invoice_line_db(a.1, a.0 as i16)
+            })
             .collect::<anyhow::Result<Vec<InvoiceLineDb>>>()?,
         additional_charges: req.additional_charges
             .iter()
@@ -280,10 +295,10 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceRequest, currency_scale: i16, ig
         total_payable_amount: req.total_amount(currency_scale)?,
         created_by,
         igst_applicable,
-        invoice_remarks:req.invoice_remarks.as_ref()
-            .map(|a|a.get_str()),
-        ecommerce_gstin:req.ecommerce_gstin
-            .as_ref().map(|a|a.get_str())
+        invoice_remarks: req.invoice_remarks.as_ref()
+            .map(|a| a.get_str()),
+        ecommerce_gstin: req.ecommerce_gstin
+            .as_ref().map(|a| a.get_str()),
     })
 }
 
