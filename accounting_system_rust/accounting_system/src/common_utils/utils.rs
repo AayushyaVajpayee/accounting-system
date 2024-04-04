@@ -82,8 +82,8 @@ pub enum UserIdHeaderError {
     NotPresent,
     #[error("x-acc-user-id header does not have a valid uuid")]
     NotUuid,
-    #[error("user id not found in system")]
-    NotInDb,
+    #[error("user id {user_id} for tenant id {tenant_id} not found in system")]
+    NotInDb{tenant_id: Uuid,user_id:Uuid},
 }
 
 impl ResponseError for UserIdHeaderError {
@@ -167,7 +167,7 @@ pub async fn tenant_user_header_middleware(
         .ok_or(TenantIdHeaderError::NotInDb)?;
     let _user = user_service.get_user_by_id(user_id.0, tenant_id.inner())
         .await?
-        .ok_or(UserIdHeaderError::NotInDb)?;
+        .ok_or_else(||UserIdHeaderError::NotInDb{tenant_id:tenant_id.inner(),user_id:user_id.inner()})?;
     // pre-processing
     let resp = next.call(req).await;
     resp
