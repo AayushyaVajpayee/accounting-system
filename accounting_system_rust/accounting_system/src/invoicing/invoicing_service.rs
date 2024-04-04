@@ -265,8 +265,8 @@ mod tests {
     use spectral::assert_that;
     use spectral::prelude::VecAssertions;
 
-    use invoice_doc_generator::hsc_sac::{Hsn, Sac};
-    use invoice_doc_generator::hsc_sac::GstItemCode::{HsnCode, SacCode};
+    use invoice_doc_generator::hsn_sac::{Hsn, Sac};
+    use invoice_doc_generator::hsn_sac::GstItemCode::{HsnCode, SacCode};
 
     use crate::common_utils::utils::current_indian_date;
     use crate::invoicing::invoicing_request_models::PurchaseOrderDate;

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use cess_models::CessStrategy;
-use invoice_doc_generator::hsc_sac::GstItemCode;
+use invoice_doc_generator::hsn_sac::GstItemCode;
 use invoice_doc_generator::invoice_line1::UOM;
 use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
@@ -131,7 +131,7 @@ pub mod tests {
     use uuid::Uuid;
 
     use cess_models::CessStrategy;
-    use invoice_doc_generator::hsc_sac::{GstItemCode, Hsn};
+    use invoice_doc_generator::hsn_sac::{GstItemCode, Hsn};
     use invoice_doc_generator::invoice_line1::UOM;
     use invoice_doc_generator::invoice_line::line_title::LineTitle;
 

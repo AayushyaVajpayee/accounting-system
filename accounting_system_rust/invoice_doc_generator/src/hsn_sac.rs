@@ -8,7 +8,8 @@ use crate::hsn_code_generated::HSN_SET;
 use crate::sac_code_generated::SAC_SET;
 
 #[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
-#[serde(rename_all = "snake_case")]
+// #[serde(rename_all = "snake_case")]
+#[serde(try_from = "String")]
 pub enum GstItemCode {
     HsnCode(Hsn),
     SacCode(Sac),
@@ -30,7 +31,19 @@ impl GstItemCode {
         };
     }
 }
+impl TryFrom<String> for GstItemCode{
+    type Error = anyhow::Error;
 
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if Hsn::is_hsn(value.as_str()){
+            let hsn=Hsn::new(value)?;
+            Ok(GstItemCode::HsnCode(hsn))
+        }else{
+            let sac = Sac::new(value)?;
+            Ok(GstItemCode::SacCode(sac))
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
 #[serde(try_from = "String")]
 pub struct Hsn(String);
@@ -122,7 +135,7 @@ mod hsn_tests {
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
 
-    use crate::hsc_sac::Hsn;
+    use crate::hsn_sac::Hsn;
 
     #[rstest]
     #[case("", false)]
@@ -149,7 +162,7 @@ mod sac_tests {
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
 
-    use crate::hsc_sac::Sac;
+    use crate::hsn_sac::Sac;
 
     #[rstest]
     #[trace]

@@ -7,7 +7,7 @@ mod invoice_model;
 pub mod hsn_code_generated;
 mod sac_code_generated;
 pub mod invoice_number;
-pub mod hsc_sac;
+pub mod hsn_sac;
 pub mod invoice_line1;
 pub mod invoice_line;
 pub mod percentages;

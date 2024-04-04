@@ -3,7 +3,7 @@ use gstin_validator::gstin_models::{GstinValidationError, validate_gstin};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::hsc_sac::GstItemCode;
+use crate::hsn_sac::GstItemCode;
 use crate::invoice_line::line_number::LineNumber;
 use crate::invoice_line::line_quantity::LineQuantity;
 use crate::invoice_line::line_subtitle::LineSubtitle;

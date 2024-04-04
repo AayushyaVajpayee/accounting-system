@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use cess_models::CessStrategy;
-use invoice_doc_generator::hsc_sac::GstItemCode;
+use invoice_doc_generator::hsn_sac::GstItemCode;
 use invoice_doc_generator::invoice_line::line_subtitle::LineSubtitle;
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::percentages::tax_discount_cess::GSTPercentage;
