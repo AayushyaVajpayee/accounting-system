@@ -30,7 +30,6 @@ pub struct CreateCurrencyMasterRequest {
     pub scale: i16,
     pub display_name: String,
     pub description: String,
-    pub audit_metadata: AuditMetadataBase,
 }
 
 
@@ -87,9 +86,6 @@ pub mod tests{
             scale: builder.scale.unwrap_or(0),
             display_name: builder.display_name.unwrap_or("".to_string()),
             description: builder.description.unwrap_or("".to_string()),
-            audit_metadata: builder.audit_metadata
-                .unwrap_or_else(||
-                    an_audit_metadata_base(Default::default())),
         }
     }
 }

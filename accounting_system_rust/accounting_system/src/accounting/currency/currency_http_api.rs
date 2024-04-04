@@ -1,4 +1,4 @@
-use actix_web::{ HttpResponse, Responder, ResponseError, web};
+use actix_web::{HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use std::sync::Arc;
@@ -9,7 +9,7 @@ use crate::accounting::currency::currency_models::CreateCurrencyMasterRequest;
 use crate::accounting::currency::currency_service::{
     CurrencyService, CurrencyServiceError,
 };
-use crate::common_utils::utils::{ TenantId};
+use crate::common_utils::utils::{TenantId, UserId};
 use crate::setup_routes;
 
 impl ResponseError for CurrencyServiceError {
@@ -40,9 +40,9 @@ async fn get_currency_by_id(
 async fn create_currency(
     request: web::Json<CreateCurrencyMasterRequest>,
     data: Data<Arc<dyn CurrencyService>>,
-    tenant_id: TenantId,
+    tenant_id: TenantId, user_id: UserId,
 ) -> actix_web::Result<impl Responder> {
-    let p = data.create_currency_entry(&request.0, tenant_id.inner()).await?;
+    let p = data.create_currency_entry(&request.0, tenant_id.inner(), user_id.inner()).await?;
     Ok(web::Json(p))
 }
 setup_routes!(CurrencyService,"/currency",
@@ -70,7 +70,7 @@ mod tests {
             let mut currency_mock = MockCurrencyService::new();
             currency_mock
                 .expect_create_currency_entry()
-                .returning(|_, _| Ok(Default::default()));
+                .returning(|_, _, _| Ok(Default::default()));
             currency_mock
                 .expect_get_currency_entry()
                 .returning(move |_, _| Ok(Some(p1.clone())));
