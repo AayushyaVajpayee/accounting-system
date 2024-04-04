@@ -1,9 +1,10 @@
+use std::sync::Arc;
+use std::time::Duration;
+
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
 #[cfg(test)]
 use mockall::automock;
-use std::sync::Arc;
-use std::time::Duration;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
@@ -12,18 +13,21 @@ use crate::accounting::user::user_dao::{get_user_dao, UserDao};
 use crate::accounting::user::user_models::{CreateUserRequest, User};
 use crate::common_utils::cache_utils::get_or_fetch_entity;
 use crate::common_utils::dao_error::DaoError;
+use crate::tenant::tenant_service::SUPER_USER_ID;
 
 #[derive(Debug, Error)]
 pub enum UserServiceError {
+    #[error("validation failures \n {}", .0.join("\n"))]
+    Validation(Vec<String>),
     #[error(transparent)]
-    Db(#[from]DaoError)
+    Db(#[from]DaoError),
 }
 
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UserService: Send + Sync {
     async fn get_user_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<Option<Arc<User>>, UserServiceError>;
-    async fn create_user(&self, user: &CreateUserRequest) -> Result<Uuid, UserServiceError>;
+    async fn create_user(&self, user: &CreateUserRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, UserServiceError>;
 }
 
 #[allow(dead_code)]
@@ -58,7 +62,16 @@ impl UserService for UserServiceImpl {
                             fetch).await
     }
 
-    async fn create_user(&self, user: &CreateUserRequest) -> Result<Uuid, UserServiceError> {
-        self.user_dao.create_user(user).await.map_err(|a| a.into())
+    async fn create_user(&self, user: &CreateUserRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, UserServiceError> {
+        let mut validations: Vec<String> = Vec::new();
+        if tenant_id != *SUPER_USER_ID && tenant_id != user.tenant_id {
+            validations.push(format!("This user and tenant does not have authorisation to create user for other tenant id {} .\
+             Only allowed tenant id {}"
+                                     , user.tenant_id, tenant_id));
+        }
+        if !validations.is_empty(){
+            return Err(UserServiceError::Validation(validations));
+        }
+        self.user_dao.create_user(user, tenant_id, user_id).await.map_err(|a| a.into())
     }
 }

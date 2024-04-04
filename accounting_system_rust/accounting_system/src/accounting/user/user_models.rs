@@ -29,7 +29,6 @@ pub struct CreateUserRequest {
     pub last_name: Option<String>,
     pub email_id: Option<String>,
     pub mobile_number: Option<String>,
-    pub audit_metadata: AuditMetadataBase,
 }
 
 #[cfg(test)]
@@ -61,7 +60,6 @@ pub mod tests {
         pub last_name: Option<String>,
         pub email_id: Option<String>,
         pub mobile_number: Option<String>,
-        pub audit_metadata: Option<AuditMetadataBase>,
     }
 
     pub fn a_user(builder: UserTestDataBuilder) -> User {
@@ -86,8 +84,6 @@ pub mod tests {
                 .email_id
                 .or(Some("testemail@t1dno.com".to_string().clone())),
             mobile_number: builder.mobile_number,
-            audit_metadata: builder.audit_metadata
-                .unwrap_or(an_audit_metadata_base(Default::default())),
         }
     }
 }
