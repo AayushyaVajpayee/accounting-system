@@ -64,7 +64,7 @@ impl UserService for UserServiceImpl {
 
     async fn create_user(&self, user: &CreateUserRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, UserServiceError> {
         let mut validations: Vec<String> = Vec::new();
-        if tenant_id != *SUPER_USER_ID && tenant_id != user.tenant_id {
+        if user_id != *SUPER_USER_ID && tenant_id != user.tenant_id {
             validations.push(format!("This user and tenant does not have authorisation to create user for other tenant id {} .\
              Only allowed tenant id {}"
                                      , user.tenant_id, tenant_id));
@@ -72,6 +72,6 @@ impl UserService for UserServiceImpl {
         if !validations.is_empty(){
             return Err(UserServiceError::Validation(validations));
         }
-        self.user_dao.create_user(user, tenant_id, user_id).await.map_err(|a| a.into())
+        self.user_dao.create_user(user, user_id).await.map_err(|a| a.into())
     }
 }

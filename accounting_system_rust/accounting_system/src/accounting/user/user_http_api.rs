@@ -69,7 +69,7 @@ mod tests {
         let exp_user = a_user(
             UserTestDataBuilder { id: Some(Default::default()), ..Default::default() }
         );
-        get_and_create_api_test_v2!(User,UserService,closure,get_uri,"/user/create",a_create_user_request(Default::default()),exp_user,*SEED_TENANT_ID);
+            get_and_create_api_test_v2!(User,UserService,closure,get_uri,"/user/create",a_create_user_request(Default::default()),exp_user,*SEED_TENANT_ID);
 
     }
 }

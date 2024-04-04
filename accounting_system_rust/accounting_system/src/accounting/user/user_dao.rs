@@ -19,7 +19,7 @@ const BY_ID_QUERY: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME,
 #[async_trait]
 pub trait UserDao: Send + Sync {
     async fn get_user_by_id(&self, id: Uuid,tenant_id: Uuid) -> Result<Option<User>, DaoError>;
-    async fn create_user(&self, request: &CreateUserRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, DaoError>;
+    async fn create_user(&self, request: &CreateUserRequest,user_id:Uuid) -> Result<Uuid, DaoError>;
 }
 
 pub struct UserDaoPostgresImpl {
@@ -68,14 +68,14 @@ impl UserDao for UserDaoPostgresImpl {
         ).next().transpose()
     }
 
-    async fn create_user(&self, request: &CreateUserRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, DaoError> {
+    async fn create_user(&self, request: &CreateUserRequest,user_id:Uuid) -> Result<Uuid, DaoError> {
         let simple_query = format!(r#"
         begin transaction;
         select create_app_user(Row('{}','{}','{}',{},{},{},'{}','{}',{},{}));
         commit;
         "#,
                                    request.idempotence_key,
-                                   tenant_id,
+                                   request.tenant_id,
                                    request.first_name,
                                    request.last_name.as_ref()
                                        .map(|a| format!("'{}'", a))
@@ -119,7 +119,7 @@ mod tests {
                 ..Default::default()
             }
         );
-        let user_id = user_dao.create_user(&user,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
+        let user_id = user_dao.create_user(&user,*SEED_USER_ID).await.unwrap();
         let user = user_dao.get_user_by_id(user_id,*SEED_TENANT_ID).await.unwrap().unwrap();
         assert_eq!(user.id, user_id);
     }
@@ -130,7 +130,7 @@ mod tests {
         let user_dao = get_dao_generic(|a| UserDaoPostgresImpl { postgres_client: a.clone() },None)
             .await;
         let user_request = a_create_user_request(Default::default());
-        let id = user_dao.create_user(&user_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
+        let id = user_dao.create_user(&user_request,*SEED_USER_ID).await.unwrap();
         let acc = user_dao.get_user_by_id(id,*SEED_TENANT_ID).await.unwrap();
         assert_that!(acc).is_some();
     }
@@ -146,8 +146,8 @@ mod tests {
                     first_name: Some(name.to_string()),
                     ..Default::default()
                 });
-        let id = user_dao.create_user(&user_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
-        let id2 = user_dao.create_user(&user_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
+        let id = user_dao.create_user(&user_request,*SEED_USER_ID).await.unwrap();
+        let id2 = user_dao.create_user(&user_request,*SEED_USER_ID).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
         let number_of_users_created: i64 = user_dao.postgres_client
             .get()
