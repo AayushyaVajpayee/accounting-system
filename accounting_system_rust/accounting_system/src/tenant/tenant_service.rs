@@ -1,8 +1,10 @@
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
+use lazy_static::lazy_static;
 #[cfg(test)]
 use mockall::automock;
 use moka::future::Cache;
@@ -14,6 +16,14 @@ use crate::common_utils::dao_error::DaoError;
 use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
 use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
 
+lazy_static! {
+    pub static ref SUPER_TENANT_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
+}
+
+lazy_static! {
+    pub static ref SUPER_USER_ID: Uuid =
+        Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap();
+}
 #[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum TenantServiceError {
@@ -32,13 +42,14 @@ pub enum TenantServiceError {
 #[async_trait]
 pub trait TenantService: Send + Sync {
     async fn get_tenant_by_id(&self, id: Uuid) -> Result<Option<Arc<Tenant>>, TenantServiceError>;
-    async fn create_tenant(&self, tenant: &CreateTenantRequest)
+    async fn create_tenant(&self, tenant: &CreateTenantRequest, tenant_id: Uuid,
+                           user_id: Uuid)
                            -> Result<Uuid, TenantServiceError>;
 }
 
 struct TenantServiceImpl {
     tenant_dao: Arc<dyn TenantDao>,
-    cache_by_id: Cache<(Uuid, Uuid), Arc<Tenant>>
+    cache_by_id: Cache<(Uuid, Uuid), Arc<Tenant>>,
 }
 
 #[async_trait]
@@ -57,8 +68,20 @@ impl TenantService for TenantServiceImpl {
     async fn create_tenant(
         &self,
         tenant: &CreateTenantRequest,
+        tenant_id: Uuid,
+        user_id: Uuid,
     ) -> Result<Uuid, TenantServiceError> {
-        let tenant_id = self.tenant_dao.create_tenant(tenant).await?;
+        let mut validation: Vec<String> = Vec::new();
+        if tenant_id != *SUPER_TENANT_ID {
+            validation.push(format!("tenant_id {} is not authorised to create new tenant", tenant_id));
+        }
+        if user_id != *SUPER_USER_ID {
+            validation.push(format!("user id {} is not authorised to create new tenant", user_id));
+        }
+        if !validation.is_empty() {
+            return Err(TenantServiceError::Validation(validation));
+        }
+        let tenant_id = self.tenant_dao.create_tenant(tenant, user_id).await?;
         Ok(tenant_id)
     }
 }

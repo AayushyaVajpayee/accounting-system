@@ -6,6 +6,7 @@ use actix_web::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use web::{Data, Path};
+use crate::common_utils::utils::{TenantId, UserId};
 
 use crate::setup_routes;
 use crate::tenant::tenant_models::CreateTenantRequest;
@@ -14,17 +15,18 @@ use crate::tenant::tenant_service::{TenantService, TenantServiceError};
 async fn get_tenant_by_id(
     id: Path<Uuid>,
     data: Data<Arc<dyn TenantService>>,
+    _tenant_id: TenantId,_user_id: UserId
 ) -> actix_web::Result<impl Responder> {
     let t = data.get_tenant_by_id(id.into_inner()).await?;
     Ok(web::Json(t))
 }
 
-//todo need to write a test for this. How?
 async fn create_tenant(
     request: web::Json<CreateTenantRequest>,
     data: Data<Arc<dyn TenantService>>,
+    tenant_id: TenantId,user_id: UserId
 ) -> actix_web::Result<impl Responder> {
-    let p = data.create_tenant(&request.0).await?;
+    let p = data.create_tenant(&request.0,tenant_id.inner(),user_id.inner()).await?;
     Ok(web::Json(p))
 }
 
@@ -68,7 +70,7 @@ setup_routes!(TenantService,
 
 #[cfg(test)]
 mod tests {
-    use crate::get_and_create_api_test;
+    use crate::{ get_and_create_api_test_v2};
     use crate::tenant::tenant_http_api::map_endpoints_to_functions;
     use crate::tenant::tenant_models::Tenant;
     use crate::tenant::tenant_models::tests::{a_create_tenant_request, SEED_TENANT_ID};
@@ -81,13 +83,13 @@ mod tests {
             mocked.expect_get_tenant_by_id()
                 .returning(|_| Ok(Some(Default::default())));
             mocked.expect_create_tenant()
-                .returning(|_| Ok(Default::default()));
+                .returning(|_,_,_| Ok(Default::default()));
             mocked
         };
         let get_uri=format!("/tenant/id/{}", *SEED_TENANT_ID);
         let tenant_expected:Tenant = Default::default();
-        get_and_create_api_test!(Tenant,TenantService,closure,
+        get_and_create_api_test_v2!(Tenant,TenantService,closure,
             get_uri,"/tenant/create",
-            a_create_tenant_request(Default::default()),tenant_expected);
+            a_create_tenant_request(Default::default()),tenant_expected, *SEED_TENANT_ID);
     }
 }
