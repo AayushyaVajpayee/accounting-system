@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateCompanyRequest {
     pub idempotence_key: Uuid,
     pub tenant_id: Uuid,

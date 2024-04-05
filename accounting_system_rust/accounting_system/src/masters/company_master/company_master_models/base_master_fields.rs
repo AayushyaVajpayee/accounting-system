@@ -14,7 +14,6 @@ pub struct BaseMasterFields {
     pub remarks: Option<MasterUpdationRemarks>,
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use uuid::Uuid;

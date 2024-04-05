@@ -7,8 +7,8 @@ use thiserror::Error;
 use cess_models::CessStrategy;
 
 use crate::invoice_line::InvoiceLineError::{
-    OuantityTooLarge, QuantityNegative,
-    TaxPercentageNotInBounds, UnitPriceNegative, UnitPriceToolarge,
+    OuantityTooLarge, QuantityNegative, TaxPercentageNotInBounds, UnitPriceNegative,
+    UnitPriceToolarge,
 };
 
 #[derive(Debug)]
@@ -19,8 +19,6 @@ pub struct InvoiceLine {
     tax_percentage: f32,
     cess_percentage: CessStrategy,
 }
-
-
 
 #[derive(Debug, Error)]
 pub enum InvoiceLineError {
@@ -42,8 +40,8 @@ pub enum InvoiceLineError {
     DiscountPercentageNotInBounds,
 }
 #[derive(Debug)]
-struct ErrorList( Vec<InvoiceLineError>);
-impl Display for ErrorList{
+struct ErrorList(Vec<InvoiceLineError>);
+impl Display for ErrorList {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for (index, error) in self.0.iter().enumerate() {
             writeln!(f, "{}: {}", index + 1, error)?;
@@ -90,11 +88,10 @@ impl InvoiceLine {
         }
     }
 }
-impl InvoiceLine{
+impl InvoiceLine {
     pub fn compute_discount_amount(&self) -> f64 {
         self.quantity * self.unit_price * (self.discount_percentage as f64) / 100.00
     }
-
 
     pub fn compute_taxable_amount(&self) -> f64 {
         self.quantity * self.unit_price * (100.0 - self.discount_percentage as f64) / 100.00
@@ -105,23 +102,22 @@ impl InvoiceLine{
     }
 
     pub fn compute_cess_amount(&self) -> f64 {
-       self.cess_percentage.calculate_cess_amount(self.compute_taxable_amount(),self.quantity)
+        self.cess_percentage
+            .calculate_cess_amount(self.compute_taxable_amount(), self.quantity)
     }
 
     pub fn compute_line_total_amount(&self) -> f64 {
-       self.compute_taxable_amount() + self.compute_tax_amount() +self.compute_cess_amount()
+        self.compute_taxable_amount() + self.compute_tax_amount() + self.compute_cess_amount()
     }
-
 }
-
 
 #[cfg(test)]
 mod tests {
+    use crate::invoice_line::InvoiceLine;
+    use cess_models::CessStrategy;
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::FloatAssertions;
-    use cess_models::CessStrategy;
-    use crate::invoice_line::InvoiceLine;
 
     #[rstest]
     #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]
@@ -175,9 +171,6 @@ mod tests {
     , 4_400_000_000_000_000_000.00)]
     fn test_line_total_amount(#[case] line: InvoiceLine, #[case] total_amount: f64) {
         let p = line.compute_line_total_amount();
-        assert_that!(p).
-            is_close_to(total_amount, 0.0000000000001);
+        assert_that!(p).is_close_to(total_amount, 0.0000000000001);
     }
 }
-
-

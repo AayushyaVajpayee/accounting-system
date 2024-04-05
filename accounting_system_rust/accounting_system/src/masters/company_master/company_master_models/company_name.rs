@@ -13,7 +13,7 @@ impl CompanyName {
     pub fn validate(name: &str) -> Result<()> {
         let name = name.trim();
         if name.is_empty() || name.len() > 50 {
-            anyhow::bail!("company name cannot be empty or more than {} chars",50);
+            anyhow::bail!("company name cannot be empty or more than {} chars", 50);
         }
         Ok(())
     }

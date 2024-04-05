@@ -17,7 +17,8 @@ use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
 use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
 
 lazy_static! {
-    pub static ref SUPER_TENANT_ID:Uuid= Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
+    pub static ref SUPER_TENANT_ID: Uuid =
+        Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
 }
 
 lazy_static! {
@@ -42,9 +43,12 @@ pub enum TenantServiceError {
 #[async_trait]
 pub trait TenantService: Send + Sync {
     async fn get_tenant_by_id(&self, id: Uuid) -> Result<Option<Arc<Tenant>>, TenantServiceError>;
-    async fn create_tenant(&self, tenant: &CreateTenantRequest, tenant_id: Uuid,
-                           user_id: Uuid)
-                           -> Result<Uuid, TenantServiceError>;
+    async fn create_tenant(
+        &self,
+        tenant: &CreateTenantRequest,
+        tenant_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Uuid, TenantServiceError>;
 }
 
 struct TenantServiceImpl {
@@ -55,14 +59,11 @@ struct TenantServiceImpl {
 #[async_trait]
 impl TenantService for TenantServiceImpl {
     async fn get_tenant_by_id(&self, id: Uuid) -> Result<Option<Arc<Tenant>>, TenantServiceError> {
-        let fetch = async
-            {
-                let p = self.tenant_dao
-                    .get_tenant_by_id(id).await?;
-                Ok(p)
-            };
-        get_or_fetch_entity(id, id, &self.cache_by_id,
-                            fetch).await
+        let fetch = async {
+            let p = self.tenant_dao.get_tenant_by_id(id).await?;
+            Ok(p)
+        };
+        get_or_fetch_entity(id, id, &self.cache_by_id, fetch).await
     }
 
     async fn create_tenant(
@@ -73,10 +74,16 @@ impl TenantService for TenantServiceImpl {
     ) -> Result<Uuid, TenantServiceError> {
         let mut validation: Vec<String> = Vec::new();
         if tenant_id != *SUPER_TENANT_ID {
-            validation.push(format!("tenant_id {} is not authorised to create new tenant", tenant_id));
+            validation.push(format!(
+                "tenant_id {} is not authorised to create new tenant",
+                tenant_id
+            ));
         }
         if user_id != *SUPER_USER_ID {
-            validation.push(format!("user id {} is not authorised to create new tenant", user_id));
+            validation.push(format!(
+                "user id {} is not authorised to create new tenant",
+                user_id
+            ));
         }
         if !validation.is_empty() {
             return Err(TenantServiceError::Validation(validation));

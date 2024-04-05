@@ -42,17 +42,19 @@ pub mod tests {
 
     use crate::accounting::account::account_models::CreateAccountRequest;
     use crate::accounting::account::account_type::account_type_models::tests::SEED_ACCOUNT_TYPE_ID;
-    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
+    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
-        pub static ref SEED_DEBIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap();
+        pub static ref SEED_DEBIT_ACCOUNT_ID: Uuid =
+            Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap();
     }
     lazy_static! {
-        pub static ref SEED_CREDIT_ACCOUNT_ID:Uuid=Uuid::from_str("018c1515-0580-7444-9da8-107986ab3d35").unwrap();
+        pub static ref SEED_CREDIT_ACCOUNT_ID: Uuid =
+            Uuid::from_str("018c1515-0580-7444-9da8-107986ab3d35").unwrap();
     }
 
     #[derive(Debug, Default)]
@@ -66,7 +68,9 @@ pub mod tests {
         pub audit_metadata: Option<AuditMetadataBase>,
     }
 
-    pub fn a_create_account_request(builder: CreateAccountRequestTestBuilder) -> CreateAccountRequest {
+    pub fn a_create_account_request(
+        builder: CreateAccountRequestTestBuilder,
+    ) -> CreateAccountRequest {
         CreateAccountRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
             tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
@@ -80,8 +84,9 @@ pub mod tests {
             account_type_id: builder.account_type_id.unwrap_or(*SEED_ACCOUNT_TYPE_ID),
             ledger_master_id: builder.ledger_master_id.unwrap_or(*SEED_LEDGER_MASTER_ID),
             user_id: builder.user_id.unwrap_or(*SEED_USER_ID),
-            audit_metadata: builder.audit_metadata.unwrap_or_else(||
-                an_audit_metadata_base(Default::default())),
+            audit_metadata: builder
+                .audit_metadata
+                .unwrap_or_else(|| an_audit_metadata_base(Default::default())),
         }
     }
 }

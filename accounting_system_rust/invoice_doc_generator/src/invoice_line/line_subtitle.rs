@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::invoice_line::line_subtitle::LineSubtitleError::Empty;
 
-#[derive(Debug, Serialize, Deserialize,Clone,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct LineSubtitle(String);
 #[derive(Debug, Error)]
@@ -16,7 +16,7 @@ pub enum LineSubtitleError {
 }
 impl LineSubtitle {
     pub fn new(subtitle: String) -> Result<Self, LineSubtitleError> {
-        let subtitle= subtitle.trim();
+        let subtitle = subtitle.trim();
         if subtitle.is_empty() {
             return Err(Empty);
         }
@@ -25,7 +25,7 @@ impl LineSubtitle {
         }
         Ok(Self(subtitle.to_string()))
     }
-    pub fn inner(&self)->&str{
+    pub fn inner(&self) -> &str {
         self.0.as_str()
     }
 }
@@ -38,9 +38,8 @@ impl TryFrom<String> for LineSubtitle {
     }
 }
 
-
 #[cfg(test)]
-mod line_subtitle_tests{
+mod line_subtitle_tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
@@ -48,11 +47,14 @@ mod line_subtitle_tests{
     use crate::invoice_line::line_subtitle::LineSubtitle;
 
     #[rstest]
-    #[case("",false)]
-    #[case("    ",false)]
-    #[case("dfafdakjfdfafdafadhdakjfkajlkjweijfojvodidfafdakjfdfafdafadhodafj;ldjd;lajflahvoij;j",false)]
-    #[case("kjlj",true)]
-    fn test_line_subtitle(#[case] input:String,#[case] valid:bool){
+    #[case("", false)]
+    #[case("    ", false)]
+    #[case(
+        "dfafdakjfdfafdafadhdakjfkajlkjweijfojvodidfafdakjfdfafdafadhodafj;ldjd;lajflahvoij;j",
+        false
+    )]
+    #[case("kjlj", true)]
+    fn test_line_subtitle(#[case] input: String, #[case] valid: bool) {
         let line_no = LineSubtitle::new(input);
         if valid {
             assert_that!(line_no).is_ok();

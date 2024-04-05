@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use anyhow::{Context, ensure};
+use anyhow::{ensure, Context};
 use chrono::NaiveDate;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use invoice_doc_generator::invoice_line::line_quantity::LineQuantity;
@@ -15,7 +15,7 @@ use pdf_doc_generator::invoice_template::Invoice;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 use crate::masters::product_item_master::product_item_models::ProductItemResponse;
 #[derive(Debug)]
-pub struct CreateInvoiceWithAllDetailsIncluded{
+pub struct CreateInvoiceWithAllDetailsIncluded {
     pub idempotence_key: Uuid,
     pub invoice_template_id: Uuid,
     pub invoicing_series_mst_id: Uuid,
@@ -37,8 +37,8 @@ pub struct CreateInvoiceWithAllDetailsIncluded{
     pub ecommerce_gstin: Option<GstinNo>,
 }
 #[derive(Debug)]
-pub struct CreateInvoiceLineRequestWithAllDetails{
-    pub product_item_id:Arc<ProductItemResponse>,
+pub struct CreateInvoiceLineRequestWithAllDetails {
+    pub product_item_id: Arc<ProductItemResponse>,
     pub quantity: LineQuantity,
     pub free_quantity: LineQuantity,
     pub unit_price: Price,
@@ -50,16 +50,24 @@ pub struct CreateInvoiceLineRequestWithAllDetails{
     pub reverse_charge_applicable: bool,
 }
 
-impl CreateInvoiceRequest{
-    pub fn to_create_invoice_with_all_details_included(self,product_items:Vec<Arc<ProductItemResponse>>)->anyhow::Result<CreateInvoiceWithAllDetailsIncluded>{
-        let map:HashMap<Uuid,Arc<ProductItemResponse>> =product_items.into_iter()
-            .map(|a|(a.base_master_fields.id,a))
+impl CreateInvoiceRequest {
+    pub fn to_create_invoice_with_all_details_included(
+        self,
+        product_items: Vec<Arc<ProductItemResponse>>,
+    ) -> anyhow::Result<CreateInvoiceWithAllDetailsIncluded> {
+        let map: HashMap<Uuid, Arc<ProductItemResponse>> = product_items
+            .into_iter()
+            .map(|a| (a.base_master_fields.id, a))
             .collect();
-        let mut invoice_lines:Vec<CreateInvoiceLineRequestWithAllDetails> = Vec::with_capacity(self.invoice_lines.len());
+        let mut invoice_lines: Vec<CreateInvoiceLineRequestWithAllDetails> =
+            Vec::with_capacity(self.invoice_lines.len());
         for il in self.invoice_lines.into_iter() {
-            let pr =CreateInvoiceLineRequestWithAllDetails{
-                product_item_id: map.get(&il.product_item_id)
-                    .context("product item not found for product id during invoice creation request")?
+            let pr = CreateInvoiceLineRequestWithAllDetails {
+                product_item_id: map
+                    .get(&il.product_item_id)
+                    .context(
+                        "product item not found for product id during invoice creation request",
+                    )?
                     .clone(),
                 quantity: il.quantity,
                 free_quantity: il.free_quantity,
@@ -72,8 +80,8 @@ impl CreateInvoiceRequest{
             };
             invoice_lines.push(pr);
         }
-        
-        Ok(CreateInvoiceWithAllDetailsIncluded{
+
+        Ok(CreateInvoiceWithAllDetailsIncluded {
             idempotence_key: self.idempotence_key,
             invoice_template_id: self.invoice_template_id,
             invoicing_series_mst_id: self.invoicing_series_mst_id,
@@ -117,8 +125,6 @@ pub struct CreateInvoiceRequest {
     pub ecommerce_gstin: Option<GstinNo>,
 }
 
-
-
 #[derive(Debug, Serialize, Deserialize, Clone, Builder)]
 pub struct BillShipDetail {
     pub billed_to_customer_id: Uuid,
@@ -133,7 +139,7 @@ pub struct CreateAdditionalChargeRequest {
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateInvoiceLineRequest {
-    pub product_item_id:Uuid,
+    pub product_item_id: Uuid,
     pub quantity: LineQuantity,
     pub free_quantity: LineQuantity,
     pub unit_price: Price,
@@ -145,8 +151,6 @@ pub struct CreateInvoiceLineRequest {
     pub reverse_charge_applicable: bool,
 }
 
-
-
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Clone)]
 #[serde(try_from = "String")]
 pub struct InvoiceRemarks(String);
@@ -154,8 +158,11 @@ pub struct InvoiceRemarks(String);
 impl InvoiceRemarks {
     pub fn new(remark: &str) -> anyhow::Result<Self> {
         let remark = remark.trim();
-        ensure!(!remark.is_empty() || remark.len() <= 100,
-            "remark cannot be empty or greater than {} chars",100);
+        ensure!(
+            !remark.is_empty() || remark.len() <= 100,
+            "remark cannot be empty or greater than {} chars",
+            100
+        );
         Ok(Self(remark.to_string()))
     }
 
@@ -192,9 +199,12 @@ impl TryFrom<PaymentTerms> for PaymentTermsValidated {
 
     fn try_from(value: PaymentTerms) -> Result<Self, Self::Error> {
         if let Some(discount_days) = &value.discount_days {
-            ensure!(value.due_days.0 >= discount_days.0,
+            ensure!(
+                value.due_days.0 >= discount_days.0,
                 "discount days {} cannot be more than due days {} in payment terms",
-                discount_days.0,value.due_days.0);
+                discount_days.0,
+                value.due_days.0
+            );
         }
         Ok(PaymentTermsValidated {
             due_days: value.due_days,
@@ -210,7 +220,7 @@ pub struct DiscountDays(u16);
 
 impl DiscountDays {
     pub fn new(value: i32) -> anyhow::Result<Self> {
-        ensure!(value>=0,"discount days cannot be less than 0");
+        ensure!(value >= 0, "discount days cannot be less than 0");
         Ok(DiscountDays(value as u16))
     }
     #[allow(dead_code)]
@@ -233,8 +243,8 @@ pub struct DueDays(u16);
 
 impl DueDays {
     pub fn new(value: i32) -> anyhow::Result<Self> {
-        ensure!(value>=0,"due days cannot be less than 0");
-        ensure!(value<=400,"due days cannot be more than 400");
+        ensure!(value >= 0, "due days cannot be less than 0");
+        ensure!(value <= 400, "due days cannot be more than 400");
         Ok(DueDays(value as u16))
     }
     #[allow(dead_code)]
@@ -257,10 +267,18 @@ pub struct PurchaseOrderNo(String);
 impl PurchaseOrderNo {
     pub fn new(value: String) -> anyhow::Result<Self> {
         let value = value.trim();
-        ensure!(value.len()<=30,"purchase order no cannot be more than 30 chars");
-        ensure!(!value.is_empty(),"purchase order no cannot be empty, make it null if you don't need it");
-        ensure!(value.chars()
-            .all(|a| a.is_ascii_alphanumeric() || a == '/' || a == '-'),
+        ensure!(
+            value.len() <= 30,
+            "purchase order no cannot be more than 30 chars"
+        );
+        ensure!(
+            !value.is_empty(),
+            "purchase order no cannot be empty, make it null if you don't need it"
+        );
+        ensure!(
+            value
+                .chars()
+                .all(|a| a.is_ascii_alphanumeric() || a == '/' || a == '-'),
             "purchase order no can only contain alphanumeric characters or / or -"
         );
         Ok(PurchaseOrderNo(value.to_owned()))
@@ -277,7 +295,6 @@ impl TryFrom<String> for PurchaseOrderNo {
         PurchaseOrderNo::new(value)
     }
 }
-
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "String")]
@@ -298,7 +315,9 @@ impl PurchaseOrderDate {
         &self.0
     }
     pub fn epoch_millis(&self) -> Option<i64> {
-        return self.0.and_hms_milli_opt(0, 0, 0, 0)
+        return self
+            .0
+            .and_hms_milli_opt(0, 0, 0, 0)
             .map(|a| a.timestamp_millis());
     }
 }
@@ -310,17 +329,22 @@ impl TryFrom<String> for PurchaseOrderDate {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "String")]
 pub struct BatchNo(String);
 
-
 impl BatchNo {
     pub fn new(value: String) -> anyhow::Result<Self> {
         let value = value.trim();
-        ensure!(value.len()<=20,"batch no cannot be more than 20 chars but was {} chars",value.len());
-        ensure!(value.chars().all(|a|a.is_ascii_alphanumeric()),"batch no can only contain alphanumeric characters");
+        ensure!(
+            value.len() <= 20,
+            "batch no cannot be more than 20 chars but was {} chars",
+            value.len()
+        );
+        ensure!(
+            value.chars().all(|a| a.is_ascii_alphanumeric()),
+            "batch no can only contain alphanumeric characters"
+        );
         Ok(Self(value.to_owned()))
     }
     pub fn inner(&self) -> &str {
@@ -345,7 +369,8 @@ impl ExpiryDateMs {
         Ok(ExpiryDateMs(p))
     }
     pub fn epoch_millis(&self) -> Option<i64> {
-        self.0.and_hms_milli_opt(0, 0, 0, 0)
+        self.0
+            .and_hms_milli_opt(0, 0, 0, 0)
             .map(|a| a.timestamp_millis())
     }
 }
@@ -358,13 +383,11 @@ impl TryFrom<String> for ExpiryDateMs {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InvoicePdfRequest {
     pub tenant_id: Uuid,
     pub invoice_id: Uuid,
     pub invoice: Invoice,
-
 }
 
 #[cfg(test)]
@@ -381,61 +404,93 @@ pub mod tests {
 
     use crate::accounting::currency::currency_models::tests::SEED_CURRENCY_ID;
     use crate::invoicing::invoice_template::invoice_template_models::tests::SEED_INVOICE_TEMPLATE_ID;
-    use crate::invoicing::invoicing_request_models::{BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest, CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest, CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder};
+    use crate::invoicing::invoicing_request_models::{
+        BillShipDetail, BillShipDetailBuilder, CreateAdditionalChargeRequest,
+        CreateAdditionalChargeRequestBuilder, CreateInvoiceLineRequest,
+        CreateInvoiceLineRequestBuilder, CreateInvoiceRequest, CreateInvoiceRequestBuilder,
+    };
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::SEED_INVOICING_SERIES_MST_ID;
-    use crate::masters::business_entity_master::business_entity_models::tests::{SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2};
+    use crate::masters::business_entity_master::business_entity_models::tests::{
+        SEED_BUSINESS_ENTITY_ID1, SEED_BUSINESS_ENTITY_ID2,
+    };
     use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
 
     lazy_static! {
-        pub static ref SEED_INVOICE_ID:Uuid = Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
+        pub static ref SEED_INVOICE_ID: Uuid =
+            Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
     }
 
     pub fn a_create_invoice_request(builder: CreateInvoiceRequestBuilder) -> CreateInvoiceRequest {
         CreateInvoiceRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            invoice_template_id: builder.invoice_template_id.unwrap_or(*SEED_INVOICE_TEMPLATE_ID),
-            invoicing_series_mst_id: builder.invoicing_series_mst_id.unwrap_or(*SEED_INVOICING_SERIES_MST_ID),
+            invoice_template_id: builder
+                .invoice_template_id
+                .unwrap_or(*SEED_INVOICE_TEMPLATE_ID),
+            invoicing_series_mst_id: builder
+                .invoicing_series_mst_id
+                .unwrap_or(*SEED_INVOICING_SERIES_MST_ID),
             currency_id: builder.currency_id.unwrap_or(*SEED_CURRENCY_ID),
             einvoicing_applicable: builder.einvoicing_applicable.unwrap_or(false),
             b2b_invoice: builder.b2b_invoice.unwrap_or(true),
             service_invoice: builder.service_invoice.unwrap_or(false),
             supplier_id: builder.supplier_id.unwrap_or(*SEED_BUSINESS_ENTITY_ID1),
-            bill_ship_detail: builder.bill_ship_detail.unwrap_or_else(|| Some(a_bill_ship_detail(Default::default()))),
+            bill_ship_detail: builder
+                .bill_ship_detail
+                .unwrap_or_else(|| Some(a_bill_ship_detail(Default::default()))),
             order_number: builder.order_number.flatten(),
             order_date: builder.order_date.flatten(),
             payment_terms: builder.payment_terms.flatten(),
-            invoice_lines: builder.invoice_lines
-                .unwrap_or_else(||
-                    vec![a_create_invoice_line_request(Default::default())]),
-            additional_charges: builder.additional_charges
+            invoice_lines: builder
+                .invoice_lines
+                .unwrap_or_else(|| vec![a_create_invoice_line_request(Default::default())]),
+            additional_charges: builder
+                .additional_charges
                 .unwrap_or_else(|| vec![a_create_additional_charge_request(Default::default())]),
             invoice_remarks: builder.invoice_remarks.flatten(),
             ecommerce_gstin: builder.ecommerce_gstin.flatten(),
-            dispatch_from_id:builder.dispatch_from_id.flatten(),
+            dispatch_from_id: builder.dispatch_from_id.flatten(),
         }
     }
 
     pub fn a_bill_ship_detail(builder: BillShipDetailBuilder) -> BillShipDetail {
         BillShipDetail {
-            billed_to_customer_id: builder.billed_to_customer_id.unwrap_or(*SEED_BUSINESS_ENTITY_ID2),
-            shipped_to_customer_id: builder.shipped_to_customer_id.unwrap_or(*SEED_BUSINESS_ENTITY_ID2),
+            billed_to_customer_id: builder
+                .billed_to_customer_id
+                .unwrap_or(*SEED_BUSINESS_ENTITY_ID2),
+            shipped_to_customer_id: builder
+                .shipped_to_customer_id
+                .unwrap_or(*SEED_BUSINESS_ENTITY_ID2),
         }
     }
 
-    pub fn a_create_additional_charge_request(builder: CreateAdditionalChargeRequestBuilder) -> CreateAdditionalChargeRequest {
+    pub fn a_create_additional_charge_request(
+        builder: CreateAdditionalChargeRequestBuilder,
+    ) -> CreateAdditionalChargeRequest {
         CreateAdditionalChargeRequest {
-            line_title: builder.line_title.unwrap_or(LineTitle::new("some line title".to_string()).unwrap()),
+            line_title: builder
+                .line_title
+                .unwrap_or(LineTitle::new("some line title".to_string()).unwrap()),
             rate: builder.rate.unwrap_or_else(|| Price::new(0.0).unwrap()),
         }
     }
 
-    pub fn a_create_invoice_line_request(builder: CreateInvoiceLineRequestBuilder) -> CreateInvoiceLineRequest {
+    pub fn a_create_invoice_line_request(
+        builder: CreateInvoiceLineRequestBuilder,
+    ) -> CreateInvoiceLineRequest {
         CreateInvoiceLineRequest {
-            product_item_id:builder.product_item_id.unwrap_or(*SEED_PRODUCT_ITEM_ID),
-            quantity: builder.quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
-            free_quantity: builder.free_quantity.unwrap_or_else(|| a_line_quantity(Default::default())),
-            unit_price: builder.unit_price.unwrap_or_else(|| Price::new(10.0).unwrap()),
-            discount_percentage: builder.discount_percentage.unwrap_or_else(|| DiscountPercentage::new(0.0).unwrap()),
+            product_item_id: builder.product_item_id.unwrap_or(*SEED_PRODUCT_ITEM_ID),
+            quantity: builder
+                .quantity
+                .unwrap_or_else(|| a_line_quantity(Default::default())),
+            free_quantity: builder
+                .free_quantity
+                .unwrap_or_else(|| a_line_quantity(Default::default())),
+            unit_price: builder
+                .unit_price
+                .unwrap_or_else(|| Price::new(10.0).unwrap()),
+            discount_percentage: builder
+                .discount_percentage
+                .unwrap_or_else(|| DiscountPercentage::new(0.0).unwrap()),
             mrp: builder.mrp.flatten(),
             batch_no: builder.batch_no.flatten(),
             expiry_date: builder.expiry_date.flatten(),

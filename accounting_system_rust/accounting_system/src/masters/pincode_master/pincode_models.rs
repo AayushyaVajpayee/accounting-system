@@ -5,21 +5,21 @@ use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::country_master::country_model::CountryEnum;
 use crate::masters::country_master::country_utils::get_country_enum_from_id;
 
-#[derive(Debug,Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct PincodeMaster {
     pub id: Uuid,
     pub pincode: Pincode,
     pub city_id: Uuid,
     pub audit_metadata: AuditMetadataBase,
-    pub country_id:Uuid
+    pub country_id: Uuid,
 }
 
-#[derive(Debug,Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Pincode {
     IndianPincode(u32),
     Others(String),
 }
-impl Default for Pincode{
+impl Default for Pincode {
     fn default() -> Self {
         Pincode::IndianPincode(249407)
     }
@@ -38,28 +38,22 @@ impl Pincode {
                 }
                 Ok(Pincode::IndianPincode(pincode))
             }
-            CountryEnum::Others =>
-                {
-                    if pincode.len()>20{
-                        return Err("pincode length cannot be greater than 20 for non indian pincodes")
-                    }
-                    Ok(Pincode::Others(pincode.to_string()))
-                },
+            CountryEnum::Others => {
+                if pincode.len() > 20 {
+                    return Err("pincode length cannot be greater than 20 for non indian pincodes");
+                }
+                Ok(Pincode::Others(pincode.to_string()))
+            }
         }
     }
-    
-    pub fn to_string(&self)->String{
+
+    pub fn to_string(&self) -> String {
         match &self {
-            Pincode::IndianPincode(a) => {
-                a.to_string()
-            }
-            Pincode::Others(a) => {
-                a.to_string()
-            }
-        }        
+            Pincode::IndianPincode(a) => a.to_string(),
+            Pincode::Others(a) => a.to_string(),
+        }
     }
 }
-
 
 #[cfg(test)]
 pub mod tests {
@@ -75,7 +69,8 @@ pub mod tests {
     use crate::masters::pincode_master::pincode_models::Pincode;
 
     lazy_static! {
-        pub static ref SEED_PINCODE_ID:Uuid = Uuid::from_str("c8c1da55-8be8-722c-9623-1295611b2eee").unwrap();
+        pub static ref SEED_PINCODE_ID: Uuid =
+            Uuid::from_str("c8c1da55-8be8-722c-9623-1295611b2eee").unwrap();
     }
 
     #[rstest]
@@ -83,16 +78,25 @@ pub mod tests {
     #[case("123456",true,Ok(Pincode::IndianPincode(123456)),*INDIA_COUNTRY_ID)]
     #[case("9999999",false,Err("pincode should be 6 digits only"),*INDIA_COUNTRY_ID)]
     #[case("1234567",true,Ok(Pincode::Others("1234567".to_string())),Uuid::now_v7())]
-    #[case("123456789123bhudhcui38kj",false,Err("pincode length cannot be greater than 20 for non indian pincodes"),Uuid::now_v7())]
-    fn test_pincodes(#[case] input:String,#[case] valid:bool, #[case] output: Result<Pincode,&'static str>,#[case] country_id:Uuid){
-        let p = Pincode::new(input.as_str(),country_id);
-        if valid{
+    #[case(
+        "123456789123bhudhcui38kj",
+        false,
+        Err("pincode length cannot be greater than 20 for non indian pincodes"),
+        Uuid::now_v7()
+    )]
+    fn test_pincodes(
+        #[case] input: String,
+        #[case] valid: bool,
+        #[case] output: Result<Pincode, &'static str>,
+        #[case] country_id: Uuid,
+    ) {
+        let p = Pincode::new(input.as_str(), country_id);
+        if valid {
             assert_that!(p).is_ok();
-            assert_eq!(p,output);
-        }else{
+            assert_eq!(p, output);
+        } else {
             assert_that!(p).is_err();
-            assert_eq!(p,output);
+            assert_eq!(p, output);
         }
-
     }
 }

@@ -5,13 +5,13 @@ use deadpool_postgres::Pool;
 use moka::future::Cache;
 use uuid::Uuid;
 
-use crate::masters::country_master::country_dao::{CountryMasterDao, get_country_master_dao};
+use crate::masters::country_master::country_dao::{get_country_master_dao, CountryMasterDao};
 use crate::masters::country_master::country_model::CountryMaster;
 
 const CACHE_ALL_KEY: i32 = 1;
 
 #[async_trait]
-pub trait CountryMasterService:Send+Sync {
+pub trait CountryMasterService: Send + Sync {
     async fn get_all_countries(&self) -> Option<Arc<Vec<Arc<CountryMaster>>>>;
     async fn get_country_by_id(&self, id: Uuid) -> Option<Arc<CountryMaster>>;
 }
@@ -45,7 +45,7 @@ impl CountryMasterServiceImpl {
                 .insert(arc_country.id, arc_country.clone())
                 .await
         }
-        cache.insert(CACHE_ALL_KEY,Arc::new(cache_vec)).await;
+        cache.insert(CACHE_ALL_KEY, Arc::new(cache_vec)).await;
     }
 }
 
@@ -54,11 +54,11 @@ impl CountryMasterService for CountryMasterServiceImpl {
     async fn get_all_countries(&self) -> Option<Arc<Vec<Arc<CountryMaster>>>> {
         let cache = self.cache_all.clone();
         let res = cache.get(&CACHE_ALL_KEY).await;
-        if res.is_none(){
+        if res.is_none() {
             self.populate_caches().await;
             return cache.get(&CACHE_ALL_KEY).await;
         }
-        return res
+        return res;
     }
 
     async fn get_country_by_id(&self, id: Uuid) -> Option<Arc<CountryMaster>> {
@@ -69,11 +69,10 @@ impl CountryMasterService for CountryMasterServiceImpl {
         let item = cache.get(&id).await;
         return item;
     }
-
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use std::sync::Arc;
 
     use moka::future::Cache;
@@ -83,14 +82,17 @@ mod tests{
 
     use crate::masters::country_master::country_dao::MockCountryMasterDao;
     use crate::masters::country_master::country_model::{CountryMaster, CountryName};
-    use crate::masters::country_master::country_service::{CountryMasterService, CountryMasterServiceImpl};
+    use crate::masters::country_master::country_service::{
+        CountryMasterService, CountryMasterServiceImpl,
+    };
 
     #[tokio::test]
-    async fn test_get_all_countries_should_be_called_once_and_then_entry_to_be_fetched_from_cache(){
+    async fn test_get_all_countries_should_be_called_once_and_then_entry_to_be_fetched_from_cache()
+    {
         let mut dao_mock = MockCountryMasterDao::new();
         dao_mock.expect_get_all_countries().times(1).returning(|| {
             vec![CountryMaster {
-                id:Uuid::now_v7() ,
+                id: Uuid::now_v7(),
                 name: CountryName::new("INDIA").unwrap(),
                 audit_metadata: Default::default(),
             }]
@@ -106,17 +108,20 @@ mod tests{
     }
 
     #[tokio::test]
-    async fn test_get_country_by_id(){
+    async fn test_get_country_by_id() {
         let mut dao_mock = MockCountryMasterDao::new();
-        let id=Uuid::now_v7();
-        dao_mock.expect_get_all_countries().times(1).returning(move ||{
-            vec![CountryMaster {
-                id,
-                name: CountryName::new("INDIA").unwrap(),
-                audit_metadata: Default::default(),
-            }]
-        });
-        let service = CountryMasterServiceImpl{
+        let id = Uuid::now_v7();
+        dao_mock
+            .expect_get_all_countries()
+            .times(1)
+            .returning(move || {
+                vec![CountryMaster {
+                    id,
+                    name: CountryName::new("INDIA").unwrap(),
+                    audit_metadata: Default::default(),
+                }]
+            });
+        let service = CountryMasterServiceImpl {
             dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(200),
@@ -125,6 +130,5 @@ mod tests{
         let p1 = service.get_country_by_id(id).await;
         assert_that!(p).is_some();
         assert_that!(p1).is_some();
-
     }
 }

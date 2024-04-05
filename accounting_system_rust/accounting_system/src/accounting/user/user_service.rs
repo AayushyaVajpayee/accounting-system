@@ -20,14 +20,23 @@ pub enum UserServiceError {
     #[error("validation failures \n {}", .0.join("\n"))]
     Validation(Vec<String>),
     #[error(transparent)]
-    Db(#[from]DaoError),
+    Db(#[from] DaoError),
 }
 
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UserService: Send + Sync {
-    async fn get_user_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<Option<Arc<User>>, UserServiceError>;
-    async fn create_user(&self, user: &CreateUserRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, UserServiceError>;
+    async fn get_user_by_id(
+        &self,
+        id: Uuid,
+        tenant_id: Uuid,
+    ) -> Result<Option<Arc<User>>, UserServiceError>;
+    async fn create_user(
+        &self,
+        user: &CreateUserRequest,
+        tenant_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Uuid, UserServiceError>;
 }
 
 #[allow(dead_code)]
@@ -44,7 +53,6 @@ pub fn get_user_service(arc: Arc<Pool>) -> Arc<dyn UserService> {
     Arc::new(user_service)
 }
 
-
 struct UserServiceImpl {
     user_dao: Arc<dyn UserDao>,
     cache_by_tenant_id_and_id: Cache<(Uuid, Uuid), Arc<User>>,
@@ -52,26 +60,36 @@ struct UserServiceImpl {
 
 #[async_trait]
 impl UserService for UserServiceImpl {
-    async fn get_user_by_id(&self, id: Uuid, tenant_id: Uuid) -> Result<Option<Arc<User>>, UserServiceError> {
-        let fetch = async
-            {
-                let p = self.user_dao.get_user_by_id(id, tenant_id).await?;
-                Ok(p)
-            };
-        get_or_fetch_entity(tenant_id, id, &self.cache_by_tenant_id_and_id,
-                            fetch).await
+    async fn get_user_by_id(
+        &self,
+        id: Uuid,
+        tenant_id: Uuid,
+    ) -> Result<Option<Arc<User>>, UserServiceError> {
+        let fetch = async {
+            let p = self.user_dao.get_user_by_id(id, tenant_id).await?;
+            Ok(p)
+        };
+        get_or_fetch_entity(tenant_id, id, &self.cache_by_tenant_id_and_id, fetch).await
     }
 
-    async fn create_user(&self, user: &CreateUserRequest, tenant_id: Uuid, user_id: Uuid) -> Result<Uuid, UserServiceError> {
+    async fn create_user(
+        &self,
+        user: &CreateUserRequest,
+        tenant_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<Uuid, UserServiceError> {
         let mut validations: Vec<String> = Vec::new();
         if user_id != *SUPER_USER_ID && tenant_id != user.tenant_id {
             validations.push(format!("This user and tenant does not have authorisation to create user for other tenant id {} .\
              Only allowed tenant id {}"
                                      , user.tenant_id, tenant_id));
         }
-        if !validations.is_empty(){
+        if !validations.is_empty() {
             return Err(UserServiceError::Validation(validations));
         }
-        self.user_dao.create_user(user, user_id).await.map_err(|a| a.into())
+        self.user_dao
+            .create_user(user, user_id)
+            .await
+            .map_err(|a| a.into())
     }
 }

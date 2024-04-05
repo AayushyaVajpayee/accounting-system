@@ -10,7 +10,7 @@ use crate::masters::state_master::state_models::StateMasterModel;
 
 const CACHE_ALL_KEY: i32 = 1;
 #[async_trait]
-pub trait StateMasterService:Send+Sync {
+pub trait StateMasterService: Send + Sync {
     async fn get_all_states(&self) -> Option<Arc<Vec<Arc<StateMasterModel>>>>;
     async fn get_state_by_id(&self, id: &Uuid) -> Option<Arc<StateMasterModel>>;
 }
@@ -56,7 +56,7 @@ impl StateMasterService for StateMasterServiceImpl {
             self.populate_caches().await;
             return cache.get(&CACHE_ALL_KEY).await;
         }
-        return res //safe to call unwrap because we are initialising with empty vector
+        return res; //safe to call unwrap because we are initialising with empty vector
     }
 
     async fn get_state_by_id(&self, id: &Uuid) -> Option<Arc<StateMasterModel>> {
@@ -91,9 +91,9 @@ mod tests {
             vec![StateMasterModel {
                 id: Default::default(),
                 state_name: StateName::new("Uttarakhand").unwrap(),
-                state_code:"05".to_string(),
+                state_code: "05".to_string(),
                 audit_metadata: Default::default(),
-                country_id:Uuid::now_v7()
+                country_id: Uuid::now_v7(),
             }]
         });
         let service = StateMasterServiceImpl {
@@ -112,9 +112,9 @@ mod tests {
             vec![StateMasterModel {
                 id: Default::default(),
                 state_name: StateName::new("Uttarakhand").unwrap(),
-                state_code:"05".to_string(),
+                state_code: "05".to_string(),
                 audit_metadata: Default::default(),
-                country_id:Uuid::now_v7()
+                country_id: Uuid::now_v7(),
             }]
         });
         let service = StateMasterServiceImpl {

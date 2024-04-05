@@ -10,7 +10,6 @@ pub struct CreateAdditionalChargeRequestDbModel {
     pub rate: f64,
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
@@ -19,15 +18,21 @@ pub mod tests {
     use uuid::Uuid;
     use xxhash_rust::xxh32;
 
-    use crate::invoicing::additional_charge::additional_charge_models::{CreateAdditionalChargeRequestDbModel, CreateAdditionalChargeRequestDbModelBuilder};
+    use crate::invoicing::additional_charge::additional_charge_models::{
+        CreateAdditionalChargeRequestDbModel, CreateAdditionalChargeRequestDbModelBuilder,
+    };
 
     lazy_static! {
-        pub static ref ADDITIONAL_CHARGE_SEED_ID:Uuid = Uuid::from_str("018d557f-4a97-78ef-9947-fcbcebc2be21").unwrap();
+        pub static ref ADDITIONAL_CHARGE_SEED_ID: Uuid =
+            Uuid::from_str("018d557f-4a97-78ef-9947-fcbcebc2be21").unwrap();
     }
 
-
-pub fn a_create_additional_charge_request_db_model(builder: CreateAdditionalChargeRequestDbModelBuilder) -> CreateAdditionalChargeRequestDbModel {
-        let line_title = builder.line_title.unwrap_or("additional charge".to_string());
+    pub fn a_create_additional_charge_request_db_model(
+        builder: CreateAdditionalChargeRequestDbModelBuilder,
+    ) -> CreateAdditionalChargeRequestDbModel {
+        let line_title = builder
+            .line_title
+            .unwrap_or("additional charge".to_string());
         let mut k = xxh32::Xxh32::new(0);
         k.update(line_title.as_bytes());
         let a = k.digest();

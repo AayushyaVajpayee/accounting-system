@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct LedgerMasterDbMapping{}
+pub struct LedgerMasterDbMapping {}
 
 const LEDGER_MASTER_DDL_SQL: &str = include_str!("./ledger_master_sql/ledger_master_ddl.sql");
-const LEDGER_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./ledger_master_sql/ledger_master_functions_and_procedures.sql");
-const LEDGER_MASTER_SEED_CSV:&str =include_str!("./ledger_master_sql/ledger_master.csv");
-impl DbStructMapping for LedgerMasterDbMapping{
+const LEDGER_MASTER_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./ledger_master_sql/ledger_master_functions_and_procedures.sql");
+const LEDGER_MASTER_SEED_CSV: &str = include_str!("./ledger_master_sql/ledger_master.csv");
+impl DbStructMapping for LedgerMasterDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("ledger_master")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for LedgerMasterDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         LEDGER_MASTER_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

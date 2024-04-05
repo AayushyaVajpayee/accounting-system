@@ -24,10 +24,8 @@ impl Default for AddressLine {
 impl AddressLine {
     pub fn new_nullable(line: Option<&str>) -> anyhow::Result<Option<Self>> {
         match line {
-            None => { Ok(None) }
-            Some(line) => {
-                Some(AddressLine::new(line)).transpose()
-            }
+            None => Ok(None),
+            Some(line) => Some(AddressLine::new(line)).transpose(),
         }
     }
     pub fn new(line: &str) -> anyhow::Result<Self> {
@@ -53,7 +51,6 @@ impl TryFrom<String> for AddressLine {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
 pub struct Address {
     pub base_master_fields: BaseMasterFields,
@@ -70,12 +67,12 @@ pub struct Address {
     pub audit_metadata: AuditMetadataBase,
 }
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
-pub struct AddressDto{
-    pub address:Address,
-    pub country:Arc<CountryMaster>,
-    pub city:Arc<CityMaster>,
-    pub pincode:Arc<PincodeMaster>,
-    pub state:Arc<StateMasterModel>
+pub struct AddressDto {
+    pub address: Address,
+    pub country: Arc<CountryMaster>,
+    pub city: Arc<CityMaster>,
+    pub pincode: Arc<PincodeMaster>,
+    pub state: Arc<StateMasterModel>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
@@ -90,7 +87,6 @@ pub struct CreateAddressRequest {
     pub pincode_id: Uuid,
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
@@ -102,20 +98,23 @@ pub mod tests {
     use spectral::prelude::ResultAssertions;
     use uuid::Uuid;
 
-    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
+    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::SEED_USER_ID;
-    use crate::masters::address_master::address_model::{Address, AddressLine, CreateAddressRequest, CreateAddressRequestBuilder};
+    use crate::masters::address_master::address_model::{
+        Address, AddressLine, CreateAddressRequest, CreateAddressRequestBuilder,
+    };
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
-    use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
     use crate::masters::company_master::company_master_models::base_master_fields::tests::a_base_master_field;
+    use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
     use crate::masters::pincode_master::pincode_models::tests::SEED_PINCODE_ID;
     use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
-        pub static ref SEED_ADDRESS_ID:Uuid = Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap();
+        pub static ref SEED_ADDRESS_ID: Uuid =
+            Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap();
     }
     #[allow(dead_code)]
     pub struct AddressBuilder {
@@ -133,7 +132,9 @@ pub mod tests {
 
     pub fn an_address(builder: AddressBuilder) -> Address {
         Address {
-            base_master_fields: builder.base_master_fields.unwrap_or_else(|| a_base_master_field(Default::default())),
+            base_master_fields: builder
+                .base_master_fields
+                .unwrap_or_else(|| a_base_master_field(Default::default())),
             line_1: AddressLine("some fake address".to_string()),
             line_2: None,
             landmark: None,
@@ -141,7 +142,9 @@ pub mod tests {
             state_id: builder.state_id.unwrap_or(*SEED_STATE_ID),
             pincode_id: builder.pincode_id.unwrap_or(*SEED_PINCODE_ID),
             country_id: builder.country_id.unwrap_or(*INDIA_COUNTRY_ID),
-            audit_metadata: builder.audit_metadata.unwrap_or_else(|| an_audit_metadata_base(Default::default())),
+            audit_metadata: builder
+                .audit_metadata
+                .unwrap_or_else(|| an_audit_metadata_base(Default::default())),
         }
     }
 
@@ -162,7 +165,11 @@ pub mod tests {
     #[case("kldlfdakjfdklajfdlkajafjlkjdalkjflakjdlkajflkajlkjdflkajkldfaj", false, Err(anyhow ! ("address line cannot be more than 60 chars")))]
     #[case("", false, Err(anyhow ! ("address line cannot be empty")))]
     #[case("baker street ", true, Ok(AddressLine("baker street".to_string())))]
-    fn test_address_line(#[case] input: String, #[case] valid: bool, #[case] output: anyhow::Result<AddressLine>) {
+    fn test_address_line(
+        #[case] input: String,
+        #[case] valid: bool,
+        #[case] output: anyhow::Result<AddressLine>,
+    ) {
         let address_line = AddressLine::new(input.as_str());
         if valid {
             assert_that!(address_line).is_ok();

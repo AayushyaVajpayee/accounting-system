@@ -31,7 +31,8 @@ impl TryFrom<&Row> for CompanyMaster {
                 active: row.get(3),
                 approval_status: MasterStatusEnum::get_enum_for_value(
                     row.get::<usize, i16>(4) as usize
-                ).context(DIAGNOSTIC_HELP)?,
+                )
+                .context(DIAGNOSTIC_HELP)?,
                 remarks,
             },
             name: CompanyName::new(row.get(6)).context(DIAGNOSTIC_HELP)?,
@@ -45,7 +46,6 @@ impl TryFrom<&Row> for CompanyMaster {
         })
     }
 }
-
 
 impl TryFrom<Row> for CompanyMasterSql {
     type Error = DaoError;
@@ -67,7 +67,6 @@ impl TryFrom<Row> for CompanyMasterSql {
     }
 }
 
-
 impl TryFrom<CompanyMasterSql> for CompanyMaster {
     type Error = DaoError;
 
@@ -79,15 +78,17 @@ impl TryFrom<CompanyMasterSql> for CompanyMaster {
                 entity_version_id: company_master_sql.entity_version_id,
                 tenant_id: company_master_sql.tenant_id,
                 active: company_master_sql.active,
-                approval_status: MasterStatusEnum::get_enum_for_value(company_master_sql.approval_status as usize)
-                    .context(DIAGNOSTIC_HELP)?,
-                remarks: company_master_sql.remarks
+                approval_status: MasterStatusEnum::get_enum_for_value(
+                    company_master_sql.approval_status as usize,
+                )
+                .context(DIAGNOSTIC_HELP)?,
+                remarks: company_master_sql
+                    .remarks
                     .map(|remarks| MasterUpdationRemarks::new(&remarks))
                     .transpose()
                     .context(DIAGNOSTIC_HELP)?,
             },
-            name: CompanyName::new(&company_master_sql.name)
-                .context(DIAGNOSTIC_HELP)?,
+            name: CompanyName::new(&company_master_sql.name).context(DIAGNOSTIC_HELP)?,
             cin: CompanyIdentificationNumber::new(&company_master_sql.cin)
                 .context(DIAGNOSTIC_HELP)?,
             audit_metadata: AuditMetadataBase {

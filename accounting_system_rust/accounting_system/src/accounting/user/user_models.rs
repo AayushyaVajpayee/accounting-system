@@ -35,10 +35,10 @@ pub struct CreateUserRequest {
 pub mod tests {
     use uuid::Uuid;
 
-    use crate::accounting::currency::currency_models::{AuditMetadataBase};
+    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
+    use crate::accounting::currency::currency_models::AuditMetadataBase;
     use crate::accounting::user::user_models::{CreateUserRequest, User};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
-    use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
 
     #[derive(Default)]
     pub struct UserTestDataBuilder {
@@ -50,7 +50,6 @@ pub mod tests {
         pub mobile_number: Option<String>,
         pub audit_metadata: Option<AuditMetadataBase>,
     }
-
 
     #[derive(Default)]
     pub struct CreateUserRequestTestBuilder {

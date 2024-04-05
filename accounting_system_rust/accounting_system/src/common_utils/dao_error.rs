@@ -1,6 +1,6 @@
-use std::fmt::Error;
 use anyhow::{anyhow, Error as AnyhowError};
 use deadpool_postgres::PoolError;
+use std::fmt::Error;
 use tokio_postgres::error::SqlState;
 
 #[derive(Debug, thiserror::Error)]
@@ -35,10 +35,11 @@ impl From<tokio_postgres::Error> for DaoError {
     fn from(value: tokio_postgres::Error) -> Self {
         if let Some(k) = value.as_db_error() {
             if k.code().code() == SqlState::UNIQUE_VIOLATION.code() {
-                return DaoError::UniqueConstraintViolated { constraint_name: k.constraint().unwrap().to_string() };
+                return DaoError::UniqueConstraintViolated {
+                    constraint_name: k.constraint().unwrap().to_string(),
+                };
             }
         }
         DaoError::PostgresQueryError(value.to_string())
     }
 }
-

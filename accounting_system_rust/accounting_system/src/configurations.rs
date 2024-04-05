@@ -33,21 +33,38 @@ pub fn get_dev_conf() -> Setting {
             port: vars.get("port").unwrap().clone().into_uint().unwrap() as u16,
             user: vars.get("user").unwrap().clone().into_string().unwrap(),
             db: vars.get("app_db").unwrap().clone().into_string().unwrap(),
-            max_connections: vars.get("max_connections").unwrap().clone().into_uint().unwrap() as u16,
+            max_connections: vars
+                .get("max_connections")
+                .unwrap()
+                .clone()
+                .into_uint()
+                .unwrap() as u16,
             host: vars.get("host").unwrap().clone().into_string().unwrap(),
             connect_timeout_seconds: vars
                 .get("connect_timeout_seconds")
-                .unwrap().clone()
+                .unwrap()
+                .clone()
                 .into_uint()
                 .unwrap() as u16,
             password: vars.get("password").unwrap().clone().into_string().unwrap(),
             wait_timeout_seconds: vars
                 .get("wait_timeout_seconds")
-                .unwrap().clone()
+                .unwrap()
+                .clone()
                 .into_uint()
                 .unwrap() as u16,
-            recycling_method: vars.get("pool_recycling_method").unwrap().clone().into_string().unwrap(),
-            application_name: vars.get("application_name").unwrap().clone().into_string().unwrap(),
+            recycling_method: vars
+                .get("pool_recycling_method")
+                .unwrap()
+                .clone()
+                .into_string()
+                .unwrap(),
+            application_name: vars
+                .get("application_name")
+                .unwrap()
+                .clone()
+                .into_string()
+                .unwrap(),
         },
     }
 }

@@ -2,9 +2,12 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
 pub struct BusinessEntityDbMapping {}
 
-const BUSINESS_ENTITY_DDL_SQL: &str = include_str!("./business_entity_master_sql/business_entity_ddl.sql");
-const BUSINESS_ENTITY_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./business_entity_master_sql/business_entity_functions_and_procedures.sql");
-const BUSINESS_ENTITY_SEED_CSV: &str = include_str!("./business_entity_master_sql/business_entity.csv");
+const BUSINESS_ENTITY_DDL_SQL: &str =
+    include_str!("./business_entity_master_sql/business_entity_ddl.sql");
+const BUSINESS_ENTITY_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./business_entity_master_sql/business_entity_functions_and_procedures.sql");
+const BUSINESS_ENTITY_SEED_CSV: &str =
+    include_str!("./business_entity_master_sql/business_entity.csv");
 
 impl DbStructMapping for BusinessEntityDbMapping {
     fn table_name(&self) -> Option<&'static str> {

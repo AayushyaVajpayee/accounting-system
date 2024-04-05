@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use itertools::Itertools;
+use serde::de::{SeqAccess, Visitor};
 use serde::{Deserialize, Serialize};
-use serde::de::{ SeqAccess, Visitor};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
@@ -18,7 +18,9 @@ use crate::common_utils::utils::get_current_indian_standard_time;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
 use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
-use crate::masters::product_item_master::product_item_models::{CessTaxRateResponse, ProductCreationRequest, ProductItemResponse, ProductTaxRateResponse};
+use crate::masters::product_item_master::product_item_models::{
+    CessTaxRateResponse, ProductCreationRequest, ProductItemResponse, ProductTaxRateResponse,
+};
 
 #[derive(Debug)]
 pub struct ProductItemDb<'a> {
@@ -115,62 +117,63 @@ impl ToPostgresString for ProductItemDb<'_> {
     }
 }
 
-fn convert_product_creation_request_to_cess_rate_db(req: &ProductCreationRequest,
-                                                    tenant_id: Uuid,
-                                                    created_by: Uuid)
-                                                    -> CreateCessRequestDb {
-    req.create_cess_request.as_ref()
+fn convert_product_creation_request_to_cess_rate_db(
+    req: &ProductCreationRequest,
+    tenant_id: Uuid,
+    created_by: Uuid,
+) -> CreateCessRequestDb {
+    req.create_cess_request
+        .as_ref()
         .map(|a| CreateCessRequestDb {
             idempotence_key: req.idempotence_key,
             tenant_id,
             created_by,
             cess_strategy: a.cess_strategy.get_strategy_name(),
-            cess_rate_percentage: a.cess_strategy.get_cess_rate_percentage()
-                .unwrap_or(0.0),
-            cess_amount_per_unit: a.cess_strategy.get_cess_amount_per_unit()
-                .unwrap_or(0.0),
-            retail_sale_price: a.cess_strategy.get_retail_sale_price()
-                .unwrap_or(0.0),
+            cess_rate_percentage: a.cess_strategy.get_cess_rate_percentage().unwrap_or(0.0),
+            cess_amount_per_unit: a.cess_strategy.get_cess_amount_per_unit().unwrap_or(0.0),
+            retail_sale_price: a.cess_strategy.get_retail_sale_price().unwrap_or(0.0),
             start_date: a.start_date,
         })
-        .unwrap_or_else(|| {
-            CreateCessRequestDb {
-                idempotence_key: req.idempotence_key,
-                tenant_id,
-                created_by,
-                cess_strategy: CessStrategy::get_default_strategy_name(),
-                cess_rate_percentage: 0.0,
-                cess_amount_per_unit: 0.0,
-                retail_sale_price: 0.0,
-                start_date: get_current_indian_standard_time(),
-            }
+        .unwrap_or_else(|| CreateCessRequestDb {
+            idempotence_key: req.idempotence_key,
+            tenant_id,
+            created_by,
+            cess_strategy: CessStrategy::get_default_strategy_name(),
+            cess_rate_percentage: 0.0,
+            cess_amount_per_unit: 0.0,
+            retail_sale_price: 0.0,
+            start_date: get_current_indian_standard_time(),
         })
 }
 
-fn convert_product_creation_request_to_create_tax_request(req: &ProductCreationRequest,
-                                                          tenant_id: Uuid,
-                                                          created_by: Uuid) -> CreateTaxRateRequestDb {
-    req.create_tax_rate_request.as_ref()
+fn convert_product_creation_request_to_create_tax_request(
+    req: &ProductCreationRequest,
+    tenant_id: Uuid,
+    created_by: Uuid,
+) -> CreateTaxRateRequestDb {
+    req.create_tax_rate_request
+        .as_ref()
         .map(|a| CreateTaxRateRequestDb {
             idempotence_key: req.idempotence_key,
             tenant_id,
             created_by,
             tax_percentage: a.tax_rate_percentage.inner(),
             start_date: a.start_date,
-        }).unwrap_or_else(|| {
-        CreateTaxRateRequestDb {
+        })
+        .unwrap_or_else(|| CreateTaxRateRequestDb {
             idempotence_key: req.idempotence_key,
             tenant_id,
             created_by,
             tax_percentage: 0.0,
             start_date: get_current_indian_standard_time(),
-        }
-    })
+        })
 }
 
-pub fn convert_product_creation_request_to_product_item_db(req: &ProductCreationRequest,
-                                                           tenant_id: Uuid,
-                                                           created_by: Uuid) -> ProductItemDb {
+pub fn convert_product_creation_request_to_product_item_db(
+    req: &ProductCreationRequest,
+    tenant_id: Uuid,
+    created_by: Uuid,
+) -> ProductItemDb {
     let mut hasher = Sha256::new();
     hasher.update(req.line_title.inner().as_bytes());
     if let Some(a) = req.line_subtitle.as_ref() {
@@ -188,15 +191,14 @@ pub fn convert_product_creation_request_to_product_item_db(req: &ProductCreation
         product_hash,
         uom: req.uom.as_str(),
         hsn_sac_code: req.hsn_sac_code.as_str(),
-        create_tax_rate_request: convert_product_creation_request_to_create_tax_request(req,
-                                                                                        tenant_id,
-                                                                                        created_by),
-        create_cess_request: convert_product_creation_request_to_cess_rate_db(req,
-                                                                              tenant_id,
-                                                                              created_by),
+        create_tax_rate_request: convert_product_creation_request_to_create_tax_request(
+            req, tenant_id, created_by,
+        ),
+        create_cess_request: convert_product_creation_request_to_cess_rate_db(
+            req, tenant_id, created_by,
+        ),
     }
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProductItemDbRawRsp {
@@ -239,60 +241,67 @@ pub struct GetProductItemDbRsp {
     temporal_cess_rates: Vec<CessRateDbRawRsp>,
 }
 
-pub fn convert_db_resp_to_product_item_db_resp(pi: GetProductItemDbRsp) -> anyhow::Result<ProductItemResponse> {
-    Ok(
-        ProductItemResponse {
-            base_master_fields: BaseMasterFields {
-                id: pi.product_item.id,
-                entity_version_id: pi.product_item.entity_version_id,
-                tenant_id: pi.product_item.tenant_id,
-                active: pi.product_item.active,
-                approval_status: MasterStatusEnum::
-                get_enum_for_value(pi
-                    .product_item
-                    .approval_status as usize
-                )?,
-                remarks: pi.product_item.remarks.as_ref()
-                    .map(|a| MasterUpdationRemarks::new(a)).transpose()?,
-            },
-            title: LineTitle::new(pi.product_item.title)?,
-            subtitle: pi.product_item.subtitle
-                .map(|a| LineSubtitle::new(a))
+pub fn convert_db_resp_to_product_item_db_resp(
+    pi: GetProductItemDbRsp,
+) -> anyhow::Result<ProductItemResponse> {
+    Ok(ProductItemResponse {
+        base_master_fields: BaseMasterFields {
+            id: pi.product_item.id,
+            entity_version_id: pi.product_item.entity_version_id,
+            tenant_id: pi.product_item.tenant_id,
+            active: pi.product_item.active,
+            approval_status: MasterStatusEnum::get_enum_for_value(
+                pi.product_item.approval_status as usize,
+            )?,
+            remarks: pi
+                .product_item
+                .remarks
+                .as_ref()
+                .map(|a| MasterUpdationRemarks::new(a))
                 .transpose()?,
-            hsn_sac_code: GstItemCode::new(pi.product_item.hsn_sac_code)?,
-            product_hash: "".to_string(),
-            temporal_tax_rates: pi.temporal_tax_rates
-                .into_iter()
-                .map(|tax_rt_db| {
-                    let tax_perc = GSTPercentage::new(tax_rt_db.tax_rate_percentage);
-                    tax_perc.map(|tp| ProductTaxRateResponse {
-                        tax_rate_percentage: tp,
-                        start_date: tax_rt_db.start_date,
-                        end_date: tax_rt_db.end_date,
-                    })
+        },
+        title: LineTitle::new(pi.product_item.title)?,
+        subtitle: pi
+            .product_item
+            .subtitle
+            .map(|a| LineSubtitle::new(a))
+            .transpose()?,
+        hsn_sac_code: GstItemCode::new(pi.product_item.hsn_sac_code)?,
+        product_hash: "".to_string(),
+        temporal_tax_rates: pi
+            .temporal_tax_rates
+            .into_iter()
+            .map(|tax_rt_db| {
+                let tax_perc = GSTPercentage::new(tax_rt_db.tax_rate_percentage);
+                tax_perc.map(|tp| ProductTaxRateResponse {
+                    tax_rate_percentage: tp,
+                    start_date: tax_rt_db.start_date,
+                    end_date: tax_rt_db.end_date,
                 })
-                .try_collect()?,
-            temporal_cess_rates: pi.temporal_cess_rates
-                .into_iter()
-                .map(|cess_db| {
-                    CessStrategy::new(
-                        cess_db.cess_strategy.as_str(),
-                        cess_db.cess_rate_percentage,
-                        cess_db.retail_sale_price,
-                        cess_db.cess_amount_per_unit,
-                    ).map(|st| CessTaxRateResponse {
-                        cess_strategy: st,
-                        start_date: cess_db.start_date,
-                        end_date: cess_db.end_date,
-                    })
+            })
+            .try_collect()?,
+        temporal_cess_rates: pi
+            .temporal_cess_rates
+            .into_iter()
+            .map(|cess_db| {
+                CessStrategy::new(
+                    cess_db.cess_strategy.as_str(),
+                    cess_db.cess_rate_percentage,
+                    cess_db.retail_sale_price,
+                    cess_db.cess_amount_per_unit,
+                )
+                .map(|st| CessTaxRateResponse {
+                    cess_strategy: st,
+                    start_date: cess_db.start_date,
+                    end_date: cess_db.end_date,
                 })
-                .try_collect()?,
-            audit_metadata: AuditMetadataBase {
-                created_by: pi.product_item.created_by,
-                updated_by: pi.product_item.updated_by,
-                created_at: pi.product_item.created_at,
-                updated_at: pi.product_item.updated_at,
-            },
-        }
-    )
+            })
+            .try_collect()?,
+        audit_metadata: AuditMetadataBase {
+            created_by: pi.product_item.created_by,
+            updated_by: pi.product_item.updated_by,
+            created_at: pi.product_item.created_at,
+            updated_at: pi.product_item.updated_at,
+        },
+    })
 }

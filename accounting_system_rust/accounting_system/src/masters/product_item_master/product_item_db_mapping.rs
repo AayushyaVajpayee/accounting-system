@@ -3,7 +3,8 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 pub struct ProductItemDbMapping {}
 
 const PRODUCT_ITEM_DDL_SQL: &str = include_str!("./product_item_sql/product_item_ddl.sql");
-const PRODUCT_ITEM_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./product_item_sql/product_item_functions_and_procedures.sql");
+const PRODUCT_ITEM_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./product_item_sql/product_item_functions_and_procedures.sql");
 const PRODUCT_ITEM_SEED_DATA: &str = include_str!("./product_item_sql/product_item.csv");
 impl DbStructMapping for ProductItemDbMapping {
     fn table_name(&self) -> Option<&'static str> {

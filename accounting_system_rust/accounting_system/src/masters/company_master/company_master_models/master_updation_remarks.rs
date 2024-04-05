@@ -8,7 +8,7 @@ impl MasterUpdationRemarks {
     pub fn new(remark: &str) -> anyhow::Result<Self> {
         let remark = remark.trim();
         if remark.is_empty() || remark.len() > 70 {
-            bail!("remark cannot be empty or greater than {} chars",70)
+            bail!("remark cannot be empty or greater than {} chars", 70)
         }
         Ok(Self(remark.to_string()))
     }
@@ -31,8 +31,8 @@ mod master_updation_remarks_tests {
     #[case(" ", false)]
     #[case("", false)]
     #[case(
-    "lfjdalfjdalfjldjgldajflkdjalfkjalfkfdaf dafaf jalhijvcnao j flajd foj eo jeo",
-    false
+        "lfjdalfjdalfjldjgldajflkdjalfkjalfkfdaf dafaf jalhijvcnao j flajd foj eo jeo",
+        false
     )]
     fn test_failure_conditions_for_master_updation_remarks(
         #[case] input: String,

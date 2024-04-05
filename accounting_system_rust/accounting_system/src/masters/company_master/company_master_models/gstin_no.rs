@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use gstin_validator::gstin_models::{GstinValidationError, validate_gstin};
+use gstin_validator::gstin_models::{validate_gstin, GstinValidationError};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(try_from = "String")]
@@ -8,7 +8,7 @@ pub struct GstinNo(String);
 
 impl Default for GstinNo {
     fn default() -> Self {
-        GstinNo("05AABCA5291p1ZD".to_string())//seed gstin no
+        GstinNo("05AABCA5291p1ZD".to_string()) //seed gstin no
     }
 }
 impl GstinNo {
@@ -87,4 +87,3 @@ pub mod gstin_no_tests {
         }
     }
 }
-

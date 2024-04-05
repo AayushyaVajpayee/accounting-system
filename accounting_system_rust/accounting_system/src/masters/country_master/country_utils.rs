@@ -7,5 +7,5 @@ pub fn get_country_enum_from_id(id: Uuid) -> CountryEnum {
         CountryEnum::India
     } else {
         CountryEnum::Others
-    }
+    };
 }

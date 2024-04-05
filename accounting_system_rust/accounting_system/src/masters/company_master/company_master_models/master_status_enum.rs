@@ -1,7 +1,7 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Copy, Clone,Default,)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Copy, Clone, Default)]
 #[serde(try_from = "i32")]
 #[serde(into = "i32")]
 pub enum MasterStatusEnum {
@@ -64,9 +64,9 @@ mod master_status_enum_tests {
     ) {
         let k = MasterStatusEnum::get_enum_for_value(input);
         if output.is_err() {
-            assert_that!(k).is_err().matches(|a| {
-                a.to_string() == output.as_ref().unwrap_err().to_string()
-            });
+            assert_that!(k)
+                .is_err()
+                .matches(|a| a.to_string() == output.as_ref().unwrap_err().to_string());
         } else {
             assert_that!(k.unwrap()).is_equal_to(output.unwrap())
         }

@@ -1,15 +1,15 @@
 use std::cell::{RefCell, RefMut};
-use std::collections::{HashMap,};
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use comemo::Prehashed;
 use time::OffsetDateTime;
-use typst::{Library, World};
 use typst::diag::{eco_format, FileError, FileResult, PackageError, PackageResult};
-use typst::foundations::{Bytes, Datetime,};
-use typst::syntax::{FileId, Source};
+use typst::foundations::{Bytes, Datetime};
 use typst::syntax::package::PackageSpec;
+use typst::syntax::{FileId, Source};
 use typst::text::{Font, FontBook};
+use typst::{Library, World};
 
 use crate::fonts::register_fonts;
 #[derive(Debug)]
@@ -20,15 +20,12 @@ pub struct FileEntry {
 
 impl FileEntry {
     pub fn from_bytes(bytes: Bytes, source: Option<Source>) -> Self {
-        Self {
-            bytes,
-            source,
-        }
+        Self { bytes, source }
     }
     pub fn new(bytes: Vec<u8>, source: Option<Source>) -> Self {
         //todo we need to provide another constructor that will provide all related files as bytes in a hashmap
         Self {
-            bytes: bytes.into(),//todo for our use case we can take static bytes for many things except the json
+            bytes: bytes.into(), //todo for our use case we can take static bytes for many things except the json
             source,
         }
     }
@@ -117,7 +114,7 @@ impl InMemoryWorld {
 
             Ok(response)
         })
-            .map_err(|error| PackageError::NetworkFailed(Some(error)))?;
+        .map_err(|error| PackageError::NetworkFailed(Some(error)))?;
 
         let mut compressed_archive = Vec::new();
         response
@@ -144,11 +141,12 @@ impl InMemoryWorld {
         } else {
             id.vpath().resolve(&self.root)
         }
-            .ok_or(FileError::AccessDenied)?;
+        .ok_or(FileError::AccessDenied)?;
         if let Some(a) = self.file_map.get(path.to_str().unwrap()) {
             let p = FileEntry::from_bytes(a.clone(), None);
-            return Ok(RefMut::map(self.files.borrow_mut(),
-                                  |files| files.entry(id).or_insert(p)));
+            return Ok(RefMut::map(self.files.borrow_mut(), |files| {
+                files.entry(id).or_insert(p)
+            }));
         }
         let content = std::fs::read(&path).map_err(|error| FileError::from_io(error, &path))?;
         Ok(RefMut::map(self.files.borrow_mut(), |files| {

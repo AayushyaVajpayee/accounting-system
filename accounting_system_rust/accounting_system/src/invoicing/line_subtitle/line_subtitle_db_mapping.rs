@@ -3,8 +3,9 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 pub struct LineSubtitleDbMapping {}
 
 const LINE_SUBTITLE_DDL_SQL: &str = include_str!("./line_subtitle_sql/line_subtitle_ddl.sql");
-const LINE_SUBTITLE_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./line_subtitle_sql/line_subtitle_functions_and_procedures.sql");
-const LINE_SUBTITLE_SEED_DATA:&str =include_str!("./line_subtitle_sql/line_subtitle.csv");
+const LINE_SUBTITLE_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./line_subtitle_sql/line_subtitle_functions_and_procedures.sql");
+const LINE_SUBTITLE_SEED_DATA: &str = include_str!("./line_subtitle_sql/line_subtitle.csv");
 impl DbStructMapping for LineSubtitleDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("line_subtitle")
@@ -46,5 +47,3 @@ impl DbStructMapping for LineSubtitleDbMapping {
         todo!()
     }
 }
-
-

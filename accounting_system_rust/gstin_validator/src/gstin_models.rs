@@ -79,37 +79,37 @@ pub fn gstin_checksum(gstin: &str) -> Result<char, &str> {
         }
     }
     let hash_sum_remainder = hash_sum % 36;
-    let check_digit = (36 - hash_sum_remainder)%36;
+    let check_digit = (36 - hash_sum_remainder) % 36;
     let check_alpha = INT_TO_ALPHABET_MAP.get(&check_digit).unwrap();
     Ok(*check_alpha)
 }
 
-fn validate_gstin_checksum(gstin:&str)->Option<GstinValidationError>{
-    let check_digit  =  gstin.chars().nth(14);
-    if check_digit.is_none(){
+fn validate_gstin_checksum(gstin: &str) -> Option<GstinValidationError> {
+    let check_digit = gstin.chars().nth(14);
+    if check_digit.is_none() {
         return Some(GstinValidationError::TypingError(gstin.to_string()));
     }
     let l = gstin_checksum(gstin);
-    if l.is_err(){
-        println!("{}",l.err().unwrap());
-        return  Some(GstinValidationError::TypingError(gstin.to_string()));
+    if l.is_err() {
+        println!("{}", l.err().unwrap());
+        return Some(GstinValidationError::TypingError(gstin.to_string()));
     }
-    if l.unwrap()!=check_digit.unwrap(){
-        return  Some(GstinValidationError::TypingError(gstin.to_string()));
+    if l.unwrap() != check_digit.unwrap() {
+        return Some(GstinValidationError::TypingError(gstin.to_string()));
     }
     None
 }
-pub fn validate_gstin(gstin:&str) ->Option<GstinValidationError>{
+pub fn validate_gstin(gstin: &str) -> Option<GstinValidationError> {
     let size_validation = validate_gstin_size(gstin);
-    if size_validation.is_some(){
+    if size_validation.is_some() {
         return size_validation;
     }
     let pattern_validation = validate_gstin_pattern(gstin);
-    if pattern_validation.is_some(){
+    if pattern_validation.is_some() {
         return pattern_validation;
     }
     let checksum_validation = validate_gstin_checksum(gstin);
-    if checksum_validation.is_some(){
+    if checksum_validation.is_some() {
         return checksum_validation;
     }
     None
@@ -120,7 +120,10 @@ mod test {
     use spectral::assert_that;
     use spectral::prelude::OptionAssertions;
 
-    use crate::gstin_models::{gstin_checksum, GstinValidationError, validate_gstin, validate_gstin_checksum, validate_gstin_pattern, validate_gstin_size};
+    use crate::gstin_models::{
+        gstin_checksum, validate_gstin, validate_gstin_checksum, validate_gstin_pattern,
+        validate_gstin_size, GstinValidationError,
+    };
 
     #[rstest]
     #[case("", false)]
@@ -155,8 +158,8 @@ mod test {
     }
     #[rstest]
     #[trace]
-    #[case("",'A',false)]
-    #[case("27AAPFU0939F1ZV",'V',true)]
+    #[case("", 'A', false)]
+    #[case("27AAPFU0939F1ZV", 'V', true)]
     #[case("07PCZPK9220B1ZG", '1', true)]
     #[case("05AABCA5291p1ZD", 'D', true)]
     #[case("18AABCU9603R1zM", 'M', true)]
@@ -178,40 +181,38 @@ mod test {
 
     #[rstest]
     #[trace]
-    #[case("",false)]
-    #[case("27AAPFU0939F1ZP",false)]
-    fn test_validate_gstin_checksum(#[case] gstin:String,#[case] valid:bool){
-      let p=  validate_gstin_checksum(gstin.as_str());
+    #[case("", false)]
+    #[case("27AAPFU0939F1ZP", false)]
+    fn test_validate_gstin_checksum(#[case] gstin: String, #[case] valid: bool) {
+        let p = validate_gstin_checksum(gstin.as_str());
         if valid {
             assert!(p.is_none());
-        }else{
+        } else {
             assert!(p.is_some());
-            assert!(matches!(p.unwrap(),GstinValidationError::TypingError(..)));
+            assert!(matches!(p.unwrap(), GstinValidationError::TypingError(..)));
         }
     }
 
-
     #[rstest]
     #[trace]
-    #[case("",false)]
+    #[case("", false)]
     #[case("akljsfljda", false)]
     #[case("123456789123456", false)]
     #[case("07PCZPK9220B1ZG", false)]
     #[case("07PCZPK9220B1zG", false)]
     #[case("07PCZPk9220B1ZG", false)]
     #[case("07pCZPk9220B1ZG", false)]
-    #[case("27AAPFU0939F1ZP",false)]
+    #[case("27AAPFU0939F1ZP", false)]
     #[case("079CZPk9220B1ZG", false)]
     #[case("absciedneiencie", false)]
-    fn test_validate_gstin_api(#[case] gstin:String,#[case] valid:bool){
+    fn test_validate_gstin_api(#[case] gstin: String, #[case] valid: bool) {
         let p = validate_gstin(gstin.as_str());
-        if valid{
+        if valid {
             assert_that!(&p).is_none();
             // assert!(p.is_none())
-        }else{
+        } else {
             assert_that!(&p).is_some();
             // assert!(p.is_some())
-
         }
     }
 }

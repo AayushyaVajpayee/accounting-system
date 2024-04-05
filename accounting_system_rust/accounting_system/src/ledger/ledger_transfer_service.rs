@@ -7,26 +7,26 @@ use uuid::Uuid;
 use crate::ledger::ledger_transfer_dao::{get_ledger_transfer_dao, LedgerTransferDao};
 
 #[async_trait]
-pub trait LedgerTransferService:Send+Sync {
-    async fn create_transfers(&self,request: CreateTransfersRequest);
-    async fn get_transfers_by_id(&self,request: GetTransferByIdRequest);
-    async fn get_transfers_for_account_for_interval(&self,request: GetTransfersForAccountForInterval);
+pub trait LedgerTransferService: Send + Sync {
+    async fn create_transfers(&self, request: CreateTransfersRequest);
+    async fn get_transfers_by_id(&self, request: GetTransferByIdRequest);
+    async fn get_transfers_for_account_for_interval(
+        &self,
+        request: GetTransfersForAccountForInterval,
+    );
 }
 
-
-struct LedgerTransferServiceImpl{
-    dao:Arc<dyn LedgerTransferDao>
+struct LedgerTransferServiceImpl {
+    dao: Arc<dyn LedgerTransferDao>,
 }
 
 pub fn get_ledger_transfer_service(arc: Arc<Pool>) -> Arc<dyn LedgerTransferService> {
     let dao = get_ledger_transfer_dao(arc);
-    let service = LedgerTransferServiceImpl{
-        dao
-    };
+    let service = LedgerTransferServiceImpl { dao };
     Arc::new(service)
 }
 #[async_trait]
-impl LedgerTransferService for LedgerTransferServiceImpl{
+impl LedgerTransferService for LedgerTransferServiceImpl {
     async fn create_transfers(&self, _request: CreateTransfersRequest) {
         todo!()
     }
@@ -35,11 +35,13 @@ impl LedgerTransferService for LedgerTransferServiceImpl{
         todo!()
     }
 
-    async fn get_transfers_for_account_for_interval(&self, _request: GetTransfersForAccountForInterval) {
+    async fn get_transfers_for_account_for_interval(
+        &self,
+        _request: GetTransfersForAccountForInterval,
+    ) {
         todo!()
     }
 }
-
 
 #[allow(dead_code)]
 pub struct CreateTransfersRequest {
@@ -97,4 +99,3 @@ pub struct GetTransfersForAccountForInterval {
     from: i64,
     to: i64,
 }
-

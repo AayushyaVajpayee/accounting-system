@@ -11,7 +11,8 @@ use uuid::Uuid;
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 use crate::masters::city_master::city_master_models::{CityMaster, CityName};
 
-const SELECT_FIELDS: &str = "id,city_name,state_id,created_by,updated_by,created_at,updated_at,country_id";
+const SELECT_FIELDS: &str =
+    "id,city_name,state_id,created_by,updated_by,created_at,updated_at,country_id";
 
 const TABLE_NAME: &str = "city_master";
 
@@ -25,19 +26,17 @@ const BY_ID_QUERY: &str = concatcp!(
     " where id=$1"
 );
 
-
-
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait CityMasterDao:Send+Sync {
+pub trait CityMasterDao: Send + Sync {
     async fn get_all_cities(&self) -> Vec<CityMaster>;
 
     async fn get_city_by_id(&self, id: &Uuid) -> Option<CityMaster>;
 }
 #[allow(dead_code)]
 pub fn get_city_master_dao(client: Arc<Pool>) -> Arc<dyn CityMasterDao> {
-    let city_master_dao = CityMasterDaoImpl{
-        postgres_client:client
+    let city_master_dao = CityMasterDaoImpl {
+        postgres_client: client,
     };
     Arc::new(city_master_dao)
 }
@@ -59,7 +58,7 @@ impl TryFrom<&Row> for CityMaster {
                 created_at: row.get(5),
                 updated_at: row.get(6),
             },
-            country_id: row.get(7)
+            country_id: row.get(7),
         })
     }
 }
@@ -79,26 +78,39 @@ impl CityMasterDao for CityMasterDaoImpl {
     }
 }
 
-
 #[cfg(test)]
-mod tests{
+mod tests {
     use spectral::assert_that;
     use spectral::option::OptionAssertions;
 
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::postgres_factory::test_utils_postgres::{
+        get_dao_generic, get_postgres_conn_pool, get_postgres_image_port,
+    };
     use crate::masters::city_master::city_master_dao::{CityMasterDao, CityMasterDaoImpl};
     use crate::masters::city_master::city_master_models::tests::SEED_CITY_ID;
 
     #[tokio::test]
-    async fn should_be_able_to_fetch_all_cities(){
-        let city_master_dao =get_dao_generic(|a|CityMasterDaoImpl{postgres_client:a.clone()},None).await;
+    async fn should_be_able_to_fetch_all_cities() {
+        let city_master_dao = get_dao_generic(
+            |a| CityMasterDaoImpl {
+                postgres_client: a.clone(),
+            },
+            None,
+        )
+        .await;
         let cities = city_master_dao.get_all_cities().await;
         assert!(!cities.is_empty());
     }
 
     #[tokio::test]
-    async fn should_be_able_to_fetch_city_by_id(){
-        let city_master_dao =get_dao_generic(|a|CityMasterDaoImpl{postgres_client:a.clone()},None).await;
+    async fn should_be_able_to_fetch_city_by_id() {
+        let city_master_dao = get_dao_generic(
+            |a| CityMasterDaoImpl {
+                postgres_client: a.clone(),
+            },
+            None,
+        )
+        .await;
         let city = city_master_dao.get_city_by_id(&SEED_CITY_ID).await;
         assert_that!(city).is_some();
     }

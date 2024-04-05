@@ -30,9 +30,9 @@ pub mod tests {
     use crate::masters::company_master::company_master_models::company_name::CompanyName;
 
     lazy_static! {
-    pub static ref SEED_COMPANY_MASTER_ID:Uuid= Uuid::from_str("018c5e2d-615b-742f-85e2-907c65daf8f4").unwrap();
-}
-
+        pub static ref SEED_COMPANY_MASTER_ID: Uuid =
+            Uuid::from_str("018c5e2d-615b-742f-85e2-907c65daf8f4").unwrap();
+    }
 
     #[derive(Debug, Default)]
     pub struct CompanyMasterTestDataBuilder {
@@ -42,14 +42,20 @@ pub mod tests {
         pub audit_metadata: Option<AuditMetadataBase>,
     }
 
-
     pub fn a_company_master(builder: CompanyMasterTestDataBuilder) -> CompanyMaster {
         CompanyMaster {
-            base_master_fields: builder.base_master_fields
+            base_master_fields: builder
+                .base_master_fields
                 .unwrap_or_else(|| a_base_master_field(Default::default())),
-            name: builder.name.unwrap_or(CompanyName::new("test_company").unwrap()),
-            cin: builder.cin.unwrap_or_else(generate_random_company_identification_number),
-            audit_metadata: builder.audit_metadata.unwrap_or_else(|| an_audit_metadata_base(Default::default())),
+            name: builder
+                .name
+                .unwrap_or(CompanyName::new("test_company").unwrap()),
+            cin: builder
+                .cin
+                .unwrap_or_else(generate_random_company_identification_number),
+            audit_metadata: builder
+                .audit_metadata
+                .unwrap_or_else(|| an_audit_metadata_base(Default::default())),
         }
     }
 }

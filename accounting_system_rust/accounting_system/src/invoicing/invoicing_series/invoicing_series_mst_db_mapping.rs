@@ -2,12 +2,15 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
 pub struct InvoicingSeriesMstDbMapping {}
 
+const INVOICING_SERIES_DDL_SQL: &str =
+    include_str!("./invoicing_series_sql/invoicing_series_ddl.sql");
+const INVOICING_SERIES_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./invoicing_series_sql/invoicing_series_functions_and_procedures.sql");
 
-const INVOICING_SERIES_DDL_SQL: &str = include_str!("./invoicing_series_sql/invoicing_series_ddl.sql");
-const INVOICING_SERIES_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./invoicing_series_sql/invoicing_series_functions_and_procedures.sql");
-
-const INVOICING_SERIES_INDEXES_AND_CONSTRAINTS_SQL: &str = include_str!("./invoicing_series_sql/invoicing_series_indexes_and_constraints.sql");
-const INVOICING_SERIES_MST_SEED_DATA:&str =include_str!("./invoicing_series_sql/invoicing_series_mst.csv");
+const INVOICING_SERIES_INDEXES_AND_CONSTRAINTS_SQL: &str =
+    include_str!("./invoicing_series_sql/invoicing_series_indexes_and_constraints.sql");
+const INVOICING_SERIES_MST_SEED_DATA: &str =
+    include_str!("./invoicing_series_sql/invoicing_series_mst.csv");
 impl DbStructMapping for InvoicingSeriesMstDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("invoicing_series_mst")

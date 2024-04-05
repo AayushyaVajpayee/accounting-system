@@ -23,8 +23,8 @@ pub struct FinancialYear(i32);
 
 impl FinancialYear {
     pub fn new(value: i32) -> anyhow::Result<Self> {
-        ensure!(value>2023,"financial year needs to be more than 2023");
-        ensure!(value<2060,"financial year needs tb be less than 2060");
+        ensure!(value > 2023, "financial year needs to be more than 2023");
+        ensure!(value < 2060, "financial year needs tb be less than 2060");
         Ok(Self(value))
     }
 
@@ -62,7 +62,6 @@ pub struct InvoicingSeriesCounter {
     pub audit_metadata: AuditMetadataBase,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct InvoiceNumberPrefix(String);
@@ -73,15 +72,20 @@ impl Default for InvoiceNumberPrefix {
     }
 }
 
-
 impl InvoiceNumberPrefix {
     pub fn new(value: &str) -> anyhow::Result<Self> {
         let value = value.trim();
-        ensure!(value.len()<=7,"invoice number prefix should be less than equal to 7 chars");
-        ensure!(!value.is_empty(),"invoice number prefix cannot be empty");
-        ensure!(value.chars()
-            .all(|a| a.is_ascii_alphanumeric() || a == '/' || a == '-'),
-        "invoice number prefix can only contain alphanumeric characters or / or -");
+        ensure!(
+            value.len() <= 7,
+            "invoice number prefix should be less than equal to 7 chars"
+        );
+        ensure!(!value.is_empty(), "invoice number prefix cannot be empty");
+        ensure!(
+            value
+                .chars()
+                .all(|a| a.is_ascii_alphanumeric() || a == '/' || a == '-'),
+            "invoice number prefix can only contain alphanumeric characters or / or -"
+        );
         Ok(InvoiceNumberPrefix(value.to_uppercase()))
     }
     pub fn inner(&self) -> &str {
@@ -97,7 +101,6 @@ impl TryFrom<String> for InvoiceNumberPrefix {
     }
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct InvoicingSeriesName(String);
@@ -111,9 +114,15 @@ impl Default for InvoicingSeriesName {
 impl InvoicingSeriesName {
     pub fn new(value: &str) -> anyhow::Result<Self> {
         let value = value.trim();
-        ensure!(value.len() <=30,"series name should be less than 30 chars");
-        ensure!(!value.is_empty(),"series name cannot be empty");
-        ensure!(value.chars().all(|a|a.is_ascii_alphanumeric()||a=='-'),"series name can only have alphanumeric or - as character");
+        ensure!(
+            value.len() <= 30,
+            "series name should be less than 30 chars"
+        );
+        ensure!(!value.is_empty(), "series name cannot be empty");
+        ensure!(
+            value.chars().all(|a| a.is_ascii_alphanumeric() || a == '-'),
+            "series name can only have alphanumeric or - as character"
+        );
         Ok(InvoicingSeriesName(value.to_lowercase()))
     }
     pub fn inner(&self) -> &str {
@@ -136,19 +145,31 @@ pub mod tests {
     use lazy_static::lazy_static;
     use uuid::Uuid;
 
-    use crate::invoicing::invoicing_series::invoicing_series_models::{CreateInvoiceNumberSeriesRequest, CreateInvoiceNumberSeriesRequestBuilder, FinancialYear, InvoiceNumberPrefix, InvoicingSeriesName};
+    use crate::invoicing::invoicing_series::invoicing_series_models::{
+        CreateInvoiceNumberSeriesRequest, CreateInvoiceNumberSeriesRequestBuilder, FinancialYear,
+        InvoiceNumberPrefix, InvoicingSeriesName,
+    };
 
     lazy_static! {
-        pub static ref SEED_INVOICING_SERIES_MST_ID:Uuid= Uuid::from_str("018d417d-e88a-732b-bdd9-db9aec8d3f78").unwrap();
+        pub static ref SEED_INVOICING_SERIES_MST_ID: Uuid =
+            Uuid::from_str("018d417d-e88a-732b-bdd9-db9aec8d3f78").unwrap();
     }
-    pub fn a_create_invoice_number_series_request(builder: CreateInvoiceNumberSeriesRequestBuilder) -> CreateInvoiceNumberSeriesRequest {
+    pub fn a_create_invoice_number_series_request(
+        builder: CreateInvoiceNumberSeriesRequestBuilder,
+    ) -> CreateInvoiceNumberSeriesRequest {
         CreateInvoiceNumberSeriesRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            name: builder.name.unwrap_or(InvoicingSeriesName::new("test-name").unwrap()),
-            prefix: builder.prefix.unwrap_or(InvoiceNumberPrefix::new("tes").unwrap()),
+            name: builder
+                .name
+                .unwrap_or(InvoicingSeriesName::new("test-name").unwrap()),
+            prefix: builder
+                .prefix
+                .unwrap_or(InvoiceNumberPrefix::new("tes").unwrap()),
             zero_padded_counter: false,
             start_value: None,
-            financial_year: builder.financial_year.unwrap_or(FinancialYear::new(2024).unwrap()),
+            financial_year: builder
+                .financial_year
+                .unwrap_or(FinancialYear::new(2024).unwrap()),
         }
     }
 }

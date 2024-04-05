@@ -17,15 +17,12 @@ const F13: &[u8] = include_bytes!("../fonts/DejaVuSansMono-Oblique.ttf");
 const F14: &[u8] = include_bytes!("../fonts/DejaVuSansMono-BoldOblique.ttf");
 
 pub fn register_fonts() -> Vec<Font> {
-    let p = vec![
-        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
-    ];
+    let p = vec![F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14];
     p.into_iter()
         .flat_map(|a| {
             let buffer = Bytes::from(a);
             let face_count = ttf_parser::fonts_in_collection(&buffer).unwrap_or(1);
-            (0..face_count).map(move |face| {
-                Font::new(buffer.clone(), face).unwrap()
-            })
-        }).collect::<Vec<_>>()
+            (0..face_count).map(move |face| Font::new(buffer.clone(), face).unwrap())
+        })
+        .collect::<Vec<_>>()
 }

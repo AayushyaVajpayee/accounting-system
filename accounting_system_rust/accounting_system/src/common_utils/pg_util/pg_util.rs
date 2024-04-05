@@ -1,6 +1,6 @@
-use std::fmt::Write;
 use chrono::{DateTime, SecondsFormat, Utc};
 use chrono_tz::Tz;
+use std::fmt::Write;
 
 use uuid::Uuid;
 
@@ -159,7 +159,6 @@ impl ToPostgresString for &str {
     }
 }
 
-
 impl ToPostgresString for DateTime<Tz> {
     fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
         let representation = self.to_rfc3339_opts(SecondsFormat::Micros, false);
@@ -170,7 +169,6 @@ impl ToPostgresString for DateTime<Tz> {
         "timestamp with timezone"
     }
 }
-
 
 impl ToPostgresString for DateTime<Utc> {
     fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
@@ -186,15 +184,19 @@ impl ToPostgresString for DateTime<Utc> {
 impl<T: ToPostgresString> ToPostgresString for Option<T> {
     fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
         match self {
-            None => { write!(f, "null") }
-            Some(a) => { a.fmt_postgres(f) }
+            None => {
+                write!(f, "null")
+            }
+            Some(a) => a.fmt_postgres(f),
         }
     }
 
     fn db_type_name(&self) -> &'static str {
         match self {
-            None => { panic!("should not reach this code block") }
-            Some(a) => { a.db_type_name() }
+            None => {
+                panic!("should not reach this code block")
+            }
+            Some(a) => a.db_type_name(),
         }
     }
 }
@@ -243,7 +245,10 @@ impl<T: ToPostgresString> ToPostgresString for &[T] {
     }
 }
 
-pub fn create_composite_type_db_row(fields: &[&dyn ToPostgresString], f: &mut String) -> std::fmt::Result {
+pub fn create_composite_type_db_row(
+    fields: &[&dyn ToPostgresString],
+    f: &mut String,
+) -> std::fmt::Result {
     write!(f, "row(")?;
     if let Some(first) = fields.first() {
         first.fmt_postgres(f)?;
@@ -257,16 +262,17 @@ pub fn create_composite_type_db_row(fields: &[&dyn ToPostgresString], f: &mut St
 
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
-    use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, db_type_name_slice, fmt_postgres_slice, ToPostgresString};
+    use crate::common_utils::pg_util::pg_util::{
+        create_composite_type_db_row, db_type_name_slice, fmt_postgres_slice, ToPostgresString,
+    };
     use rstest::rstest;
     use std::fmt::Write;
+    use uuid::Uuid;
 
     struct P {
         id: Uuid,
         name: String,
         active: bool,
-
     }
 
     struct Nested {
@@ -285,7 +291,6 @@ mod tests {
             "create_p"
         }
     }
-
 
     impl ToPostgresString for Nested {
         fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
@@ -317,7 +322,10 @@ mod tests {
 
         let mut str = String::with_capacity(52);
         p.fmt_postgres(&mut str).unwrap();
-        assert_eq!(str, "row('00000000-0000-0000-0000-000000000000','da',false)");
+        assert_eq!(
+            str,
+            "row('00000000-0000-0000-0000-000000000000','da',false)"
+        );
         let n: Nested = Nested {
             id: Default::default(),
             solder: 4,
@@ -325,12 +333,14 @@ mod tests {
         };
         let mut str = String::with_capacity(52);
         n.fmt_postgres(&mut str).unwrap();
-        assert_eq!(str, "row('00000000-0000-0000-0000-000000000000',4,\
+        assert_eq!(
+            str,
+            "row('00000000-0000-0000-0000-000000000000',4,\
         array[row('00000000-0000-0000-0000-000000000000','da',false),\
         row('00000000-0000-0000-0000-000000000000','d2a',false),\
-        row('00000000-0000-0000-0000-000000000000','d3a',false)]::create_p[])");
+        row('00000000-0000-0000-0000-000000000000','d3a',false)]::create_p[])"
+        );
     }
-
 
     #[rstest]
     #[case(42, "42", "integer")]
@@ -350,7 +360,6 @@ mod tests {
         assert_eq!(output, expected_output);
         assert_eq!(input.db_type_name(), expected_type_name);
     }
-
 
     #[derive(Debug, PartialEq)]
     struct TestType(i32);
@@ -383,14 +392,19 @@ mod tests {
 
     #[rstest]
     #[case(& [TestType(1), TestType(2), TestType(3)], "array[1,2,3]::int4[]")]
-    fn test_fmt_postgres_slice_multiple_elements(#[case] slice: &[TestType], #[case] expected: &str) {
+    fn test_fmt_postgres_slice_multiple_elements(
+        #[case] slice: &[TestType],
+        #[case] expected: &str,
+    ) {
         let mut result = String::new();
         fmt_postgres_slice(slice, &mut result).unwrap();
         assert_eq!(result, expected);
     }
 
     #[rstest]
-    #[should_panic(expected = "cannot find db type name for empty list. this code should be unreachable")]
+    #[should_panic(
+        expected = "cannot find db type name for empty list. this code should be unreachable"
+    )]
     fn test_db_type_name_slice_empty() {
         let empty_slice: &[TestType] = &[];
         db_type_name_slice(empty_slice);

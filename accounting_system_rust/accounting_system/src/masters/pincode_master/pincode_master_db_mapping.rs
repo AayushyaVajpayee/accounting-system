@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct PincodeMasterDbMapping{}
+pub struct PincodeMasterDbMapping {}
 
 const PINCODE_MASTER_DDL_SQL: &str = include_str!("./pincode_master_sql/pincode_master_ddl.sql");
-const PINCODE_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./pincode_master_sql/pincode_master_functions_and_procedures.sql");
-const PINCODE_MASTER_SEED_CSV:&str =include_str!("./pincode_master_sql/pincode_master.csv");
-impl DbStructMapping for PincodeMasterDbMapping{
+const PINCODE_MASTER_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./pincode_master_sql/pincode_master_functions_and_procedures.sql");
+const PINCODE_MASTER_SEED_CSV: &str = include_str!("./pincode_master_sql/pincode_master.csv");
+impl DbStructMapping for PincodeMasterDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("pincode_master")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for PincodeMasterDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         PINCODE_MASTER_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

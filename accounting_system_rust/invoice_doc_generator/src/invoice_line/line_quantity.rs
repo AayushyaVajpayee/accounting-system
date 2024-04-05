@@ -3,8 +3,8 @@ use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::invoice_line1::UOM;
 use crate::invoice_line::line_quantity::LineQuantityError::{NegativeValue, TooLarge};
+use crate::invoice_line1::UOM;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LineQuantityRaw {
@@ -12,7 +12,7 @@ pub struct LineQuantityRaw {
     uom: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Builder,Clone)]
+#[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 #[serde(try_from = "LineQuantityRaw")]
 pub struct LineQuantity {
     quantity: f64,
@@ -37,10 +37,10 @@ impl LineQuantity {
         }
         Ok(Self { quantity, uom })
     }
-    pub fn get_quantity(&self)->f64{
+    pub fn get_quantity(&self) -> f64 {
         self.quantity
     }
-    pub fn uom_as_str(&self)->&str{
+    pub fn uom_as_str(&self) -> &str {
         self.uom.as_str()
     }
 }
@@ -69,8 +69,8 @@ mod line_quantity_tests {
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
 
-    use crate::invoice_line1::UOM;
     use crate::invoice_line::line_quantity::LineQuantity;
+    use crate::invoice_line1::UOM;
 
     #[rstest]
     #[case(34.0, true)]
@@ -88,8 +88,8 @@ mod line_quantity_tests {
 
 #[cfg(feature = "test_utils")]
 pub mod test_utils {
-    use crate::invoice_line1::UOM;
     use crate::invoice_line::line_quantity::{LineQuantity, LineQuantityBuilder};
+    use crate::invoice_line1::UOM;
 
     pub fn a_line_quantity(builder: LineQuantityBuilder) -> LineQuantity {
         LineQuantity {

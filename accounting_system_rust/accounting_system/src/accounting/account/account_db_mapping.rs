@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct AccountDbMapping{}
+pub struct AccountDbMapping {}
 
 const ACCOUNT_DDL_SQL: &str = include_str!("./account_sql/account_ddl.sql");
-const ACCOUNT_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./account_sql/account_functions_and_procedures.sql");
-const ACCOUNT_SEED_CSV:&str =include_str!("./account_sql/account.csv");
-impl DbStructMapping for AccountDbMapping{
+const ACCOUNT_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./account_sql/account_functions_and_procedures.sql");
+const ACCOUNT_SEED_CSV: &str = include_str!("./account_sql/account.csv");
+impl DbStructMapping for AccountDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("user_account")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for AccountDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         ACCOUNT_FUNCTIONS_AND_PROCEDURES_SQL
     }
 
