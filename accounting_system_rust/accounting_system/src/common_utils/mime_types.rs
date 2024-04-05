@@ -20,9 +20,7 @@ impl MimeType {
     pub fn get_mime_type(&self) -> &'static str {
         match &self {
             Csv => "text/csv",
-            Docx => {
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            }
+            Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             Jpeg => "image/jpeg",
             Json => "application/json",
             Png => "image/png",
@@ -52,13 +50,13 @@ impl MimeType {
 impl<'a> FromSql<'a> for MimeType {
     fn from_sql(_ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
         let k = String::from_utf8_lossy(raw);
-        match MimeType::from_text(k.as_ref()){
-            Ok(a) => {Ok(a)}
-            Err(b) => {Err(b.into())}
+        match MimeType::from_text(k.as_ref()) {
+            Ok(a) => Ok(a),
+            Err(b) => Err(b.into()),
         }
     }
 
     fn accepts(ty: &Type) -> bool {
-         ty.name()=="anyenum"
+        ty.name() == "anyenum"
     }
 }

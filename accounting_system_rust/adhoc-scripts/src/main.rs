@@ -2,7 +2,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::{NoContext, Timestamp, Uuid};
 
@@ -15,7 +15,6 @@ fn main() {
     process_pincode_master_seed().unwrap();
     println!("Hello, world!");
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CurrencyMaster {
@@ -47,7 +46,8 @@ fn process_currency_master_seed() -> Result<(), Box<dyn Error>> {
     let p1 = std::env::current_dir()?;
     let p = p1.join("schema/postgres/seed_data/currency_master.csv");
     let mut reader = csv::Reader::from_path(p.as_path())?;
-    let mut writer = csv::Writer::from_path(p1.join("schema/postgres/seed_data/currency_master_temp.csv"))?;
+    let mut writer =
+        csv::Writer::from_path(p1.join("schema/postgres/seed_data/currency_master_temp.csv"))?;
     // writer.write_record(reader.headers()?)?;
     // writer.flush()?;
     let mut map: HashMap<String, String> = HashMap::new();
@@ -59,10 +59,10 @@ fn process_currency_master_seed() -> Result<(), Box<dyn Error>> {
         currency.id = uuid.to_string();
         writer.serialize(currency)?;
     }
-    let mut ledger_master_reader = csv::Reader::
-    from_path(p1.join("schema/postgres/seed_data/ledger_master.csv"))?;
-    let mut ledger_master_writer = csv::Writer::
-    from_path(p1.join("schema/postgres/seed_data/ledger_master_temp.csv"))?;
+    let mut ledger_master_reader =
+        csv::Reader::from_path(p1.join("schema/postgres/seed_data/ledger_master.csv"))?;
+    let mut ledger_master_writer =
+        csv::Writer::from_path(p1.join("schema/postgres/seed_data/ledger_master_temp.csv"))?;
     // ledger_master_writer.write_record(ledger_master_reader.headers()?)?;
     for rec in ledger_master_reader.records() {
         let string_record = rec?;
@@ -111,19 +111,22 @@ fn process_account_type_master_seed() -> Result<(), Box<dyn Error>> {
     let p1 = std::env::current_dir()?;
     let p = p1.join("schema/postgres/seed_data/account_type_master.csv");
     let mut account_type_master_reader = csv::Reader::from_path(p.as_path())?;
-    let mut account_type_master_writer = csv::Writer::
-    from_path(p1.join("schema/postgres/seed_data/account_type_master_temp.csv"))?;
+    let mut account_type_master_writer =
+        csv::Writer::from_path(p1.join("schema/postgres/seed_data/account_type_master_temp.csv"))?;
     let mut map: HashMap<String, String> = HashMap::new();
     for rec in account_type_master_reader.records() {
         let string_record = rec?;
         let account_type_master: AccountTypeMaster = string_record.deserialize(None)?;
         let id = account_type_master.id.parse::<i32>()?;
-        let timestmp = Timestamp::
-        from_unix(NoContext,
-                  (SystemTime::now()
-                      .duration_since(UNIX_EPOCH)
-                      .unwrap()
-                      .as_micros() as u64) + (id as u64) * 1000, 0);//to generate sortable uuids
+        let timestmp = Timestamp::from_unix(
+            NoContext,
+            (SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_micros() as u64)
+                + (id as u64) * 1000,
+            0,
+        ); //to generate sortable uuids
 
         let uuid = Uuid::new_v7(timestmp);
         map.insert(id.to_string(), uuid.to_string());
@@ -135,22 +138,32 @@ fn process_account_type_master_seed() -> Result<(), Box<dyn Error>> {
         let mut account_type_master: AccountTypeMaster = string_record.deserialize(None)?;
         account_type_master.id = map.get(account_type_master.id.as_str()).unwrap().clone();
         let k = parse_child_ids_array_in_seed(account_type_master.child_ids.as_str())?
-            .iter().map(|a| map.get(a).unwrap().to_string()).join(",");
+            .iter()
+            .map(|a| map.get(a).unwrap().to_string())
+            .join(",");
         if !k.is_empty() {
             account_type_master.child_ids = format!("{{{}}} ", k);
         }
         if !account_type_master.parent_id.is_empty() {
-            account_type_master.parent_id = map.get(account_type_master.parent_id.as_str()).unwrap().to_string();
+            account_type_master.parent_id = map
+                .get(account_type_master.parent_id.as_str())
+                .unwrap()
+                .to_string();
         }
         account_type_master_writer.serialize(account_type_master)?;
 
-        let mut account_reader = csv::Reader::from_path(p1.join("schema/postgres/seed_data/user_account.csv"))?;
-        let mut account_writer = csv::Writer::from_path(p1.join("schema/postgres/seed_data/user_account_temp.csv"))?;
+        let mut account_reader =
+            csv::Reader::from_path(p1.join("schema/postgres/seed_data/user_account.csv"))?;
+        let mut account_writer =
+            csv::Writer::from_path(p1.join("schema/postgres/seed_data/user_account_temp.csv"))?;
 
         for rec in account_reader.records() {
             let string_record = rec?;
             let mut account: Account = string_record.deserialize(None)?;
-            account.account_type_id = map.get(account.account_type_id.as_str()).unwrap().to_string();
+            account.account_type_id = map
+                .get(account.account_type_id.as_str())
+                .unwrap()
+                .to_string();
             account_writer.serialize(account)?;
         }
         // println!("dafda {:?}",account_type_master.child_ids);
@@ -163,9 +176,9 @@ fn parse_child_ids_array_in_seed(array: &str) -> Result<Vec<String>, Box<dyn Err
     if array.is_empty() {
         return Ok(vec![]);
     }
-    array = array.strip_prefix("{").unwrap()
-        .strip_suffix("}").unwrap();
-    let parsed_ar = array.split(',')
+    array = array.strip_prefix("{").unwrap().strip_suffix("}").unwrap();
+    let parsed_ar = array
+        .split(',')
         .map(|a| a.trim().to_string())
         .collect::<Vec<String>>();
     Ok(parsed_ar)
@@ -175,30 +188,39 @@ fn process_ledger_master_seed() -> Result<(), Box<dyn Error>> {
     let curr_path = std::env::current_dir()?;
     let dest_path = curr_path.join("schema/postgres/seed_data/ledger_master.csv");
     let mut led_mst_reader = csv::Reader::from_path(dest_path)?;
-    let mut led_mst_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/ledger_master_temp.csv"))?;
+    let mut led_mst_writer =
+        csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/ledger_master_temp.csv"))?;
     let mut map: HashMap<String, String> = HashMap::new();
     for rec in led_mst_reader.records() {
         let string_record = rec?;
         let mut led_mst: LedgerMaster = string_record.deserialize(None)?;
         let id = led_mst.id.parse::<i32>()?;
-        let timestmp = Timestamp::
-        from_unix(NoContext,
-                  (SystemTime::now()
-                      .duration_since(UNIX_EPOCH)
-                      .unwrap()
-                      .as_micros() as u64) + (id as u64) * 1000, 0);//to generate sortable uuids
+        let timestmp = Timestamp::from_unix(
+            NoContext,
+            (SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_micros() as u64)
+                + (id as u64) * 1000,
+            0,
+        ); //to generate sortable uuids
 
         let uuid = Uuid::new_v7(timestmp);
         map.insert(led_mst.id, uuid.to_string());
         led_mst.id = uuid.to_string();
         led_mst_writer.serialize(led_mst)?;
     }
-    let mut account_reader = csv::Reader::from_path(curr_path.join("schema/postgres/seed_data/user_account.csv"))?;
-    let mut account_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/user_account_temp.csv"))?;
+    let mut account_reader =
+        csv::Reader::from_path(curr_path.join("schema/postgres/seed_data/user_account.csv"))?;
+    let mut account_writer =
+        csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/user_account_temp.csv"))?;
     for rec in account_reader.records() {
         let string_record = rec?;
         let mut account: Account = string_record.deserialize(None)?;
-        account.ledger_master_id = map.get(account.ledger_master_id.as_str()).unwrap().to_string();
+        account.ledger_master_id = map
+            .get(account.ledger_master_id.as_str())
+            .unwrap()
+            .to_string();
         account_writer.serialize(account)?;
     }
     Ok(())
@@ -231,7 +253,8 @@ fn process_state_master_seed() -> Result<(), Box<dyn Error>> {
     let curr_path = std::env::current_dir()?;
     let seed_path = curr_path.join("schema/postgres/seed_data/state_master.csv");
     let mut state_reader = csv::Reader::from_path(seed_path)?;
-    let mut state_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/state_master_temp.csv"))?;
+    let mut state_writer =
+        csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/state_master_temp.csv"))?;
     let mut map: HashMap<String, String> = HashMap::new();
     for rec in state_reader.records() {
         let string_record = rec?;
@@ -242,8 +265,10 @@ fn process_state_master_seed() -> Result<(), Box<dyn Error>> {
         state_mst.id = uuid.to_string();
         state_writer.serialize(state_mst)?;
     }
-    let mut city_mst_reader = csv::Reader::from_path(curr_path.join("schema/postgres/seed_data/city_master.csv"))?;
-    let mut city_mst_writer = csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/city_master_temp.csv"))?;
+    let mut city_mst_reader =
+        csv::Reader::from_path(curr_path.join("schema/postgres/seed_data/city_master.csv"))?;
+    let mut city_mst_writer =
+        csv::Writer::from_path(curr_path.join("schema/postgres/seed_data/city_master_temp.csv"))?;
     for rec in city_mst_reader.records() {
         let string_record = rec?;
         let mut city_master: CityMaster = string_record.deserialize(None)?;
@@ -308,12 +333,15 @@ fn process_pincode_master_seed() -> Result<(), Box<dyn Error>> {
 }
 #[allow(dead_code)]
 fn get_uuid(id: i32) -> Uuid {
-    let timestmp = Timestamp::
-    from_unix(NoContext,
-              (SystemTime::now()
-                  .duration_since(UNIX_EPOCH)
-                  .unwrap()
-                  .as_micros() as u64) + (id as u64) * 1000, 0);//to generate sortable uuids
+    let timestmp = Timestamp::from_unix(
+        NoContext,
+        (SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_micros() as u64)
+            + (id as u64) * 1000,
+        0,
+    ); //to generate sortable uuids
 
     Uuid::new_v7(timestmp)
 }

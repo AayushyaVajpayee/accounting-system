@@ -22,7 +22,11 @@ pub trait CompanyMasterDao: Send + Sync {
         page_no: u32,
         per_page: u32,
     ) -> Result<PaginatedResponse<CompanyMaster>, DaoError>;
-    async fn create_new_company_for_tenant(&self, entity: &CompanyMaster, idempotence_key: &Uuid) -> Result<Uuid, DaoError>;
+    async fn create_new_company_for_tenant(
+        &self,
+        entity: &CompanyMaster,
+        idempotence_key: &Uuid,
+    ) -> Result<Uuid, DaoError>;
     // async fn update_company_data_for_tenant(&self);
     async fn soft_delete_company_for_tenant(
         &self,

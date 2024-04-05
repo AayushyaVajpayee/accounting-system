@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct CommonUtilsDbMapping{}
+pub struct CommonUtilsDbMapping {}
 
 const COMMON_UTILS_DDL_SQL: &str = include_str!("./common_utils_sql/common_utils_ddl.sql");
-const COMMON_UTILS_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./common_utils_sql/common_utils_functions_and_procedures.sql");
-const COMMON_UTILS_SEED_CSV:&str ="";
-impl DbStructMapping for CommonUtilsDbMapping{
+const COMMON_UTILS_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./common_utils_sql/common_utils_functions_and_procedures.sql");
+const COMMON_UTILS_SEED_CSV: &str = "";
+impl DbStructMapping for CommonUtilsDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         None
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for CommonUtilsDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         COMMON_UTILS_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

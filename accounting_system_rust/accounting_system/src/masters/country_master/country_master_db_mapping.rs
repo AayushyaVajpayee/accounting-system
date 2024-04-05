@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct CountryMasterDbMapping{}
+pub struct CountryMasterDbMapping {}
 
 const COUNTRY_MASTER_DDL_SQL: &str = include_str!("./country_master_sql/country_master_ddl.sql");
-const COUNTRY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./country_master_sql/country_master_functions_and_procedures.sql");
-const COUNTRY_MASTER_SEED_CSV:&str =include_str!("./country_master_sql/country_master.csv");
-impl DbStructMapping for CountryMasterDbMapping{
+const COUNTRY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./country_master_sql/country_master_functions_and_procedures.sql");
+const COUNTRY_MASTER_SEED_CSV: &str = include_str!("./country_master_sql/country_master.csv");
+impl DbStructMapping for CountryMasterDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("country_master")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for CountryMasterDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         COUNTRY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

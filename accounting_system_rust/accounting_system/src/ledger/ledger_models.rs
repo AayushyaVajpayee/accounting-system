@@ -14,7 +14,7 @@ pub enum TransferType {
     Pending,
     PostPending { pending_id: Uuid },
     //accounts, ledger_id, don't make much sense here. I need to wrtie test if i include them otherwise i dont
-    VoidPending { pending_id: Uuid },//accounts, ledger_id,amount don't make much sense here. I need to wrtie test if i include them otherwise i dont
+    VoidPending { pending_id: Uuid }, //accounts, ledger_id,amount don't make much sense here. I need to wrtie test if i include them otherwise i dont
 }
 
 #[derive(Debug, Clone)]
@@ -48,8 +48,6 @@ pub struct Transfer {
     pub created_at: i64,
 }
 
-
-
 #[derive(Default)]
 pub struct TransferBuilder {
     pub id: Option<Uuid>,
@@ -77,13 +75,15 @@ pub struct TransferBuilder {
     /// should be max 80 char
     pub remarks: Option<String>,
     pub created_at: Option<i64>,
-    pub transfer_type: Option<TransferType>
+    pub transfer_type: Option<TransferType>,
 }
 #[cfg(test)]
 pub mod tests {
     use uuid::Uuid;
 
-    use crate::accounting::account::account_models::tests::{SEED_CREDIT_ACCOUNT_ID, SEED_DEBIT_ACCOUNT_ID};
+    use crate::accounting::account::account_models::tests::{
+        SEED_CREDIT_ACCOUNT_ID, SEED_DEBIT_ACCOUNT_ID,
+    };
     use crate::ledger::ledger_models::{Transfer, TransferBuilder};
     use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
@@ -100,8 +100,15 @@ pub mod tests {
             code: builder.code.unwrap_or(0),
             amount: builder.amount.unwrap_or(100),
             remarks: builder.remarks,
-            created_at: builder.created_at.unwrap_or_else(|| std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as i64),
-            transfer_type: builder.transfer_type.unwrap_or(crate::ledger::ledger_models::TransferType::Regular),
+            created_at: builder.created_at.unwrap_or_else(|| {
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_micros() as i64
+            }),
+            transfer_type: builder
+                .transfer_type
+                .unwrap_or(crate::ledger::ledger_models::TransferType::Regular),
         }
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context, ensure};
+use anyhow::{ensure, Context};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -11,14 +11,12 @@ use crate::masters::address_master::address_model::AddressDto;
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
-#[derive(Debug,Serialize,Deserialize,Default, PartialEq)]
-pub struct BusinessEntityDto{
-    pub business_entity:BusinessEntityMaster,
-    pub address:Option<Arc<AddressDto>>
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
+pub struct BusinessEntityDto {
+    pub business_entity: BusinessEntityMaster,
+    pub address: Option<Arc<AddressDto>>,
 }
-impl BusinessEntityDto{
-
-}
+impl BusinessEntityDto {}
 #[derive(Debug, Serialize, Deserialize, Builder, PartialEq, Default)]
 pub struct BusinessEntityMaster {
     pub base_master_fields: BaseMasterFields,
@@ -55,19 +53,15 @@ impl BusinessEntityType {
     }
     pub fn get_name(&self) -> &str {
         match self {
-            BusinessEntityType::EligibleSupplier { name, .. } => { name.inner() }
-            BusinessEntityType::Other { name, .. } => { name.inner() }
+            BusinessEntityType::EligibleSupplier { name, .. } => name.inner(),
+            BusinessEntityType::Other { name, .. } => name.inner(),
         }
     }
 
-    pub fn get_address_id(&self)->Option<Uuid>{
+    pub fn get_address_id(&self) -> Option<Uuid> {
         match self {
-            BusinessEntityType::EligibleSupplier { address_id,.. } => {
-                Some(*address_id)
-            }
-            BusinessEntityType::Other { address_id,.. } => {
-                address_id.clone()
-            }
+            BusinessEntityType::EligibleSupplier { address_id, .. } => Some(*address_id),
+            BusinessEntityType::Other { address_id, .. } => address_id.clone(),
         }
     }
 }
@@ -79,11 +73,15 @@ pub struct BusinessEntityName(String);
 impl BusinessEntityName {
     pub fn new(value: &str) -> anyhow::Result<Self> {
         let value = value.trim();
-        ensure!(!value.is_empty(),"name cannot be empty");
-        ensure!(value.len()<=80,"name cannot be more than 80 chars");
-        let valid = value.chars()
-            .all(|a| a.is_ascii_alphanumeric() || a == '.' || a == '-' || a == '_' || a == ',' || a == ' ');
-        ensure!(valid,"name should have only alphanumeric or chars like '.','-','_',',' ");
+        ensure!(!value.is_empty(), "name cannot be empty");
+        ensure!(value.len() <= 80, "name cannot be more than 80 chars");
+        let valid = value.chars().all(|a| {
+            a.is_ascii_alphanumeric() || a == '.' || a == '-' || a == '_' || a == ',' || a == ' '
+        });
+        ensure!(
+            valid,
+            "name should have only alphanumeric or chars like '.','-','_',',' "
+        );
         Ok(Self(value.to_string()))
     }
     pub fn inner(&self) -> &str {
@@ -104,7 +102,8 @@ pub struct Email(String);
 
 #[derive(Debug, Validate)]
 struct EmailTemp<'a> {
-    #[validate(email)] email: &'a str,
+    #[validate(email)]
+    email: &'a str,
 }
 
 impl Email {
@@ -137,10 +136,13 @@ pub struct PhoneNumber(String);
 impl PhoneNumber {
     pub fn new(value: &str) -> anyhow::Result<Self> {
         let value = value.trim();
-        ensure!(!value.is_empty(),"phone number cannot be empty");
-        ensure!(value.len()<=10,"phone number too large. check again");
-        ensure!(value.chars().all(|a|a.is_numeric()),"indian (+91) mobile numbers (10 digits) allowed only.  \
-        Please enter 10 digits without country code and any space ");
+        ensure!(!value.is_empty(), "phone number cannot be empty");
+        ensure!(value.len() <= 10, "phone number too large. check again");
+        ensure!(
+            value.chars().all(|a| a.is_numeric()),
+            "indian (+91) mobile numbers (10 digits) allowed only.  \
+        Please enter 10 digits without country code and any space "
+        );
         Ok(PhoneNumber(value.to_string()))
     }
     pub fn inner(&self) -> &str {
@@ -201,20 +203,27 @@ pub mod tests {
     use uuid::Uuid;
 
     use crate::accounting::user::user_models::SEED_USER_ID;
-    use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, BusinessEntityMasterBuilder, CreateBusinessEntityRequest, CreateBusinessEntityRequestBuilder};
+    use crate::masters::business_entity_master::business_entity_models::{
+        BusinessEntityMaster, BusinessEntityMasterBuilder, CreateBusinessEntityRequest,
+        CreateBusinessEntityRequestBuilder,
+    };
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_ID1:Uuid = Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap();
+        pub static ref SEED_BUSINESS_ENTITY_ID1: Uuid =
+            Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap();
     }
     lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1:Uuid =Uuid::from_str("018d503d-acef-795b-89ae-dfb0b7feda60").unwrap();
+        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1: Uuid =
+            Uuid::from_str("018d503d-acef-795b-89ae-dfb0b7feda60").unwrap();
     }
     lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_ID2:Uuid = Uuid::from_str("018d5efd-009f-7e36-9d4f-8ad30460cada").unwrap();
+        pub static ref SEED_BUSINESS_ENTITY_ID2: Uuid =
+            Uuid::from_str("018d5efd-009f-7e36-9d4f-8ad30460cada").unwrap();
     }
     lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2:Uuid =Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap();
+        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2: Uuid =
+            Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap();
     }
     #[allow(dead_code)]
     pub fn a_business_entity_master(b: BusinessEntityMasterBuilder) -> BusinessEntityMaster {
@@ -225,7 +234,9 @@ pub mod tests {
         }
     }
 
-    pub fn a_create_business_entity_request(b: CreateBusinessEntityRequestBuilder) -> CreateBusinessEntityRequest {
+    pub fn a_create_business_entity_request(
+        b: CreateBusinessEntityRequestBuilder,
+    ) -> CreateBusinessEntityRequest {
         CreateBusinessEntityRequest {
             idempotence_key: b.idempotence_key.unwrap_or_else(Uuid::now_v7),
             entity_type: b.entity_type.unwrap_or_default(),

@@ -27,13 +27,16 @@ use crate::tenant::tenant_service::{TenantService, TenantServiceError};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait CompanyMasterService: Send + Sync {
-    async fn get_all_companies_for_tenant_id(&self, tenant_id: &Uuid, pagination_request: &PaginationRequest) -> Result<PaginatedResponse<CompanyMaster>, ServiceError>;
+    async fn get_all_companies_for_tenant_id(
+        &self,
+        tenant_id: &Uuid,
+        pagination_request: &PaginationRequest,
+    ) -> Result<PaginatedResponse<CompanyMaster>, ServiceError>;
 
     async fn create_new_company_for_tenant(
         &self,
         request: &CreateCompanyRequest,
     ) -> Result<Uuid, ServiceError>;
-
 }
 
 pub struct CompanyMasterServiceImpl {
@@ -68,9 +71,10 @@ pub enum ServiceError {
 impl From<DaoError> for ServiceError {
     fn from(dao_err: DaoError) -> Self {
         match dao_err {
-            DaoError::ConnectionPool(_) |
-            DaoError::PostgresQueryError(_) |
-            DaoError::InvalidEntityToDbRowConversion(_) | DaoError::ReturnedValueNone => ServiceError::Db(dao_err),
+            DaoError::ConnectionPool(_)
+            | DaoError::PostgresQueryError(_)
+            | DaoError::InvalidEntityToDbRowConversion(_)
+            | DaoError::ReturnedValueNone => ServiceError::Db(dao_err),
             DaoError::UniqueConstraintViolated {
                 ref constraint_name,
             } => {
@@ -81,21 +85,25 @@ impl From<DaoError> for ServiceError {
                 }
                 ServiceError::Db(dao_err)
             }
-            DaoError::AnyhowError(_) => {
-                ServiceError::Db(dao_err)
-            }
+            DaoError::AnyhowError(_) => ServiceError::Db(dao_err),
         }
     }
 }
 
 impl CompanyMasterServiceImpl {
-    async fn validate_create_company_request(&self, request: &CreateCompanyRequest) -> Result<Vec<String>, ServiceError> {
+    async fn validate_create_company_request(
+        &self,
+        request: &CreateCompanyRequest,
+    ) -> Result<Vec<String>, ServiceError> {
         let mut validations = Vec::new();
         let tenant = self
             .tenant_service
             .get_tenant_by_id(request.tenant_id)
             .await?;
-        let user = self.user_service.get_user_by_id(request.created_by,request.tenant_id).await?;
+        let user = self
+            .user_service
+            .get_user_by_id(request.created_by, request.tenant_id)
+            .await?;
         let company_name = CompanyName::validate(request.name.as_str());
         let cin = CompanyIdentificationNumber::validate(request.cin.as_str());
         if tenant.is_none() {
@@ -120,15 +128,27 @@ impl CompanyMasterServiceImpl {
 
 #[async_trait]
 impl CompanyMasterService for CompanyMasterServiceImpl {
-    async fn get_all_companies_for_tenant_id(&self, tenant_id: &Uuid, pagination_request: &PaginationRequest) -> Result<PaginatedResponse<CompanyMaster>, ServiceError> {
+    async fn get_all_companies_for_tenant_id(
+        &self,
+        tenant_id: &Uuid,
+        pagination_request: &PaginationRequest,
+    ) -> Result<PaginatedResponse<CompanyMaster>, ServiceError> {
         let validated = pagination_request.validate();
         if let Err(validated) = validated {
-            let errs = flatten_errors(&validated)
-                .context("flatten_errors failed in CompanyMasterService.get_all_companies_for_tenant_id")?;
+            let errs = flatten_errors(&validated).context(
+                "flatten_errors failed in CompanyMasterService.get_all_companies_for_tenant_id",
+            )?;
             let errs = errs.iter().map(|a| a.to_string()).collect_vec();
             return Err(ServiceError::Validation(errs));
         }
-        let resp = self.dao.get_all_companies_for_tenant(tenant_id, pagination_request.page_no, pagination_request.per_page).await?;
+        let resp = self
+            .dao
+            .get_all_companies_for_tenant(
+                tenant_id,
+                pagination_request.page_no,
+                pagination_request.per_page,
+            )
+            .await?;
         return Ok(resp);
     }
 
@@ -141,7 +161,8 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
         if !validations.is_empty() {
             return Err(ServiceError::Validation(validations));
         }
-        let company_master = request.to_company_master()
+        let company_master = request
+            .to_company_master()
             .context("error while converting company creation request to company master")?;
         let res = self
             .dao
@@ -151,9 +172,17 @@ impl CompanyMasterService for CompanyMasterServiceImpl {
     }
 }
 
-pub fn get_company_master_service(arc: Arc<Pool>, tenant_service: Arc<dyn TenantService>, user_service: Arc<dyn UserService>) -> Arc<dyn CompanyMasterService> {
+pub fn get_company_master_service(
+    arc: Arc<Pool>,
+    tenant_service: Arc<dyn TenantService>,
+    user_service: Arc<dyn UserService>,
+) -> Arc<dyn CompanyMasterService> {
     let dao = get_company_master_dao(arc);
-    Arc::new(CompanyMasterServiceImpl { dao, tenant_service, user_service })
+    Arc::new(CompanyMasterServiceImpl {
+        dao,
+        tenant_service,
+        user_service,
+    })
 }
 
 #[cfg(test)]
@@ -223,9 +252,9 @@ pub mod tests {
             .once();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))))
+            .returning(|_a, _| Ok(Some(Arc::new(a_user(Default::default())))))
             .once();
-        let  company_service = CompanyMasterServiceImpl {
+        let company_service = CompanyMasterServiceImpl {
             dao: Arc::new(dao),
             tenant_service: Arc::new(tenant_service),
             user_service: Arc::new(user_service),
@@ -240,12 +269,13 @@ pub mod tests {
         assert_that!(actual_err).is_equal_to(expected_err);
     }
 
-
     #[tokio::test]
     async fn test_user_not_found_validation() {
         let mut user_service = MockUserService::new();
         let mut tenant_service = MockTenantService::new();
-        user_service.expect_get_user_by_id().returning(|_a,_| Ok(None));
+        user_service
+            .expect_get_user_by_id()
+            .returning(|_a, _| Ok(None));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(Some(Arc::new(a_tenant(Default::default())))));
@@ -259,7 +289,8 @@ pub mod tests {
         };
         let errors = company_master_service
             .validate_create_company_request(&company_request)
-            .await.unwrap();
+            .await
+            .unwrap();
         assert_that!(errors).has_length(1);
         let error = errors.get(0).unwrap();
         let p = format!(
@@ -275,7 +306,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))));
+            .returning(|_a, _| Ok(Some(Arc::new(a_user(Default::default())))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(None));
@@ -289,7 +320,8 @@ pub mod tests {
         };
         let errors = company_master_service
             .validate_create_company_request(&company_request)
-            .await.unwrap();
+            .await
+            .unwrap();
         assert_that!(errors).has_length(1);
         let error = errors.get(0).unwrap();
         let p = format!("no tenant found for id {}", company_request.tenant_id);
@@ -308,7 +340,7 @@ pub mod tests {
         let mut tenant_service = MockTenantService::new();
         user_service
             .expect_get_user_by_id()
-            .returning(|_a,_| Ok(Some(Arc::new(a_user(Default::default())))));
+            .returning(|_a, _| Ok(Some(Arc::new(a_user(Default::default())))));
         tenant_service
             .expect_get_tenant_by_id()
             .returning(|_a| Ok(Some(Arc::new(a_tenant(Default::default())))));
@@ -327,7 +359,8 @@ pub mod tests {
         };
         let errors = company_master_service
             .validate_create_company_request(&company_request)
-            .await.unwrap();
+            .await
+            .unwrap();
         assert_that!(errors).has_length(1);
         let error = errors.get(0).unwrap();
         assert_that!(error.as_str()).is_equal_to(error_message.as_str());

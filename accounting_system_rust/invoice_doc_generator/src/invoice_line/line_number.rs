@@ -1,14 +1,22 @@
 use anyhow::ensure;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "i32")]
 pub struct LineNumber(u16);
 
 impl LineNumber {
     pub fn new(line_number: i32) -> anyhow::Result<Self> {
-        ensure!(line_number>0,"line number ({}) should be greater than 0 ",line_number);
-        ensure!(line_number<=2000,"line number ({}) should be less than 2000 ",line_number);
+        ensure!(
+            line_number > 0,
+            "line number ({}) should be greater than 0 ",
+            line_number
+        );
+        ensure!(
+            line_number <= 2000,
+            "line number ({}) should be less than 2000 ",
+            line_number
+        );
         Ok(Self(line_number as u16))
     }
 }

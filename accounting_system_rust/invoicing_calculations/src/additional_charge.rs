@@ -52,17 +52,19 @@ pub fn compute_total_charge_amount(additional_charge: &AdditionalCharge) -> f64 
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use rstest::rstest;
     use spectral::assert_that;
 
-    use crate::additional_charge::{AdditionalCharge, compute_tax_amount, compute_total_charge_amount};
+    use crate::additional_charge::{
+        compute_tax_amount, compute_total_charge_amount, AdditionalCharge,
+    };
 
     #[rstest]
     #[case(AdditionalCharge::new(0.0, 0.0).unwrap(),0.0)]
     #[case(AdditionalCharge::new(100.0, 10.0).unwrap(),10.0)]
     #[case(AdditionalCharge::new(0.0, 10.0).unwrap(),0.0)]
-    fn test_compute_tax_amount(#[case] line:AdditionalCharge,#[case] taxable_amount:f64){
+    fn test_compute_tax_amount(#[case] line: AdditionalCharge, #[case] taxable_amount: f64) {
         let p = compute_tax_amount(&line);
         assert_that!(p).is_equal_to(taxable_amount);
     }
@@ -71,9 +73,8 @@ mod tests{
     #[case(AdditionalCharge::new(0.0, 0.0).unwrap(),0.0)]
     #[case(AdditionalCharge::new(100.0, 10.0).unwrap(),110.0)]
     #[case(AdditionalCharge::new(0.0, 10.0).unwrap(),0.0)]
-    fn test_compute_total_charge_amount(#[case] line:AdditionalCharge,#[case] total_amount:f64){
+    fn test_compute_total_charge_amount(#[case] line: AdditionalCharge, #[case] total_amount: f64) {
         let p = compute_total_charge_amount(&line);
         assert_that!(p).is_equal_to(total_amount);
     }
-
 }

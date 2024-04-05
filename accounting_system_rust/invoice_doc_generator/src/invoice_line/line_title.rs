@@ -4,12 +4,14 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::invoice_line::line_title::LineTitleError::{EmptyTitle, NoReadableChars, TooLong, TooShort};
+use crate::invoice_line::line_title::LineTitleError::{
+    EmptyTitle, NoReadableChars, TooLong, TooShort,
+};
 
 lazy_static! {
     static ref NO_ALPHABET_REGEX: Regex = Regex::new(r"^(?:[^a-z^A-Z]+)$").unwrap();
 }
-#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct LineTitle(String);
 
@@ -68,8 +70,8 @@ mod line_title_tests {
     #[rstest]
     #[case("", false)]
     #[case(
-    "fdjlajfljldjfaldjfladjflakdjlfkajlfjlajflakjlkasdjlfkdjalkjafldjaljfaljfdlajfdlakjfdal",
-    false
+        "fdjlajfljldjfaldjfladjflakdjlfkajlfjlajflakjlkasdjlfkdjalkjafldjaljfaljfdlajfdlakjfdal",
+        false
     )]
     #[case("\n\n\n\n\n\n", false)]
     #[case("                ", false)]

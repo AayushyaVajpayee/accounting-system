@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct CityMasterDbMapping{}
+pub struct CityMasterDbMapping {}
 
 const CITY_MASTER_DDL_SQL: &str = include_str!("./city_master_sql/city_master_ddl.sql");
-const CITY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./city_master_sql/city_master_functions_and_procedures.sql");
-const CITY_MASTER_SEED_CSV:&str =include_str!("./city_master_sql/city_master.csv");
-impl DbStructMapping for CityMasterDbMapping{
+const CITY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./city_master_sql/city_master_functions_and_procedures.sql");
+const CITY_MASTER_SEED_CSV: &str = include_str!("./city_master_sql/city_master.csv");
+impl DbStructMapping for CityMasterDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("city_master")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for CityMasterDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         CITY_MASTER_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

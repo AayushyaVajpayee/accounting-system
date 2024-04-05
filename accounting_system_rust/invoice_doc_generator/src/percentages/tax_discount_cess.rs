@@ -4,17 +4,22 @@ use thiserror::Error;
 
 use crate::percentages::tax_discount_cess::TaxPercentageError::NotInBounds;
 
-#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "f32")]
 pub struct GSTPercentage(f32);
 
 impl GSTPercentage {
     pub fn new(value: f32) -> anyhow::Result<Self> {
-        if value == 0.0 || value == 3.0 || value == 5.0
-            || value == 12.0 || value == 18.0 || value == 28.0 {
+        if value == 0.0
+            || value == 3.0
+            || value == 5.0
+            || value == 12.0
+            || value == 18.0
+            || value == 28.0
+        {
             Ok(GSTPercentage(value))
         } else {
-            bail!("gst tax ({})% not supported",value)
+            bail!("gst tax ({})% not supported", value)
         }
     }
 
@@ -30,7 +35,7 @@ impl TryFrom<f32> for GSTPercentage {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct TaxPercentage(f32);
 
 #[derive(Debug, Error)]
@@ -46,7 +51,7 @@ impl TaxPercentage {
         }
         Ok(Self(tax_percentage))
     }
-    pub fn inner(&self)->f32{
+    pub fn inner(&self) -> f32 {
         self.0
     }
 }

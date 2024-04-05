@@ -2,7 +2,8 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
 pub struct BusinessEntityDetailDbMapping {}
 
-const BUSINESS_ENTITY_DETAIL_SEED_CSV: &str = include_str!("./business_entity_master_sql/business_entity_invoice_detail.csv");
+const BUSINESS_ENTITY_DETAIL_SEED_CSV: &str =
+    include_str!("./business_entity_master_sql/business_entity_invoice_detail.csv");
 
 impl DbStructMapping for BusinessEntityDetailDbMapping {
     fn table_name(&self) -> Option<&'static str> {

@@ -2,8 +2,8 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
 pub struct InvoicingSeriesCounterDbMapping {}
 
-
-const INVOICING_SERIES_COUNTER_SEED_DATA:&str = include_str!("./invoicing_series_sql/invoicing_series_counter.csv");
+const INVOICING_SERIES_COUNTER_SEED_DATA: &str =
+    include_str!("./invoicing_series_sql/invoicing_series_counter.csv");
 
 impl DbStructMapping for InvoicingSeriesCounterDbMapping {
     fn table_name(&self) -> Option<&'static str> {

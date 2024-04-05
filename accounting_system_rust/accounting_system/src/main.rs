@@ -1,9 +1,9 @@
 use std::io;
 use std::sync::Arc;
 
-use actix_web::{App, HttpResponseBuilder, HttpServer, Responder, web};
 use actix_web::http::StatusCode;
 use actix_web::middleware::Logger;
+use actix_web::{web, App, HttpResponseBuilder, HttpServer, Responder};
 use actix_web_lab::middleware::from_fn;
 use log::LevelFilter;
 
@@ -32,19 +32,17 @@ use crate::storage::storage_service::get_storage_service;
 use crate::tenant::tenant_http_api;
 use crate::tenant::tenant_service::get_tenant_service;
 
-mod ledger;
 mod accounting;
+mod ledger;
 
-
-mod configurations;
 mod audit_table;
+mod common_utils;
+mod configurations;
+mod db_schema_syncer;
 mod invoicing;
 mod masters;
-mod tenant;
-mod common_utils;
-mod db_schema_syncer;
 mod storage;
-
+mod tenant;
 
 pub fn build_dependencies() {
     //1. seeddata dependencies
@@ -74,7 +72,6 @@ async fn healthcheck() -> actix_web::Result<impl Responder> {
     builder.await
 }
 
-
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "error");
@@ -83,7 +80,8 @@ async fn main() -> io::Result<()> {
         .filter(Some("actix_web"), LevelFilter::Info)
         .filter(Some("accounting_system"), LevelFilter::Info)
         .format_module_path(true)
-        .format_timestamp_micros().init();
+        .format_timestamp_micros()
+        .init();
     let storage = get_storage_service().await;
     let pool = Arc::new(get_postgres_conn_pool());
     let audit_table_service = get_audit_service(pool.clone());
@@ -99,13 +97,17 @@ async fn main() -> io::Result<()> {
     let account_type_master_service = get_account_type_master_service(pool.clone());
     let account_service = get_account_service(pool.clone());
     let ledger_service = get_ledger_transfer_service(pool.clone());
-    let company_master_service = get_company_master_service(pool.clone(), tenant_service.clone(), user_service.clone());
-    let address_service = get_address_service(pool.clone(),
-                                              country_master_service.clone(),
-                                              city_master_service.clone(),
-                                              pincode_service.clone(),
-                                              state_master_service.clone());
-    let business_entity_service = get_business_entity_master_service(pool.clone(), address_service.clone());
+    let company_master_service =
+        get_company_master_service(pool.clone(), tenant_service.clone(), user_service.clone());
+    let address_service = get_address_service(
+        pool.clone(),
+        country_master_service.clone(),
+        city_master_service.clone(),
+        pincode_service.clone(),
+        state_master_service.clone(),
+    );
+    let business_entity_service =
+        get_business_entity_master_service(pool.clone(), address_service.clone());
     let invoice_template_service = get_invoice_template_master_service(pool.clone());
     let invoicing_series_service = get_invoicing_series_service(pool.clone());
     let product_item_serv = get_product_item_service(pool.clone());
@@ -128,27 +130,84 @@ async fn main() -> io::Result<()> {
             .app_data(user_service.clone())
             .wrap(from_fn(tenant_user_header_middleware))
             .wrap(from_fn(pagination_header_middleware))
-
-            .configure(|conf| audit_table::audit_table_http_api::init_routes(conf, audit_table_service.clone()))
+            .configure(|conf| {
+                audit_table::audit_table_http_api::init_routes(conf, audit_table_service.clone())
+            })
             .configure(|conf| tenant_http_api::init_routes(conf, tenant_service.clone()))
-            .configure(|conf| accounting::user::user_http_api::init_routes(conf, user_service.clone()))
-            .configure(|conf| masters::pincode_master::pincode_http_api::init_routes(conf, pincode_service.clone()))
-            .configure(|conf| masters::city_master::city_master_http_api::init_routes(conf, city_master_service.clone()))
-            .configure(|conf| masters::state_master::state_master_http_api::init_routes(conf, state_master_service.clone()))
-            .configure(|conf| masters::country_master::country_master_http_api::init_routes(conf, country_master_service.clone()))
-            .configure(|conf| masters::company_master::company_master_http_api::init_routes(conf, company_master_service.clone()))
-            .configure(|conf| accounting::currency::currency_http_api::init_routes(conf, currency_service.clone()))
-            .configure(|conf| ledger::ledgermaster::ledger_master_http_api::init_routes(conf, ledger_master_service.clone()))
-            .configure(|conf| accounting::account::account_type::account_type_http_api::init_routes(conf, account_type_master_service.clone()))
-            .configure(|conf| accounting::account::account_http_api::init_routes(conf, account_service.clone()))
-            .configure(|conf| ledger::ledger_transfer_http_api::init_routes(conf, ledger_service.clone()))
-            .configure(|conf| invoicing::invoicing_http_api::init_routes(conf, invoicing_service.clone()))
-            .configure(|conf| masters::product_item_master::product_item_http_api::init_routes(conf, product_item_serv.clone()))
-            .configure(|conf| invoicing::invoicing_series::invoicing_series_http_api::init_routes(conf, invoicing_series_service.clone()))
+            .configure(|conf| {
+                accounting::user::user_http_api::init_routes(conf, user_service.clone())
+            })
+            .configure(|conf| {
+                masters::pincode_master::pincode_http_api::init_routes(
+                    conf,
+                    pincode_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                masters::city_master::city_master_http_api::init_routes(
+                    conf,
+                    city_master_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                masters::state_master::state_master_http_api::init_routes(
+                    conf,
+                    state_master_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                masters::country_master::country_master_http_api::init_routes(
+                    conf,
+                    country_master_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                masters::company_master::company_master_http_api::init_routes(
+                    conf,
+                    company_master_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                accounting::currency::currency_http_api::init_routes(conf, currency_service.clone())
+            })
+            .configure(|conf| {
+                ledger::ledgermaster::ledger_master_http_api::init_routes(
+                    conf,
+                    ledger_master_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                accounting::account::account_type::account_type_http_api::init_routes(
+                    conf,
+                    account_type_master_service.clone(),
+                )
+            })
+            .configure(|conf| {
+                accounting::account::account_http_api::init_routes(conf, account_service.clone())
+            })
+            .configure(|conf| {
+                ledger::ledger_transfer_http_api::init_routes(conf, ledger_service.clone())
+            })
+            .configure(|conf| {
+                invoicing::invoicing_http_api::init_routes(conf, invoicing_service.clone())
+            })
+            .configure(|conf| {
+                masters::product_item_master::product_item_http_api::init_routes(
+                    conf,
+                    product_item_serv.clone(),
+                )
+            })
+            .configure(|conf| {
+                invoicing::invoicing_series::invoicing_series_http_api::init_routes(
+                    conf,
+                    invoicing_series_service.clone(),
+                )
+            })
             .route("/healthcheck", web::get().to(healthcheck))
     })
-        .bind(("0.0.0.0", 8090))?
-        .run()
-        .await.expect("TODO: panic message");
+    .bind(("0.0.0.0", 8090))?
+    .run()
+    .await
+    .expect("TODO: panic message");
     Ok(())
 }

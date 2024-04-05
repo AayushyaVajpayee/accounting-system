@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::fmt;
 
 use anyhow::{anyhow, Context};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use typst::eval::Tracer;
 use typst::foundations::Bytes;
 
@@ -43,7 +43,6 @@ fn get_file_map(data: Vec<u8>) -> HashMap<&'static str, Bytes> {
     map.insert("preview/tablex/0.0.8", Bytes::from(empty));
     map
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DocDate {
@@ -117,7 +116,10 @@ pub enum InvoiceTableHeaderNameEnum {
 }
 
 impl Serialize for InvoiceTableHeaderNameEnum {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         let mut seq = serializer.serialize_seq(Some(3))?;
         seq.serialize_element(self.header_display_name())?;
         seq.serialize_element(self.display_unit())?;
@@ -128,8 +130,8 @@ impl Serialize for InvoiceTableHeaderNameEnum {
 
 impl<'de> Deserialize<'de> for InvoiceTableHeaderNameEnum {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         struct EnumVisitor;
 
@@ -140,8 +142,8 @@ impl<'de> Deserialize<'de> for InvoiceTableHeaderNameEnum {
                 formatter.write_str("a sequence of three strings")
             }
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-                where
-                    A: SeqAccess<'de>,
+            where
+                A: SeqAccess<'de>,
             {
                 let header_display_name: &str = seq
                     .next_element()?
@@ -163,10 +165,7 @@ impl<'de> Deserialize<'de> for InvoiceTableHeaderNameEnum {
 }
 
 impl InvoiceTableHeaderNameEnum {
-    fn from_str(
-        header_display_name: &str,
-        currency_unit: String,
-    ) -> Result<Self, String> {
+    fn from_str(header_display_name: &str, currency_unit: String) -> Result<Self, String> {
         match header_display_name {
             "sl no" => Ok(InvoiceTableHeaderNameEnum::SerialNo(currency_unit)),
             "item" => Ok(InvoiceTableHeaderNameEnum::ItemDescription(currency_unit)),
@@ -195,62 +194,62 @@ impl InvoiceTableHeaderNameEnum {
 impl InvoiceTableHeaderNameEnum {
     fn header_display_name(&self) -> &'static str {
         match &self {
-            InvoiceTableHeaderNameEnum::SerialNo(_) => { "sl no" }
-            InvoiceTableHeaderNameEnum::ItemDescription(_) => { "item" }
-            InvoiceTableHeaderNameEnum::Hsn(_) => { "hsn" }
-            InvoiceTableHeaderNameEnum::Sac(_) => { "sac" }
-            InvoiceTableHeaderNameEnum::BatchNo(_) => { "batch_no" }
-            InvoiceTableHeaderNameEnum::ExpiryDate(_) => { "expiry_date" }
-            InvoiceTableHeaderNameEnum::Mrp(_) => { "mrp" }
-            InvoiceTableHeaderNameEnum::Uqc(_) => { "uqc" }
-            InvoiceTableHeaderNameEnum::Qty(_) => { "qty" }
-            InvoiceTableHeaderNameEnum::UnitPrice(_) => { "unit price" }
-            InvoiceTableHeaderNameEnum::Discount(_) => { "discount" }
-            InvoiceTableHeaderNameEnum::Igst(_) => { "igst" }
-            InvoiceTableHeaderNameEnum::Cgst(_) => { "cgst" }
-            InvoiceTableHeaderNameEnum::Sgst(_) => { "sgst" }
-            InvoiceTableHeaderNameEnum::Cess(_) => { "cess" }
-            InvoiceTableHeaderNameEnum::LineTotal(_) => { "line total" }
+            InvoiceTableHeaderNameEnum::SerialNo(_) => "sl no",
+            InvoiceTableHeaderNameEnum::ItemDescription(_) => "item",
+            InvoiceTableHeaderNameEnum::Hsn(_) => "hsn",
+            InvoiceTableHeaderNameEnum::Sac(_) => "sac",
+            InvoiceTableHeaderNameEnum::BatchNo(_) => "batch_no",
+            InvoiceTableHeaderNameEnum::ExpiryDate(_) => "expiry_date",
+            InvoiceTableHeaderNameEnum::Mrp(_) => "mrp",
+            InvoiceTableHeaderNameEnum::Uqc(_) => "uqc",
+            InvoiceTableHeaderNameEnum::Qty(_) => "qty",
+            InvoiceTableHeaderNameEnum::UnitPrice(_) => "unit price",
+            InvoiceTableHeaderNameEnum::Discount(_) => "discount",
+            InvoiceTableHeaderNameEnum::Igst(_) => "igst",
+            InvoiceTableHeaderNameEnum::Cgst(_) => "cgst",
+            InvoiceTableHeaderNameEnum::Sgst(_) => "sgst",
+            InvoiceTableHeaderNameEnum::Cess(_) => "cess",
+            InvoiceTableHeaderNameEnum::LineTotal(_) => "line total",
         }
     }
     fn display_unit(&self) -> &str {
         match &self {
-            InvoiceTableHeaderNameEnum::SerialNo(a) => { a }
-            InvoiceTableHeaderNameEnum::ItemDescription(a) => { a }
-            InvoiceTableHeaderNameEnum::Hsn(a) => { a }
-            InvoiceTableHeaderNameEnum::Sac(a) => { a }
-            InvoiceTableHeaderNameEnum::BatchNo(a) => { a }
-            InvoiceTableHeaderNameEnum::ExpiryDate(a) => { a }
-            InvoiceTableHeaderNameEnum::Mrp(a) => { a }
-            InvoiceTableHeaderNameEnum::Uqc(a) => { a }
-            InvoiceTableHeaderNameEnum::Qty(a) => { a }
-            InvoiceTableHeaderNameEnum::UnitPrice(a) => { a }
-            InvoiceTableHeaderNameEnum::Discount(a) => { a }
-            InvoiceTableHeaderNameEnum::Igst(a) => { a }
-            InvoiceTableHeaderNameEnum::Cgst(a) => { a }
-            InvoiceTableHeaderNameEnum::Sgst(a) => { a }
-            InvoiceTableHeaderNameEnum::Cess(a) => { a }
-            InvoiceTableHeaderNameEnum::LineTotal(a) => { a }
+            InvoiceTableHeaderNameEnum::SerialNo(a) => a,
+            InvoiceTableHeaderNameEnum::ItemDescription(a) => a,
+            InvoiceTableHeaderNameEnum::Hsn(a) => a,
+            InvoiceTableHeaderNameEnum::Sac(a) => a,
+            InvoiceTableHeaderNameEnum::BatchNo(a) => a,
+            InvoiceTableHeaderNameEnum::ExpiryDate(a) => a,
+            InvoiceTableHeaderNameEnum::Mrp(a) => a,
+            InvoiceTableHeaderNameEnum::Uqc(a) => a,
+            InvoiceTableHeaderNameEnum::Qty(a) => a,
+            InvoiceTableHeaderNameEnum::UnitPrice(a) => a,
+            InvoiceTableHeaderNameEnum::Discount(a) => a,
+            InvoiceTableHeaderNameEnum::Igst(a) => a,
+            InvoiceTableHeaderNameEnum::Cgst(a) => a,
+            InvoiceTableHeaderNameEnum::Sgst(a) => a,
+            InvoiceTableHeaderNameEnum::Cess(a) => a,
+            InvoiceTableHeaderNameEnum::LineTotal(a) => a,
         }
     }
     fn json_key(&self) -> &'static str {
         match &self {
-            InvoiceTableHeaderNameEnum::SerialNo(_) => { "line_no" }
-            InvoiceTableHeaderNameEnum::ItemDescription(_) => { "item" }
-            InvoiceTableHeaderNameEnum::Hsn(_) => { "hsn_sac" }
-            InvoiceTableHeaderNameEnum::Sac(_) => { "hsn_sac" }
-            InvoiceTableHeaderNameEnum::BatchNo(_) => { "batch_no" }
-            InvoiceTableHeaderNameEnum::ExpiryDate(_) => { "expiry_date" }
-            InvoiceTableHeaderNameEnum::Mrp(_) => { "mrp" }
-            InvoiceTableHeaderNameEnum::Uqc(_) => { "uqc" }
-            InvoiceTableHeaderNameEnum::Qty(_) => { "quantity" }
-            InvoiceTableHeaderNameEnum::UnitPrice(_) => { "unit_price" }
-            InvoiceTableHeaderNameEnum::Discount(_) => { "discount_percentage" }
-            InvoiceTableHeaderNameEnum::Igst(_) => { "igst_percentage" }
-            InvoiceTableHeaderNameEnum::Cgst(_) => { "cgst_percentage" }
-            InvoiceTableHeaderNameEnum::Sgst(_) => { "sgst_percentage" }
-            InvoiceTableHeaderNameEnum::Cess(_) => { "cess_percentage" }
-            InvoiceTableHeaderNameEnum::LineTotal(_) => { "line_total" }
+            InvoiceTableHeaderNameEnum::SerialNo(_) => "line_no",
+            InvoiceTableHeaderNameEnum::ItemDescription(_) => "item",
+            InvoiceTableHeaderNameEnum::Hsn(_) => "hsn_sac",
+            InvoiceTableHeaderNameEnum::Sac(_) => "hsn_sac",
+            InvoiceTableHeaderNameEnum::BatchNo(_) => "batch_no",
+            InvoiceTableHeaderNameEnum::ExpiryDate(_) => "expiry_date",
+            InvoiceTableHeaderNameEnum::Mrp(_) => "mrp",
+            InvoiceTableHeaderNameEnum::Uqc(_) => "uqc",
+            InvoiceTableHeaderNameEnum::Qty(_) => "quantity",
+            InvoiceTableHeaderNameEnum::UnitPrice(_) => "unit_price",
+            InvoiceTableHeaderNameEnum::Discount(_) => "discount_percentage",
+            InvoiceTableHeaderNameEnum::Igst(_) => "igst_percentage",
+            InvoiceTableHeaderNameEnum::Cgst(_) => "cgst_percentage",
+            InvoiceTableHeaderNameEnum::Sgst(_) => "sgst_percentage",
+            InvoiceTableHeaderNameEnum::Cess(_) => "cess_percentage",
+            InvoiceTableHeaderNameEnum::LineTotal(_) => "line_total",
         }
     }
 }
@@ -315,13 +314,11 @@ pub struct Invoice {
     pub tax_summary: TaxSummary,
     pub invoice_summary: InvoiceSummary,
     pub invoice_lines_table: InvoiceLineTable,
-    pub invoice_remarks:Option<String>,
-    pub ecommerce_gstin:Option<String>,
+    pub invoice_remarks: Option<String>,
+    pub ecommerce_gstin: Option<String>,
 }
 
-
-pub fn create_invoice_pdf(input: Invoice) ->
-anyhow::Result<Vec<u8>> {
+pub fn create_invoice_pdf(input: Invoice) -> anyhow::Result<Vec<u8>> {
     let a = serde_json::to_vec(&input).context("error during serialisation")?;
     let map = get_file_map(a);
     let world = InMemoryWorld::new(MAIN, map);
@@ -367,4 +364,3 @@ mod tests {
         assert_eq!(a, j);
     }
 }
-

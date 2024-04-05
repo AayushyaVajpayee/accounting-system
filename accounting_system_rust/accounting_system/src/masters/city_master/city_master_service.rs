@@ -5,13 +5,13 @@ use deadpool_postgres::Pool;
 use moka::future::Cache;
 use uuid::Uuid;
 
-use crate::masters::city_master::city_master_dao::{CityMasterDao, get_city_master_dao};
+use crate::masters::city_master::city_master_dao::{get_city_master_dao, CityMasterDao};
 use crate::masters::city_master::city_master_models::CityMaster;
 
 const CACHE_ALL_KEY: i32 = 1;
 
 #[async_trait]
-pub trait CityMasterService:Send+Sync {
+pub trait CityMasterService: Send + Sync {
     async fn get_city_by_id(&self, id: &Uuid) -> Option<Arc<CityMaster>>;
     async fn get_all_cities(&self) -> Option<Arc<Vec<Arc<CityMaster>>>>;
 }
@@ -67,7 +67,7 @@ impl CityMasterService for CityMasterServiceImpl {
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use std::sync::Arc;
 
     use moka::future::Cache;
@@ -77,48 +77,46 @@ mod tests{
 
     use crate::masters::city_master::city_master_dao::MockCityMasterDao;
     use crate::masters::city_master::city_master_models::{CityMaster, CityName};
-    use crate::masters::city_master::city_master_service::{CityMasterService, CityMasterServiceImpl};
+    use crate::masters::city_master::city_master_service::{
+        CityMasterService, CityMasterServiceImpl,
+    };
     use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
 
     #[tokio::test]
-   async fn test_get_all_cities_to_be_called_once_and_then_entry_to_be_fetched_from_cache(){
+    async fn test_get_all_cities_to_be_called_once_and_then_entry_to_be_fetched_from_cache() {
         let mut dao_mock = MockCityMasterDao::new();
-        dao_mock.expect_get_all_cities()
-            .times(1)
-            .returning(||{
-                vec![CityMaster{
-                    id: Default::default(),
-                    city_name: CityName::new("Haridwar").unwrap(),
-                    state_id: *SEED_STATE_ID,
-                    audit_metadata: Default::default(),
-                    country_id:Uuid::now_v7()
-                }]
-            });
-        let service = CityMasterServiceImpl{
-            dao:Arc::new(dao_mock),
-            cache_all:Cache::new(1),
-            cache_by_id:Cache::new(750)
+        dao_mock.expect_get_all_cities().times(1).returning(|| {
+            vec![CityMaster {
+                id: Default::default(),
+                city_name: CityName::new("Haridwar").unwrap(),
+                state_id: *SEED_STATE_ID,
+                audit_metadata: Default::default(),
+                country_id: Uuid::now_v7(),
+            }]
+        });
+        let service = CityMasterServiceImpl {
+            dao: Arc::new(dao_mock),
+            cache_all: Cache::new(1),
+            cache_by_id: Cache::new(750),
         };
         let p = service.get_all_cities().await.unwrap();
         let p1 = service.get_all_cities().await.unwrap();
-        assert_eq!(p.len(),1);
-        assert_eq!(p1.len(),1);
+        assert_eq!(p.len(), 1);
+        assert_eq!(p1.len(), 1);
     }
     #[tokio::test]
     async fn test_get_city_by_id() {
         let mut dao_mock = MockCityMasterDao::new();
-        dao_mock.expect_get_all_cities()
-            .times(1)
-            .returning(||{
-                vec![CityMaster{
-                    id: Default::default(),
-                    city_name: CityName::new("Haridwar").unwrap(),
-                    state_id: *SEED_STATE_ID,
-                    audit_metadata: Default::default(),
-                    country_id:Uuid::now_v7()
-                }]
-            });
-        let service = CityMasterServiceImpl{
+        dao_mock.expect_get_all_cities().times(1).returning(|| {
+            vec![CityMaster {
+                id: Default::default(),
+                city_name: CityName::new("Haridwar").unwrap(),
+                state_id: *SEED_STATE_ID,
+                audit_metadata: Default::default(),
+                country_id: Uuid::now_v7(),
+            }]
+        });
+        let service = CityMasterServiceImpl {
             dao: Arc::new(dao_mock),
             cache_all: Cache::new(1),
             cache_by_id: Cache::new(740),

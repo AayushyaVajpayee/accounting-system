@@ -2,14 +2,14 @@ use accounting_system::init_db_with_seed;
 use clap::{Parser, Subcommand};
 use deadpool_postgres::{ManagerConfig, Pool, RecyclingMethod, Runtime};
 use postgres::NoTls;
-use std::sync::{Arc};
+use std::sync::Arc;
 use std::time::Duration;
 use tokio_postgres::Config;
 
 #[derive(Parser)]
 struct Cli {
     ///postgres host
-    #[arg( long, default_value = "localhost")]
+    #[arg(long, default_value = "localhost")]
     host: String,
     ///postgres port exposed for connection
     #[arg(short, long, default_value_t = 5432)]
@@ -56,11 +56,23 @@ async fn main() {
                 .await
                 .unwrap();
             println!("created database");
-            let pool = Arc::new(connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str()));
+            let pool = Arc::new(connect_to_postgres(
+                &cli.host,
+                &cli.user,
+                &cli.pwd,
+                cli.port,
+                dbname.as_str(),
+            ));
             init_db_with_seed(pool.clone()).await;
         }
         MySubCommand::CreateSeedData { dbname } => {
-            let pool = Arc::new(connect_to_postgres(&cli.host, &cli.user, &cli.pwd, cli.port, dbname.as_str()));
+            let pool = Arc::new(connect_to_postgres(
+                &cli.host,
+                &cli.user,
+                &cli.pwd,
+                cli.port,
+                dbname.as_str(),
+            ));
             init_db_with_seed(pool.clone()).await;
         }
         MySubCommand::DropAllDbs => {

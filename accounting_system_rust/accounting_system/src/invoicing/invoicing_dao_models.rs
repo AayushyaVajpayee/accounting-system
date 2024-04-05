@@ -7,7 +7,10 @@ use xxhash_rust::xxh32;
 
 use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, ToPostgresString};
 use crate::common_utils::utils::current_indian_financial_year;
-use crate::invoicing::invoicing_request_models::{CreateAdditionalChargeRequest, CreateInvoiceLineRequestWithAllDetails, CreateInvoiceWithAllDetailsIncluded, PaymentTermsValidated};
+use crate::invoicing::invoicing_request_models::{
+    CreateAdditionalChargeRequest, CreateInvoiceLineRequestWithAllDetails,
+    CreateInvoiceWithAllDetailsIncluded, PaymentTermsValidated,
+};
 
 #[derive(Debug, ToSql)]
 #[postgres(name = "create_payment_terms_request")]
@@ -19,7 +22,8 @@ pub struct PaymentTermsDb {
 
 impl ToPostgresString for PaymentTermsDb {
     fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
-        let fields: &[&dyn ToPostgresString] = &[&self.due_days, &self.discount_days, &self.discount_percent];
+        let fields: &[&dyn ToPostgresString] =
+            &[&self.due_days, &self.discount_days, &self.discount_percent];
         create_composite_type_db_row(fields, f)
     }
 
@@ -79,7 +83,7 @@ impl ToPostgresString for InvoiceLineDb<'_> {
             &self.batch_no,
             &self.expiry_date_ms,
             &self.line_net_total,
-            &self.reverse_charge_applicable
+            &self.reverse_charge_applicable,
         ];
         create_composite_type_db_row(fields, f)
     }
@@ -193,12 +197,14 @@ fn convert_to_payment_terms_db(req: &PaymentTermsValidated) -> PaymentTermsDb {
     PaymentTermsDb {
         due_days: req.due_days.inner() as i32,
         discount_days: req.discount_days.as_ref().map(|a| a.inner() as i32),
-        discount_percent: req.discount_percent.as_ref()
-            .map(|a| a.inner()),
+        discount_percent: req.discount_percent.as_ref().map(|a| a.inner()),
     }
 }
 
-fn convert_to_additional_charge_db(req: &CreateAdditionalChargeRequest, line_no: i16) -> AdditionalChargeDb {
+fn convert_to_additional_charge_db(
+    req: &CreateAdditionalChargeRequest,
+    line_no: i16,
+) -> AdditionalChargeDb {
     AdditionalChargeDb {
         line_id: Uuid::now_v7(),
         line_no,
@@ -208,7 +214,10 @@ fn convert_to_additional_charge_db(req: &CreateAdditionalChargeRequest, line_no:
     }
 }
 
-fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequestWithAllDetails, line_no: i16) -> anyhow::Result<InvoiceLineDb> {
+fn convert_to_invoice_line_db(
+    req: &CreateInvoiceLineRequestWithAllDetails,
+    line_no: i16,
+) -> anyhow::Result<InvoiceLineDb> {
     let mut hasher = xxh32::Xxh32::new(0);
     hasher.update(req.product_item_id.title.inner().as_bytes());
     hasher.update(req.product_item_id.hsn_sac_code.as_str().as_bytes());
@@ -221,19 +230,30 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequestWithAllDetails, line
         line_title: req.product_item_id.title.inner(),
         title_hsn_sac_hash: hash,
         line_subtitle: req.product_item_id.subtitle.as_ref().map(|a| a.inner()),
-        subtitle_hash: req.product_item_id.subtitle.as_ref()
+        subtitle_hash: req
+            .product_item_id
+            .subtitle
+            .as_ref()
             .map(|a| compute_32_bit_xx_hash(a.inner())),
         quantity: req.quantity.get_quantity(),
         uqc: req.quantity.uom_as_str(),
         unit_price: req.unit_price.inner(),
-        tax_percentage: req.product_item_id.get_tax_rate()?.tax_rate_percentage.inner(),
+        tax_percentage: req
+            .product_item_id
+            .get_tax_rate()?
+            .tax_rate_percentage
+            .inner(),
         discount_percentage: req.discount_percentage.inner(),
-        cess_percentage: cess_strategy.cess_strategy.get_cess_rate_percentage()
+        cess_percentage: cess_strategy
+            .cess_strategy
+            .get_cess_rate_percentage()
             .context("cess percentage cannot be none")?,
-        cess_amount_per_unit: cess_strategy.cess_strategy
+        cess_amount_per_unit: cess_strategy
+            .cess_strategy
             .get_cess_amount_per_unit()
             .unwrap_or(0.0),
-        retail_sale_price_for_cess: cess_strategy.cess_strategy
+        retail_sale_price_for_cess: cess_strategy
+            .cess_strategy
             .get_retail_sale_price()
             .unwrap_or(0.0),
         cess_calculation_strategy: cess_strategy.cess_strategy.get_strategy_name(),
@@ -246,15 +266,21 @@ fn convert_to_invoice_line_db(req: &CreateInvoiceLineRequestWithAllDetails, line
     })
 }
 
-pub fn convert_to_invoice_db(req: &CreateInvoiceWithAllDetailsIncluded, currency_scale: i16, igst_applicable: bool,
-                             created_by: Uuid, tenant_id: Uuid) -> anyhow::Result<InvoiceDb> {
+pub fn convert_to_invoice_db(
+    req: &CreateInvoiceWithAllDetailsIncluded,
+    currency_scale: i16,
+    igst_applicable: bool,
+    created_by: Uuid,
+    tenant_id: Uuid,
+) -> anyhow::Result<InvoiceDb> {
     let date = chrono::Utc::now().naive_utc();
     Ok(InvoiceDb {
         idempotence_key: req.idempotence_key,
         tenant_id,
         invoice_template_id: req.invoice_template_id,
         invoicing_series_mst_id: req.invoicing_series_mst_id,
-        invoice_date_ms: chrono_tz::Asia::Kolkata.from_utc_datetime(&date)
+        invoice_date_ms: chrono_tz::Asia::Kolkata
+            .from_utc_datetime(&date)
             .date_naive()
             .and_hms_opt(0, 0, 0)
             .map(|a| a.timestamp_millis())
@@ -265,24 +291,28 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceWithAllDetailsIncluded, currency
         e_invoicing_applicable: req.einvoicing_applicable,
         supplier_id: req.supplier_id,
         dispatch_from_id: req.dispatch_from_id.unwrap_or(req.supplier_id),
-        billed_to_customer_id: req.bill_ship_detail
+        billed_to_customer_id: req
+            .bill_ship_detail
             .as_ref()
             .map(|l| l.billed_to_customer_id),
-        shipped_to_customer_id: req.bill_ship_detail
+        shipped_to_customer_id: req
+            .bill_ship_detail
             .as_ref()
             .map(|l| l.shipped_to_customer_id),
-        order_number: req.order_number.as_ref()
-            .map(|a| a.inner()),
-        order_date: req.order_date.as_ref()
-            .map(|a| a.epoch_millis()).flatten(),
-        payment_terms: req.payment_terms.as_ref()
+        order_number: req.order_number.as_ref().map(|a| a.inner()),
+        order_date: req.order_date.as_ref().map(|a| a.epoch_millis()).flatten(),
+        payment_terms: req
+            .payment_terms
+            .as_ref()
             .map(|a| convert_to_payment_terms_db(&a)),
-        invoice_lines: req.invoice_lines.iter().enumerate()
-            .map(|a| {
-                convert_to_invoice_line_db(a.1, a.0 as i16)
-            })
+        invoice_lines: req
+            .invoice_lines
+            .iter()
+            .enumerate()
+            .map(|a| convert_to_invoice_line_db(a.1, a.0 as i16))
             .collect::<anyhow::Result<Vec<InvoiceLineDb>>>()?,
-        additional_charges: req.additional_charges
+        additional_charges: req
+            .additional_charges
             .iter()
             .enumerate()
             .map(|a| convert_to_additional_charge_db(a.1, a.0 as i16))
@@ -295,10 +325,8 @@ pub fn convert_to_invoice_db(req: &CreateInvoiceWithAllDetailsIncluded, currency
         total_payable_amount: req.total_amount(currency_scale)?,
         created_by,
         igst_applicable,
-        invoice_remarks: req.invoice_remarks.as_ref()
-            .map(|a| a.get_str()),
-        ecommerce_gstin: req.ecommerce_gstin
-            .as_ref().map(|a| a.get_str()),
+        invoice_remarks: req.invoice_remarks.as_ref().map(|a| a.get_str()),
+        ecommerce_gstin: req.ecommerce_gstin.as_ref().map(|a| a.get_str()),
     })
 }
 

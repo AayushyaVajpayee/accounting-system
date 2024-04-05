@@ -1,5 +1,5 @@
 use anyhow::bail;
-use gstin_validator::gstin_models::{GstinValidationError, validate_gstin};
+use gstin_validator::gstin_models::{validate_gstin, GstinValidationError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -31,13 +31,13 @@ pub enum UOM {
 impl UOM {
     pub fn as_str(&self) -> &str {
         match self {
-            UOM::MilliLitre => { "MilliLitre" }
-            UOM::Litre => { "Litre" }
-            UOM::Gram => { "Gram" }
-            UOM::KiloGram => { "KiloGram" }
-            UOM::Quintal => { "Quintal" }
-            UOM::Piece => { "Piece" }
-            UOM::Box => { "Box" }
+            UOM::MilliLitre => "MilliLitre",
+            UOM::Litre => "Litre",
+            UOM::Gram => "Gram",
+            UOM::KiloGram => "KiloGram",
+            UOM::Quintal => "Quintal",
+            UOM::Piece => "Piece",
+            UOM::Box => "Box",
         }
     }
 }
@@ -54,7 +54,7 @@ impl TryFrom<String> for UOM {
             "quintal" => UOM::Quintal,
             "piece" => UOM::Piece,
             "box" => UOM::Box,
-            _ => bail!("invalid uom value")
+            _ => bail!("invalid uom value"),
         };
         Ok(k)
     }
@@ -119,52 +119,52 @@ pub enum EInvoicingUOM {
 impl EInvoicingUOM {
     pub fn as_str(&self) -> &str {
         match self {
-            EInvoicingUOM::BAG => { "BAGS" }
-            EInvoicingUOM::BAL => { "BALE" }
-            EInvoicingUOM::BDL => { "BUNDLES" }
-            EInvoicingUOM::BKL => { "BUCKLES" }
-            EInvoicingUOM::BOU => { "BILLION OF UNITS" }
-            EInvoicingUOM::BOX => { "BOX" }
-            EInvoicingUOM::BTL => { "BOTTLES" }
-            EInvoicingUOM::BUN => { "BUNCHES" }
-            EInvoicingUOM::CAN => { "CANS" }
-            EInvoicingUOM::CCM => { "CUBIC CENTIMETERS" }
-            EInvoicingUOM::CMS => { "CENTIMETERS" }
-            EInvoicingUOM::CBM => { "CUBIC METERS" }
-            EInvoicingUOM::CTN => { "CARTONS" }
-            EInvoicingUOM::DOZ => { "DOZENS" }
-            EInvoicingUOM::DRM => { "DRUMS" }
-            EInvoicingUOM::GGK => { "GREAT GROSS" }
-            EInvoicingUOM::GMS => { "GRAMMES" }
-            EInvoicingUOM::GRS => { "GROSS" }
-            EInvoicingUOM::GYD => { "GROSS YARDS" }
-            EInvoicingUOM::KGS => { "KILOGRAMS" }
-            EInvoicingUOM::KLR => { "KILOLITRE" }
-            EInvoicingUOM::KME => { "KILOMETRE" }
-            EInvoicingUOM::LTR => { "LITRES" }
-            EInvoicingUOM::MLS => { "MILLI LITRES" }
-            EInvoicingUOM::MLT => { "MILILITRE" }
-            EInvoicingUOM::MTR => { "METERS" }
-            EInvoicingUOM::MTS => { "METRIC TON" }
-            EInvoicingUOM::NOS => { "NUMBERS" }
-            EInvoicingUOM::OTH => { "OTHERS" }
-            EInvoicingUOM::PAC => { "PACKS" }
-            EInvoicingUOM::PCS => { "PIECES" }
-            EInvoicingUOM::PRS => { "PAIRS" }
-            EInvoicingUOM::QTL => { "QUINTAL" }
-            EInvoicingUOM::ROL => { "ROLLS" }
-            EInvoicingUOM::SET => { "SETS" }
-            EInvoicingUOM::SQF => { "SQUARE FEET" }
-            EInvoicingUOM::SQM => { "SQUARE METERS" }
-            EInvoicingUOM::SQY => { "SQUARE YARDS" }
-            EInvoicingUOM::TBS => { "TABLETS" }
-            EInvoicingUOM::TGM => { "TEN GROSS" }
-            EInvoicingUOM::THD => { "THOUSANDS" }
-            EInvoicingUOM::TON => { "TONNES" }
-            EInvoicingUOM::TUB => { "TUBES" }
-            EInvoicingUOM::UGS => { "US GALLONS" }
-            EInvoicingUOM::UNT => { "UNITS" }
-            EInvoicingUOM::YDS => { "YARDS" }
+            EInvoicingUOM::BAG => "BAGS",
+            EInvoicingUOM::BAL => "BALE",
+            EInvoicingUOM::BDL => "BUNDLES",
+            EInvoicingUOM::BKL => "BUCKLES",
+            EInvoicingUOM::BOU => "BILLION OF UNITS",
+            EInvoicingUOM::BOX => "BOX",
+            EInvoicingUOM::BTL => "BOTTLES",
+            EInvoicingUOM::BUN => "BUNCHES",
+            EInvoicingUOM::CAN => "CANS",
+            EInvoicingUOM::CCM => "CUBIC CENTIMETERS",
+            EInvoicingUOM::CMS => "CENTIMETERS",
+            EInvoicingUOM::CBM => "CUBIC METERS",
+            EInvoicingUOM::CTN => "CARTONS",
+            EInvoicingUOM::DOZ => "DOZENS",
+            EInvoicingUOM::DRM => "DRUMS",
+            EInvoicingUOM::GGK => "GREAT GROSS",
+            EInvoicingUOM::GMS => "GRAMMES",
+            EInvoicingUOM::GRS => "GROSS",
+            EInvoicingUOM::GYD => "GROSS YARDS",
+            EInvoicingUOM::KGS => "KILOGRAMS",
+            EInvoicingUOM::KLR => "KILOLITRE",
+            EInvoicingUOM::KME => "KILOMETRE",
+            EInvoicingUOM::LTR => "LITRES",
+            EInvoicingUOM::MLS => "MILLI LITRES",
+            EInvoicingUOM::MLT => "MILILITRE",
+            EInvoicingUOM::MTR => "METERS",
+            EInvoicingUOM::MTS => "METRIC TON",
+            EInvoicingUOM::NOS => "NUMBERS",
+            EInvoicingUOM::OTH => "OTHERS",
+            EInvoicingUOM::PAC => "PACKS",
+            EInvoicingUOM::PCS => "PIECES",
+            EInvoicingUOM::PRS => "PAIRS",
+            EInvoicingUOM::QTL => "QUINTAL",
+            EInvoicingUOM::ROL => "ROLLS",
+            EInvoicingUOM::SET => "SETS",
+            EInvoicingUOM::SQF => "SQUARE FEET",
+            EInvoicingUOM::SQM => "SQUARE METERS",
+            EInvoicingUOM::SQY => "SQUARE YARDS",
+            EInvoicingUOM::TBS => "TABLETS",
+            EInvoicingUOM::TGM => "TEN GROSS",
+            EInvoicingUOM::THD => "THOUSANDS",
+            EInvoicingUOM::TON => "TONNES",
+            EInvoicingUOM::TUB => "TUBES",
+            EInvoicingUOM::UGS => "US GALLONS",
+            EInvoicingUOM::UNT => "UNITS",
+            EInvoicingUOM::YDS => "YARDS",
         }
     }
 }
@@ -172,13 +172,13 @@ impl EInvoicingUOM {
 impl From<&UOM> for EInvoicingUOM {
     fn from(value: &UOM) -> Self {
         match value {
-            UOM::MilliLitre => { EInvoicingUOM::MLT }
-            UOM::Litre => { EInvoicingUOM::LTR }
-            UOM::Gram => { EInvoicingUOM::GMS }
-            UOM::KiloGram => { EInvoicingUOM::KGS }
-            UOM::Quintal => { EInvoicingUOM::QTL }
-            UOM::Piece => { EInvoicingUOM::PCS }
-            UOM::Box => { EInvoicingUOM::BOX }
+            UOM::MilliLitre => EInvoicingUOM::MLT,
+            UOM::Litre => EInvoicingUOM::LTR,
+            UOM::Gram => EInvoicingUOM::GMS,
+            UOM::KiloGram => EInvoicingUOM::KGS,
+            UOM::Quintal => EInvoicingUOM::QTL,
+            UOM::Piece => EInvoicingUOM::PCS,
+            UOM::Box => EInvoicingUOM::BOX,
         }
     }
 }
@@ -234,7 +234,7 @@ impl TryFrom<String> for EInvoicingUOM {
             "US GALLONS" => EInvoicingUOM::UGS,
             "UNITS" => EInvoicingUOM::UNT,
             "YARDS" => EInvoicingUOM::YDS,
-            _ => bail!("invalid EInvoicingUOM value")
+            _ => bail!("invalid EInvoicingUOM value"),
         };
         Ok(k)
     }

@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::invoice_line::unit_price::UnitPriceError::Negative;
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(try_from = "f64")]
 pub struct Price(f64);
 #[derive(Debug, Error)]
@@ -26,7 +26,7 @@ impl Price {
         Ok(Self(unit_price))
     }
 
-    pub fn inner(&self)->f64{
+    pub fn inner(&self) -> f64 {
         self.0
     }
 }
@@ -40,7 +40,7 @@ impl TryFrom<f64> for Price {
 }
 
 #[cfg(test)]
-mod unit_price_tests{
+mod unit_price_tests {
     use rstest::rstest;
     use spectral::assert_that;
     use spectral::prelude::ResultAssertions;
@@ -49,14 +49,14 @@ mod unit_price_tests{
 
     #[rstest]
     #[case(-1.0,false)]
-    #[case(100_000_000_000.0,false)]
+    #[case(100_000_000_000.0, false)]
     #[case(-0.002,false)]
-    #[case(0.023,true)]
-    fn test_unit_price(#[case] input:f64,#[case] valid:bool){
+    #[case(0.023, true)]
+    fn test_unit_price(#[case] input: f64, #[case] valid: bool) {
         let p = Price::new(input);
-        if valid{
+        if valid {
             assert_that!(p).is_ok();
-        }else{
+        } else {
             assert_that!(p).is_err();
         }
     }

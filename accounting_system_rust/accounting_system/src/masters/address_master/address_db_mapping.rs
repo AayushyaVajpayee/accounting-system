@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct AddressDbMapping{}
+pub struct AddressDbMapping {}
 
 const ADDRESS_DDL_SQL: &str = include_str!("./address_sql/address_ddl.sql");
-const ADDRESS_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./address_sql/address_functions_and_procedures.sql");
-const ADDRESS_SEED_CSV:&str =include_str!("./address_sql/address.csv");
-impl DbStructMapping for AddressDbMapping{
+const ADDRESS_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./address_sql/address_functions_and_procedures.sql");
+const ADDRESS_SEED_CSV: &str = include_str!("./address_sql/address.csv");
+impl DbStructMapping for AddressDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("address")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for AddressDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         ADDRESS_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

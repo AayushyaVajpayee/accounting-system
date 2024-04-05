@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct LedgerTransferDbMapping{}
+pub struct LedgerTransferDbMapping {}
 
 const LEDGER_TRANSFER_DDL_SQL: &str = include_str!("./ledger_transfer_sql/ledger_transfer_ddl.sql");
-const LEDGER_TRANSFER_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./ledger_transfer_sql/ledger_transfer_functions_and_procedures.sql");
-const LEDGER_TRANSFER_SEED_CSV:&str =include_str!("./ledger_transfer_sql/ledger_transfer.csv");
-impl DbStructMapping for LedgerTransferDbMapping{
+const LEDGER_TRANSFER_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./ledger_transfer_sql/ledger_transfer_functions_and_procedures.sql");
+const LEDGER_TRANSFER_SEED_CSV: &str = include_str!("./ledger_transfer_sql/ledger_transfer.csv");
+impl DbStructMapping for LedgerTransferDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("transfer")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for LedgerTransferDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         LEDGER_TRANSFER_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

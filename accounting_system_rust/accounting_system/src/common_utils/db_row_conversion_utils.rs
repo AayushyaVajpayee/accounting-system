@@ -18,15 +18,16 @@ pub fn convert_row_to_base_master_fields(row: &Row) -> anyhow::Result<(BaseMaste
         entity_version_id: row.try_get(1)?,
         tenant_id: row.try_get(2)?,
         active: row.try_get(3)?,
-        approval_status: MasterStatusEnum::get_enum_for_value(
-            row.get::<usize, i16>(4) as usize
-        )?,
+        approval_status: MasterStatusEnum::get_enum_for_value(row.get::<usize, i16>(4) as usize)?,
         remarks,
     };
     Ok((k, 6))
 }
 
-pub fn convert_row_to_audit_metadata_base(start_ind: usize, row: &Row) -> anyhow::Result<AuditMetadataBase> {
+pub fn convert_row_to_audit_metadata_base(
+    start_ind: usize,
+    row: &Row,
+) -> anyhow::Result<AuditMetadataBase> {
     let a = AuditMetadataBase {
         created_by: row.try_get(start_ind)?,
         updated_by: row.try_get(start_ind + 1)?,

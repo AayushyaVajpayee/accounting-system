@@ -1,14 +1,12 @@
-use actix_web::{HttpResponse, Responder, ResponseError, web};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
+use actix_web::{web, HttpResponse, Responder, ResponseError};
 use std::sync::Arc;
 use uuid::Uuid;
 use web::{Data, Path};
 
 use crate::accounting::currency::currency_models::CreateCurrencyMasterRequest;
-use crate::accounting::currency::currency_service::{
-    CurrencyService, CurrencyServiceError,
-};
+use crate::accounting::currency::currency_service::{CurrencyService, CurrencyServiceError};
 use crate::common_utils::utils::{TenantId, UserId};
 use crate::setup_routes;
 
@@ -33,33 +31,43 @@ async fn get_currency_by_id(
     data: Data<Arc<dyn CurrencyService>>,
     tenant_id: TenantId,
 ) -> actix_web::Result<impl Responder> {
-    let p = data.get_currency_entry(id.into_inner(), tenant_id.inner()).await?;
+    let p = data
+        .get_currency_entry(id.into_inner(), tenant_id.inner())
+        .await?;
     Ok(web::Json(p))
 }
 
 async fn create_currency(
     request: web::Json<CreateCurrencyMasterRequest>,
     data: Data<Arc<dyn CurrencyService>>,
-    tenant_id: TenantId, user_id: UserId,
+    tenant_id: TenantId,
+    user_id: UserId,
 ) -> actix_web::Result<impl Responder> {
-    let p = data.create_currency_entry(&request.0, tenant_id.inner(), user_id.inner()).await?;
+    let p = data
+        .create_currency_entry(&request.0, tenant_id.inner(), user_id.inner())
+        .await?;
     Ok(web::Json(p))
 }
-setup_routes!(CurrencyService,"/currency",
-    "/id/{id}", web::get().to(get_currency_by_id),
-    "/create",web::post().to(create_currency));
+setup_routes!(
+    CurrencyService,
+    "/currency",
+    "/id/{id}",
+    web::get().to(get_currency_by_id),
+    "/create",
+    web::post().to(create_currency)
+);
 
 #[cfg(test)]
 mod tests {
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_http_api::map_endpoints_to_functions;
+    use crate::accounting::currency::currency_models::tests::a_currency_master;
     use crate::accounting::currency::currency_models::{
         CreateCurrencyMasterRequest, CurrencyMaster,
     };
-    use crate::accounting::currency::currency_models::tests::a_currency_master;
     use crate::accounting::currency::currency_service::{CurrencyService, MockCurrencyService};
-    use crate::{get_and_create_api_test_v2};
+    use crate::get_and_create_api_test_v2;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
@@ -77,7 +85,11 @@ mod tests {
             currency_mock
         };
         let get_uri = format!("/currency/id/{}", Uuid::default());
-        get_and_create_api_test_v2!(CurrencyMaster,CurrencyService,closure,get_uri,
+        get_and_create_api_test_v2!(
+            CurrencyMaster,
+            CurrencyService,
+            closure,
+            get_uri,
             "/currency/create",
             CreateCurrencyMasterRequest {
                 ..Default::default()

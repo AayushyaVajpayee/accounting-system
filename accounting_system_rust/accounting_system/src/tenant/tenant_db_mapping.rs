@@ -1,11 +1,12 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct TenantDbMapping{}
+pub struct TenantDbMapping {}
 
 const TENANT_DDL_SQL: &str = include_str!("./tenant_sql/tenant_ddl.sql");
-const TENANT_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./tenant_sql/tenant_functions_and_procedures.sql");
-const TENANT_SEED_CSV:&str =include_str!("./tenant_sql/tenant.csv");
-impl DbStructMapping for TenantDbMapping{
+const TENANT_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./tenant_sql/tenant_functions_and_procedures.sql");
+const TENANT_SEED_CSV: &str = include_str!("./tenant_sql/tenant.csv");
+impl DbStructMapping for TenantDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("tenant")
     }
@@ -18,7 +19,7 @@ impl DbStructMapping for TenantDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         TENANT_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

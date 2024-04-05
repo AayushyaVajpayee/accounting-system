@@ -19,8 +19,8 @@ pub enum GstItemCode {
 impl GstItemCode {
     pub fn as_str(&self) -> &str {
         match self {
-            GstItemCode::HsnCode(a) => { a.0.as_str() }
-            GstItemCode::SacCode(a) => { a.0.as_str() }
+            GstItemCode::HsnCode(a) => a.0.as_str(),
+            GstItemCode::SacCode(a) => a.0.as_str(),
         }
     }
 
@@ -50,8 +50,8 @@ impl TryFrom<String> for GstItemCode {
 impl From<GstItemCode> for String {
     fn from(value: GstItemCode) -> Self {
         match value {
-            GstItemCode::HsnCode(a) => { a.0 }
-            GstItemCode::SacCode(a) => { a.0 }
+            GstItemCode::HsnCode(a) => a.0,
+            GstItemCode::SacCode(a) => a.0,
         }
     }
 }

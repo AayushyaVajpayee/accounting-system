@@ -1,11 +1,13 @@
 use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
-pub struct PaginationDataDbMapping{}
+pub struct PaginationDataDbMapping {}
 
-const PAGINATION_DATA_DDL_SQL: &str = include_str!("./pagination_data_sql/pagination_data_cache_ddl.sql");
-const PAGINATION_DATA_FUNCTIONS_AND_PROCEDURES_SQL:&str = include_str!("./pagination_data_sql/pagination_data_cache_functions_and_procedures.sql");
-const PAGINATION_DATA_SEED_CSV:&str ="";
-impl DbStructMapping for PaginationDataDbMapping{
+const PAGINATION_DATA_DDL_SQL: &str =
+    include_str!("./pagination_data_sql/pagination_data_cache_ddl.sql");
+const PAGINATION_DATA_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./pagination_data_sql/pagination_data_cache_functions_and_procedures.sql");
+const PAGINATION_DATA_SEED_CSV: &str = "";
+impl DbStructMapping for PaginationDataDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         None
     }
@@ -18,7 +20,7 @@ impl DbStructMapping for PaginationDataDbMapping{
         ""
     }
 
-    fn get_functions_and_procedures_script(&self) ->  &'static str {
+    fn get_functions_and_procedures_script(&self) -> &'static str {
         PAGINATION_DATA_FUNCTIONS_AND_PROCEDURES_SQL
     }
 

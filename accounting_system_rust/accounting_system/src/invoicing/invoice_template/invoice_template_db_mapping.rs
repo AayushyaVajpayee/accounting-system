@@ -2,9 +2,12 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
 pub struct InvoiceTemplateDbMapping {}
 
-const INVOICE_TEMPLATE_DDL_SQL: &str = include_str!("./invoice_template_sql/invoice_template_ddl.sql");
-const INVOICE_TEMPLATE_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./invoice_template_sql/invoice_template_functions_and_procedures.sql");
-const INVOICE_TEMPLATE_SEED_DATA: &str = include_str!("./invoice_template_sql/invoice_template.csv");
+const INVOICE_TEMPLATE_DDL_SQL: &str =
+    include_str!("./invoice_template_sql/invoice_template_ddl.sql");
+const INVOICE_TEMPLATE_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./invoice_template_sql/invoice_template_functions_and_procedures.sql");
+const INVOICE_TEMPLATE_SEED_DATA: &str =
+    include_str!("./invoice_template_sql/invoice_template.csv");
 impl DbStructMapping for InvoiceTemplateDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("invoice_template")

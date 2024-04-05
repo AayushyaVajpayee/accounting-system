@@ -9,7 +9,7 @@ fn main() {
 }
 
 fn generate_rust_code_for_gst_codes(filename: &str, variable_name: &str, rust_file_name: &str) {
-    let  vec: Vec<String> = read_hsn_sac_codes_from_file(filename);
+    let vec: Vec<String> = read_hsn_sac_codes_from_file(filename);
     let all_tuples = generate_codes_comma_separated_list(vec);
     let code = generate_rust_code(all_tuples, variable_name);
     let path = format!("src/{}.rs", rust_file_name);

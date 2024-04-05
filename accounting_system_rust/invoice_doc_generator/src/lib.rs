@@ -1,16 +1,16 @@
-use crate::invoice_line1::{GstinNo, InvoiceLine, PaymentTerms};
 use crate::invoice_line::unit_price::Price;
+use crate::invoice_line1::{GstinNo, InvoiceLine, PaymentTerms};
 use crate::invoice_number::InvoiceNumber;
 use crate::percentages::tax_discount_cess::TaxPercentage;
 
-mod invoice_model;
 pub mod hsn_code_generated;
-mod sac_code_generated;
-pub mod invoice_number;
 pub mod hsn_sac;
-pub mod invoice_line1;
 pub mod invoice_line;
+pub mod invoice_line1;
+mod invoice_model;
+pub mod invoice_number;
 pub mod percentages;
+mod sac_code_generated;
 
 #[allow(dead_code)]
 pub struct InvoiceHeader {
@@ -38,7 +38,7 @@ pub struct CustomerDetail {
 #[allow(dead_code)]
 pub struct AdditionalCharge {
     unit_price: Price,
-    tax_percent: TaxPercentage,// lets not tax additional charge just show it.
+    tax_percent: TaxPercentage, // lets not tax additional charge just show it.
 }
 
 #[allow(dead_code)]
@@ -56,5 +56,4 @@ pub struct Invoice {
     header: InvoiceHeader,
     invoice_lines: Vec<InvoiceLine>,
     additional_charges: Vec<AdditionalCharge>,
-
 }

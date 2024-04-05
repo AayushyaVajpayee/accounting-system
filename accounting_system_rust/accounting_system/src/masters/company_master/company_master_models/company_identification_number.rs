@@ -12,7 +12,10 @@ impl CompanyIdentificationNumber {
     pub fn validate(cin: &str) -> anyhow::Result<()> {
         let cin = cin.trim();
         if cin.len() != 21 {
-            bail!("cin length should be {} chars and should be alphanumeric",21)
+            bail!(
+                "cin length should be {} chars and should be alphanumeric",
+                21
+            )
         }
         Ok(())
     }
@@ -33,7 +36,8 @@ pub mod cin_tests {
 
     pub fn generate_random_company_identification_number() -> CompanyIdentificationNumber {
         let rng = rand::thread_rng();
-        let p = rng.sample_iter(Alphanumeric)
+        let p = rng
+            .sample_iter(Alphanumeric)
             .take(21)
             .map(|a| a as char)
             .collect::<String>();

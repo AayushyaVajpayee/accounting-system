@@ -17,7 +17,7 @@ const FETCH_ALL_QUERY: &str = concatcp!("select ", SELECT_FIELDS, " from ", TABL
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait CountryMasterDao:Send+Sync {
+pub trait CountryMasterDao: Send + Sync {
     async fn get_all_countries(&self) -> Vec<CountryMaster>;
 }
 
@@ -43,33 +43,35 @@ impl TryFrom<&Row> for CountryMaster {
 }
 #[allow(dead_code)]
 pub fn get_country_master_dao(client: Arc<Pool>) -> Arc<dyn CountryMasterDao> {
-    let country_master_dao = CountryMasterDaoPostgresImpl{
-        postgres_client:client
+    let country_master_dao = CountryMasterDaoPostgresImpl {
+        postgres_client: client,
     };
     Arc::new(country_master_dao)
 }
 
 #[async_trait]
-impl CountryMasterDao for CountryMasterDaoPostgresImpl{
+impl CountryMasterDao for CountryMasterDaoPostgresImpl {
     async fn get_all_countries(&self) -> Vec<CountryMaster> {
         let conn = self.postgres_client.get().await.unwrap();
-        let rows = conn.query(FETCH_ALL_QUERY,&[]).await.unwrap();
-        rows.iter().map(|row|row.try_into().unwrap()).collect()
+        let rows = conn.query(FETCH_ALL_QUERY, &[]).await.unwrap();
+        rows.iter().map(|row| row.try_into().unwrap()).collect()
     }
 }
 
 #[cfg(test)]
-mod tests{
-    use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
-    use crate::masters::country_master::country_dao::{CountryMasterDao, CountryMasterDaoPostgresImpl};
+mod tests {
+    use crate::accounting::postgres_factory::test_utils_postgres::{
+        get_postgres_conn_pool, get_postgres_image_port,
+    };
+    use crate::masters::country_master::country_dao::{
+        CountryMasterDao, CountryMasterDaoPostgresImpl,
+    };
 
     #[tokio::test]
-    async fn should_be_able_to_fetch_all_countries(){
+    async fn should_be_able_to_fetch_all_countries() {
         let port = get_postgres_image_port().await;
         let postgres_client = get_postgres_conn_pool(port, None).await;
-        let country_master_dao = CountryMasterDaoPostgresImpl{
-            postgres_client
-        };
+        let country_master_dao = CountryMasterDaoPostgresImpl { postgres_client };
         let p = country_master_dao.get_all_countries().await;
         assert!(!p.is_empty())
     }

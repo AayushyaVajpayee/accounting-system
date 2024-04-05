@@ -1,22 +1,30 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder, web};
 use actix_web::body::BoxBody;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path, Query};
+use actix_web::{web, HttpResponse, HttpResponseBuilder, Responder};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
-use crate::common_utils::pagination::pagination_utils::{PaginationRequest, set_pagination_headers};
+use crate::common_utils::pagination::pagination_utils::{
+    set_pagination_headers, PaginationRequest,
+};
 use crate::masters::company_master::company_master_request_response::CreateCompanyRequest;
 use crate::masters::company_master::company_master_service::{CompanyMasterService, ServiceError};
 use crate::setup_routes;
 
-async fn get_companies_by_tenant_id(data: Data<Arc<dyn CompanyMasterService>>, query: Query<PaginationRequest>, tenant_id: Path<Uuid>) -> actix_web::Result<impl Responder> {
-    let resp = data.get_all_companies_for_tenant_id(&tenant_id, &query.0).await?;
+async fn get_companies_by_tenant_id(
+    data: Data<Arc<dyn CompanyMasterService>>,
+    query: Query<PaginationRequest>,
+    tenant_id: Path<Uuid>,
+) -> actix_web::Result<impl Responder> {
+    let resp = data
+        .get_all_companies_for_tenant_id(&tenant_id, &query.0)
+        .await?;
     let mut response = HttpResponseBuilder::new(StatusCode::OK).json(&resp);
     let headers = response.headers_mut();
     set_pagination_headers(headers, &resp.meta);
@@ -52,8 +60,8 @@ impl ResponseError for ServiceError {
             ServiceError::CompanyCinAlreadyExists => StatusCode::CONFLICT,
             ServiceError::CompanyWithPrimaryKeyExists => StatusCode::CONFLICT,
             ServiceError::AnyhowError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ServiceError::Tenant(err) => { err.status_code() }
-            ServiceError::UserService(err) => { err.status_code() }
+            ServiceError::Tenant(err) => err.status_code(),
+            ServiceError::UserService(err) => err.status_code(),
         }
     }
 
@@ -78,24 +86,27 @@ impl ResponseError for ServiceError {
                 let err_list = vec![self.to_string()];
                 HttpResponse::build(self.status_code()).json(Errors { errors: &err_list })
             }
-            ServiceError::Tenant(err) => { err.error_response() }
-            ServiceError::UserService(err) => { err.error_response() }
+            ServiceError::Tenant(err) => err.error_response(),
+            ServiceError::UserService(err) => err.error_response(),
         }
     }
 }
 
-
-setup_routes!(CompanyMasterService,"/company-master",
-    "/tenant-id/{tenant_id}",web::get().to(get_companies_by_tenant_id),
-    "/create",web::post().to(create_company));
-
+setup_routes!(
+    CompanyMasterService,
+    "/company-master",
+    "/tenant-id/{tenant_id}",
+    web::get().to(get_companies_by_tenant_id),
+    "/create",
+    web::post().to(create_company)
+);
 
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
 
-    use actix_web::{App, test};
     use actix_web::middleware::Logger;
+    use actix_web::{test, App};
     use anyhow::anyhow;
     use rstest::rstest;
     use spectral::assert_that;
@@ -105,9 +116,13 @@ mod tests {
     use uuid::Uuid;
 
     use crate::common_utils::dao_error::DaoError;
-    use crate::masters::company_master::company_master_http_api::{ErrorsResponse, map_endpoints_to_functions};
+    use crate::masters::company_master::company_master_http_api::{
+        map_endpoints_to_functions, ErrorsResponse,
+    };
     use crate::masters::company_master::company_master_request_response::tests::a_create_company_request;
-    use crate::masters::company_master::company_master_service::{CompanyMasterService, MockCompanyMasterService, ServiceError};
+    use crate::masters::company_master::company_master_service::{
+        CompanyMasterService, MockCompanyMasterService, ServiceError,
+    };
 
     #[traced_test]
     #[tokio::test]

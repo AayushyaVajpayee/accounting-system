@@ -3,8 +3,9 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 pub struct PaymentTermDbMapping {}
 
 const PAYMENT_TERM_DDL_SQL: &str = include_str!("./payment_term_sql/payment_term_ddl.sql");
-const PAYMENT_TERM_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./payment_term_sql/payment_term_function_and_procedures.sql");
-const PAYMENT_TERM_SEED_DATA:&str =include_str!("./payment_term_sql/payment_term.csv");
+const PAYMENT_TERM_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./payment_term_sql/payment_term_function_and_procedures.sql");
+const PAYMENT_TERM_SEED_DATA: &str = include_str!("./payment_term_sql/payment_term.csv");
 impl DbStructMapping for PaymentTermDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("payment_term")

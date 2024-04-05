@@ -2,10 +2,13 @@ use crate::db_schema_syncer::db_struct_mapper::DbStructMapping;
 
 pub struct AdditionalChargeDbMapping {}
 
-const ADDITIONAL_CHARGE_DDL_SQL: &str = include_str!("./additional_charge_sql/additional_charge_ddl.sql");
-const ADDITIONAL_CHARGE_FUNCTIONS_AND_PROCEDURES_SQL: &str = include_str!("./additional_charge_sql/additional_charge_procedures_and_functions.sql");
+const ADDITIONAL_CHARGE_DDL_SQL: &str =
+    include_str!("./additional_charge_sql/additional_charge_ddl.sql");
+const ADDITIONAL_CHARGE_FUNCTIONS_AND_PROCEDURES_SQL: &str =
+    include_str!("./additional_charge_sql/additional_charge_procedures_and_functions.sql");
 
-const ADDITIONAL_CHARGE_SEED_SCRIPT:&str = include_str!("./additional_charge_sql/additional_charge.csv");
+const ADDITIONAL_CHARGE_SEED_SCRIPT: &str =
+    include_str!("./additional_charge_sql/additional_charge.csv");
 impl DbStructMapping for AdditionalChargeDbMapping {
     fn table_name(&self) -> Option<&'static str> {
         Some("additional_charge")
