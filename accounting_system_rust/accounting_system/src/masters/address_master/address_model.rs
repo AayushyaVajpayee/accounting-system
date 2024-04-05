@@ -81,7 +81,6 @@ pub struct AddressDto{
 #[derive(Debug, Serialize, Deserialize, Builder, Clone)]
 pub struct CreateAddressRequest {
     pub idempotence_key: Uuid,
-    pub tenant_id: Uuid,
     pub line_1: String,
     pub line_2: Option<String>,
     pub landmark: Option<String>,
@@ -89,8 +88,6 @@ pub struct CreateAddressRequest {
     pub state_id: Uuid,
     pub country_id: Uuid,
     pub pincode_id: Uuid,
-    pub created_by: Uuid
-
 }
 
 
@@ -151,7 +148,6 @@ pub mod tests {
     pub fn a_create_address_request(builder: CreateAddressRequestBuilder) -> CreateAddressRequest {
         CreateAddressRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             line_1: builder.line_1.unwrap_or("some fake address".to_string()),
             line_2: None,
             landmark: None,
@@ -159,7 +155,6 @@ pub mod tests {
             state_id: builder.state_id.unwrap_or(*SEED_STATE_ID),
             country_id: builder.country_id.unwrap_or(*INDIA_COUNTRY_ID),
             pincode_id: builder.pincode_id.unwrap_or(*SEED_PINCODE_ID),
-            created_by: builder.created_by.unwrap_or(*SEED_USER_ID)
         }
     }
 

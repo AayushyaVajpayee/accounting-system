@@ -31,7 +31,7 @@ pub enum AddressServiceError {
 #[async_trait]
 pub trait AddressService: Send + Sync {
     async fn get_address_by_id(&self,tenant_id:Uuid, address_id: Uuid) -> Result<Option<Arc<AddressDto>>, AddressServiceError>;
-    async fn create_address(&self, request: &CreateAddressRequest) -> Result<Uuid, AddressServiceError>;
+    async fn create_address(&self, request: &CreateAddressRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, AddressServiceError>;
 }
 
 
@@ -98,8 +98,8 @@ impl AddressService for AddressServiceImpl {
         ).await
     }
 
-    async fn create_address(&self, request: &CreateAddressRequest) -> Result<Uuid, AddressServiceError> {
-        let a = self.dao.create_address(request).await?;
+    async fn create_address(&self, request: &CreateAddressRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, AddressServiceError> {
+        let a = self.dao.create_address(request,tenant_id,user_id).await?;
         Ok(a)
     }
 }

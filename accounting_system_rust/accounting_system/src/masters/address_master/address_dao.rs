@@ -15,7 +15,7 @@ use crate::masters::address_master::address_utils::create_address_input_for_db_f
 #[async_trait]
 pub trait AddressDao: Send + Sync {
     async fn get_address_by_id(&self,tenant_id:Uuid, address_id: Uuid) -> Result<Option<Address>, DaoError>;
-    async fn create_address(&self, request: &CreateAddressRequest) -> Result<Uuid, DaoError>;
+    async fn create_address(&self, request: &CreateAddressRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, DaoError>;
 }
 
 struct AddressDaoImpl {
@@ -67,13 +67,13 @@ impl AddressDao for AddressDaoImpl {
         Ok(addr)
     }
 
-    async fn create_address(&self, request: &CreateAddressRequest) -> Result<Uuid, DaoError> {
+    async fn create_address(&self, request: &CreateAddressRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, DaoError> {
         let simple_query = format!(
             r#"
             begin transaction;
             select create_address({});
             commit;
-            "#, create_address_input_for_db_function(request)
+            "#, create_address_input_for_db_function(request,tenant_id,user_id)
         );
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(simple_query.as_str()).await?;

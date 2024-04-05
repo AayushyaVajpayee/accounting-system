@@ -5,7 +5,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use uuid::Uuid;
 
-use crate::common_utils::utils::TenantId;
+use crate::common_utils::utils::{TenantId, UserId};
 use crate::masters::address_master::address_model::CreateAddressRequest;
 use crate::masters::address_master::address_service::{AddressService, AddressServiceError};
 use crate::setup_routes;
@@ -20,8 +20,11 @@ impl ResponseError for AddressServiceError {
 }
 
 
-async fn create_address(data: Data<Arc<dyn AddressService>>, request: web::Json<CreateAddressRequest>) -> actix_web::Result<impl Responder> {
-    let ap = data.create_address(&request).await?;
+async fn create_address(data: Data<Arc<dyn AddressService>>, 
+                        request: web::Json<CreateAddressRequest>,
+                        tenant_id:TenantId,user_id:UserId
+) -> actix_web::Result<impl Responder> {
+    let ap = data.create_address(&request,tenant_id.inner(),user_id.inner()).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
@@ -51,7 +54,7 @@ mod tests {
         let closure = || {
             let mut mock = MockAddressService::new();
             mock.expect_create_address()
-                .returning(|_| Ok(Default::default()));
+                .returning(|_,_,_| Ok(Default::default()));
             mock.expect_get_address_by_id()
                 .returning(|_,_| Ok(Some(Default::default())));
             mock
