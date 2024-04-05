@@ -18,7 +18,7 @@ const QUERY_BY_ID: &str = concatcp!("select ",SELECT_FIELDS," from ",TABLE_NAME,
 
 #[async_trait]
 pub trait InvoicingSeriesDao: Send + Sync {
-    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest) -> Result<Uuid, DaoError>;
+    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, DaoError>;
     async fn get_invoicing_series_by_id(&self, invoicing_series_id: Uuid,tenant_id:Uuid) -> Result<Option<InvoicingSeriesMaster>, DaoError>;
 }
 
@@ -52,20 +52,20 @@ pub fn get_invoicing_series_dao(client: Arc<Pool>) -> Arc<dyn InvoicingSeriesDao
 
 #[async_trait]
 impl InvoicingSeriesDao for InvoicingSeriesDaoImpl {
-    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest) -> Result<Uuid, DaoError> {
+    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, DaoError> {
         let simple_query = format!(
             r#"
            begin transaction;
            select create_invoice_series(Row('{}','{}','{}','{}',{},{},{},'{}'));
            commit;
            "#, request.idempotence_key,
-            request.tenant_id,
+            tenant_id,
             request.name.inner(),
             request.prefix.inner(),
             request.zero_padded_counter,
             request.start_value.unwrap_or(0),
             request.financial_year.inner(),
-            request.created_by
+            user_id
         );
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(simple_query.as_str()).await?;
@@ -89,6 +89,7 @@ mod tests {
     use spectral::option::OptionAssertions;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::invoicing::invoicing_series::invoicing_series_dao::{InvoicingSeriesDao, InvoicingSeriesDaoImpl};
     use crate::invoicing::invoicing_series::invoicing_series_models::tests::a_create_invoice_number_series_request;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
@@ -97,7 +98,7 @@ mod tests {
     async fn test_insert_invoicing_series() {
         let dao = get_dao_generic(|a|InvoicingSeriesDaoImpl { postgres_client: a.clone() },None).await;
         let in_series = a_create_invoice_number_series_request(Default::default());
-        let p = dao.create_invoice_series(&in_series).await.unwrap();
+        let p = dao.create_invoice_series(&in_series,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
         let jj = dao.get_invoicing_series_by_id(p,*SEED_TENANT_ID).await.unwrap();
         assert_that!(jj).is_some();
     }

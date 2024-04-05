@@ -7,8 +7,9 @@ use thiserror::Error;
 use crate::hsn_code_generated::HSN_SET;
 use crate::sac_code_generated::SAC_SET;
 
-#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 // #[serde(rename_all = "snake_case")]
+#[serde(into = "String")]
 #[serde(try_from = "String")]
 pub enum GstItemCode {
     HsnCode(Hsn),
@@ -31,20 +32,31 @@ impl GstItemCode {
         };
     }
 }
-impl TryFrom<String> for GstItemCode{
+
+impl TryFrom<String> for GstItemCode {
     type Error = anyhow::Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        if Hsn::is_hsn(value.as_str()){
-            let hsn=Hsn::new(value)?;
+        if Hsn::is_hsn(value.as_str()) {
+            let hsn = Hsn::new(value)?;
             Ok(GstItemCode::HsnCode(hsn))
-        }else{
+        } else {
             let sac = Sac::new(value)?;
             Ok(GstItemCode::SacCode(sac))
         }
     }
 }
-#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
+
+impl From<GstItemCode> for String {
+    fn from(value: GstItemCode) -> Self {
+        match value {
+            GstItemCode::HsnCode(a) => { a.0 }
+            GstItemCode::SacCode(a) => { a.0 }
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct Hsn(String);
 
@@ -91,7 +103,7 @@ impl TryFrom<String> for Hsn {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct Sac(String);
 

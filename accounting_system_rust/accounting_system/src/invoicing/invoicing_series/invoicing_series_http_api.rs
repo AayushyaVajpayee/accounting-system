@@ -5,7 +5,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use uuid::Uuid;
 
-use crate::common_utils::utils::TenantId;
+use crate::common_utils::utils::{TenantId, UserId};
 use crate::invoicing::invoicing_series::invoicing_series_models::CreateInvoiceNumberSeriesRequest;
 use crate::invoicing::invoicing_series::invoicing_series_service::{InvoicingSeriesService, InvoicingSeriesServiceError};
 use crate::setup_routes;
@@ -19,9 +19,10 @@ impl ResponseError for InvoicingSeriesServiceError {
 }
 
 async fn create_invoice_series(data: Data<Arc<dyn InvoicingSeriesService>>,
-                               request: web::Json<CreateInvoiceNumberSeriesRequest>)
+                               request: web::Json<CreateInvoiceNumberSeriesRequest>,
+                               tenant_id: TenantId,user_id: UserId )
                                -> actix_web::Result<impl Responder> {
-    let ap = data.create_invoice_series(&request).await?;
+    let ap = data.create_invoice_series(&request,tenant_id.inner(),user_id.inner()).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
@@ -57,7 +58,7 @@ mod tests {
         let closure = || {
             let mut mock = MockInvoicingSeriesService::new();
             mock.expect_create_invoice_series()
-                .returning(|_| Ok(Default::default()));
+                .returning(|_,_,_| Ok(Default::default()));
             mock.expect_get_invoicing_series_by_id()
                 .returning(|_,_| Ok(Some(Default::default())));
             mock

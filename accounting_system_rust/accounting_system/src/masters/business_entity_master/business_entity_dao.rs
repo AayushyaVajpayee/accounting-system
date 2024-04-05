@@ -15,7 +15,7 @@ use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 
 #[async_trait]
 pub trait BusinessEntityDao: Send + Sync {
-    async fn create_business_entity(&self, request: &CreateBusinessEntityRequest) -> Result<Uuid, DaoError>;
+    async fn create_business_entity(&self, request: &CreateBusinessEntityRequest,tenant_id: Uuid,user_id:Uuid) -> Result<Uuid, DaoError>;
 
     async fn get_business_entity(&self, id: &Uuid, tenant_id: &Uuid) -> Result<Option<BusinessEntityMaster>, DaoError>;
     async fn is_business_entity_exist(&self, id: &Uuid, tenant_id: &Uuid) -> Result<bool, DaoError>;
@@ -76,7 +76,7 @@ pub fn get_business_entity_dao(client: Arc<Pool>) -> Arc<dyn BusinessEntityDao> 
 
 #[async_trait]
 impl BusinessEntityDao for BusinessEntityDaoImpl {
-    async fn create_business_entity(&self, r: &CreateBusinessEntityRequest) -> Result<Uuid, DaoError> {
+    async fn create_business_entity(&self, r: &CreateBusinessEntityRequest,tenant_id: Uuid,user_id:Uuid) -> Result<Uuid, DaoError> {
         let k: String = match &r.entity_type {
             BusinessEntityType::EligibleSupplier {
                 name, email, phone
@@ -84,8 +84,8 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
             } => {
                 format!("Row('{}','{}',{}::smallint,true,'{}','{}','{}','{address_id}','{}',\
                  '{}')"
-                        , r.idempotence_key, r.tenant_id, 1, name.inner(), email.inner()
-                        , phone.inner(), gstin.get_str(), r.created_by)
+                        , r.idempotence_key, tenant_id, 1, name.inner(), email.inner()
+                        , phone.inner(), gstin.get_str(), user_id)
             }
             BusinessEntityType::Other {
                 name, email,
@@ -93,7 +93,7 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
             } => {
                 format!("Row('{}','{}',{}::smallint,true,'{}',{},'{}',{},{},\
                  '{}')"
-                        , r.idempotence_key, r.tenant_id, 1, name.inner(),
+                        , r.idempotence_key, tenant_id, 1, name.inner(),
                         email.as_ref().map(|a| format!("'{}'", a.inner()))
                             .unwrap_or("null".to_string())
                         , phone.inner(), address_id
@@ -101,7 +101,7 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
                             .unwrap_or("null".to_string()),
                         gstin.as_ref()
                             .map(|a| format!("'{}'", a.get_str()))
-                            .unwrap_or("null".to_string()), r.created_by)
+                            .unwrap_or("null".to_string()), user_id)
             }
         };
         let simple_query = format!(
@@ -143,6 +143,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_dao_generic, get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::business_entity_master::business_entity_dao::{BusinessEntityDao, BusinessEntityDaoImpl};
     use crate::masters::business_entity_master::business_entity_models::tests::{a_create_business_entity_request, SEED_BUSINESS_ENTITY_ID2};
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
@@ -160,8 +161,8 @@ mod tests {
     async fn test_create_and_get_dao() {
         let dao = get_dao_generic(|a| BusinessEntityDaoImpl { postgres_client: a.clone() },None).await;
         let be = a_create_business_entity_request(Default::default());
-        let p = dao.create_business_entity(&be).await.unwrap();
-        let k = dao.get_business_entity(&p, &be.tenant_id).await.unwrap();
+        let p = dao.create_business_entity(&be,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
+        let k = dao.get_business_entity(&p, &*SEED_TENANT_ID).await.unwrap();
         assert_that!(k).is_some();
     }
 }

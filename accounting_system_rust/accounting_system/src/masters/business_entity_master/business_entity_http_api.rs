@@ -5,7 +5,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
 use uuid::Uuid;
 
-use crate::common_utils::utils::TenantId;
+use crate::common_utils::utils::{TenantId, UserId};
 use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequest;
 use crate::masters::business_entity_master::business_entity_service::{BusinessEntityService, BusinessEntityServiceError};
 use crate::setup_routes;
@@ -19,13 +19,13 @@ impl ResponseError for BusinessEntityServiceError {
     }
 }
 
-#[allow(dead_code)]
-async fn create_business_entity_master(data: Data<Arc<dyn BusinessEntityService>>, request: web::Json<CreateBusinessEntityRequest>) -> actix_web::Result<impl Responder> {
-    let ap = data.create_business_entity(&request).await?;
+async fn create_business_entity_master(data: Data<Arc<dyn BusinessEntityService>>,
+                                       request: web::Json<CreateBusinessEntityRequest>,
+tenant_id: TenantId,user_id: UserId) -> actix_web::Result<impl Responder> {
+    let ap = data.create_business_entity(&request,tenant_id.inner(),user_id.inner()).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }
 
-#[allow(dead_code)]
 async fn get_business_entity_master_by_id(data: Data<Arc<dyn BusinessEntityService>>,
                                           business_entity_id: Path<Uuid>,
                                           tenant_id: TenantId,
@@ -57,7 +57,7 @@ mod tests {
             mock.expect_get_business_entity_by_id()
                 .returning(move |_, _| Ok(Some(Default::default())));
             mock.expect_create_business_entity()
-                .returning(|_| Ok(Default::default()));
+                .returning(|_,_,_| Ok(Default::default()));
             mock
         };
         let p:BusinessEntityDto = Default::default();

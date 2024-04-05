@@ -117,7 +117,7 @@ async fn main() -> io::Result<()> {
         business_entity_service.clone(),
         invoice_template_service.clone(),
         storage.clone(),
-        product_item_serv.clone()
+        product_item_serv.clone(),
     );
     // let invoice_template_service= get_invoice_template_service();
     println!("{}", std::process::id());
@@ -144,6 +144,7 @@ async fn main() -> io::Result<()> {
             .configure(|conf| ledger::ledger_transfer_http_api::init_routes(conf, ledger_service.clone()))
             .configure(|conf| invoicing::invoicing_http_api::init_routes(conf, invoicing_service.clone()))
             .configure(|conf| masters::product_item_master::product_item_http_api::init_routes(conf, product_item_serv.clone()))
+            .configure(|conf| invoicing::invoicing_series::invoicing_series_http_api::init_routes(conf, invoicing_series_service.clone()))
             .route("/healthcheck", web::get().to(healthcheck))
     })
         .bind(("0.0.0.0", 8090))?

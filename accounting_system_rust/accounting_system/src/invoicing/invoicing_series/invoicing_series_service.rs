@@ -23,7 +23,7 @@ pub enum InvoicingSeriesServiceError {
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait InvoicingSeriesService: Send + Sync {
-    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest) -> Result<Uuid, InvoicingSeriesServiceError>;
+    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, InvoicingSeriesServiceError>;
 
     async fn get_invoicing_series_by_id(&self, invoicing_series_id: Uuid,tenant_id:Uuid) -> Result<Option<Arc<InvoicingSeriesMaster>>, InvoicingSeriesServiceError>;
     async fn is_valid_invoicing_series_id(&self,invoicing_series_id:Uuid,tenant_id:Uuid)->Result<bool,InvoicingSeriesServiceError>;
@@ -49,8 +49,8 @@ pub  fn get_invoicing_series_service(pool:Arc<Pool>)->Arc<dyn InvoicingSeriesSer
 
 #[async_trait]
 impl InvoicingSeriesService for InvoicingSeriesServiceImpl {
-    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest) -> Result<Uuid, InvoicingSeriesServiceError> {
-        let d = self.dao.create_invoice_series(&request).await?;
+    async fn create_invoice_series(&self, request: &CreateInvoiceNumberSeriesRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, InvoicingSeriesServiceError> {
+        let d = self.dao.create_invoice_series(&request,tenant_id,user_id).await?;
         Ok(d)
     }
 

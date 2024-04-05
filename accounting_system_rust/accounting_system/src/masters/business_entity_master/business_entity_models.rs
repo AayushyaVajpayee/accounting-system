@@ -159,10 +159,8 @@ impl TryFrom<String> for PhoneNumber {
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateBusinessEntityRequest {
     pub idempotence_key: Uuid,
-    pub tenant_id: Uuid,
     #[serde(flatten)]
     pub entity_type: BusinessEntityType,
-    pub created_by: Uuid,
 }
 
 impl Default for BusinessEntityName {
@@ -230,9 +228,7 @@ pub mod tests {
     pub fn a_create_business_entity_request(b: CreateBusinessEntityRequestBuilder) -> CreateBusinessEntityRequest {
         CreateBusinessEntityRequest {
             idempotence_key: b.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            tenant_id: b.tenant_id.unwrap_or(*SEED_TENANT_ID),
             entity_type: b.entity_type.unwrap_or_default(),
-            created_by: b.created_by.unwrap_or(*SEED_USER_ID),
         }
     }
 }

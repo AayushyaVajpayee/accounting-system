@@ -32,7 +32,8 @@ pub trait BusinessEntityService: Send + Sync {
 
     async fn is_valid_business_entity_id(&self, id: &Uuid, tenant_id: &Uuid) ->
     Result<bool, BusinessEntityServiceError>;
-    async fn create_business_entity(&self, request: &CreateBusinessEntityRequest)
+    async fn create_business_entity(&self, request: &CreateBusinessEntityRequest
+    ,tenant_id:Uuid,user_id:Uuid)
                                     -> Result<Uuid, BusinessEntityServiceError>;
 }
 
@@ -91,8 +92,8 @@ impl BusinessEntityService for BusinessEntityServiceImpl {
         return Ok(entity.is_some());
     }
 
-    async fn create_business_entity(&self, request: &CreateBusinessEntityRequest) -> Result<Uuid, BusinessEntityServiceError> {
-        let kk = self.dao.create_business_entity(request).await?;
+    async fn create_business_entity(&self, request: &CreateBusinessEntityRequest,tenant_id:Uuid,user_id:Uuid) -> Result<Uuid, BusinessEntityServiceError> {
+        let kk = self.dao.create_business_entity(request,tenant_id,user_id).await?;
         Ok(kk)
     }
 }
