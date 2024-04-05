@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use log::kv::Source;
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_dao_generic, get_postgres_conn_pool, get_postgres_image_port,

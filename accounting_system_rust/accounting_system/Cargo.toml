@@ -58,6 +58,6 @@ actix-web-lab = "0.20.2"
 invoice_doc_generator = { path = "../invoice_doc_generator", features = ["test_utils"] }
 testcontainers = "0.15.0"
 rstest = "0.18.2"
-spectral = "0.6.0"
+speculoos = "0.11.0"
 mockall = "0.12.1"
 tracing-test = "0.2.4"

@@ -94,8 +94,8 @@ pub mod tests {
     use anyhow::anyhow;
     use lazy_static::lazy_static;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;

@@ -117,8 +117,8 @@ pub fn validate_gstin(gstin: &str) -> Option<GstinValidationError> {
 #[cfg(test)]
 mod test {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
 
     use crate::gstin_models::{
         gstin_checksum, validate_gstin, validate_gstin_checksum, validate_gstin_pattern,

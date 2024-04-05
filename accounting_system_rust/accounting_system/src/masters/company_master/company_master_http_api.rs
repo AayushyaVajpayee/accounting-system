@@ -109,8 +109,8 @@ mod tests {
     use actix_web::{test, App};
     use anyhow::anyhow;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::VecAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::VecAssertions;
     use tracing::info;
     use tracing_test::traced_test;
     use uuid::Uuid;

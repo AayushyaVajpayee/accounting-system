@@ -21,8 +21,8 @@ impl MasterUpdationRemarks {
 #[cfg(test)]
 mod master_updation_remarks_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::masters::company_master::company_master_models::master_updation_remarks::MasterUpdationRemarks;
 

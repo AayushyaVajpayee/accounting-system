@@ -2,8 +2,8 @@
 mod tests {
     use std::str::FromStr;
 
-    use spectral::assert_that;
-    use spectral::option::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
     use uuid::Uuid;
 

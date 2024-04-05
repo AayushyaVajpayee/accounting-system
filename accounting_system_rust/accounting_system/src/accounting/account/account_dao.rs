@@ -104,8 +104,8 @@ impl AccountDao for AccountDaoPostgresImpl {
 
 #[cfg(test)]
 mod account_tests {
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
 
     use crate::accounting::account::account_dao::{AccountDao, AccountDaoPostgresImpl};
     use crate::accounting::account::account_models::tests::{

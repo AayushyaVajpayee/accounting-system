@@ -62,8 +62,8 @@ impl TryFrom<String> for LineTitle {
 #[cfg(test)]
 mod line_title_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::invoice_line::line_title::LineTitle;
 

@@ -196,8 +196,8 @@ impl CompanyUnitDao for CompanyUnitDaoImpl {
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::{OptionAssertions, VecAssertions};
+    use speculoos::assert_that;
+    use speculoos::prelude::{OptionAssertions, VecAssertions};
     use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};

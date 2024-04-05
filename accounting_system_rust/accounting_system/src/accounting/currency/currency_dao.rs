@@ -113,8 +113,8 @@ impl CurrencyDao for CurrencyDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
 
     use crate::accounting::currency::currency_dao::{CurrencyDao, CurrencyDaoPostgresImpl};
     use crate::accounting::currency::currency_models::tests::a_create_currency_master_request;

@@ -41,8 +41,8 @@ impl TryFrom<String> for LineSubtitle {
 #[cfg(test)]
 mod line_subtitle_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::invoice_line::line_subtitle::LineSubtitle;
 

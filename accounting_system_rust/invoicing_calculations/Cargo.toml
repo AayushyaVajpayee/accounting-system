@@ -12,4 +12,4 @@ anyhow = "1.0.79"
 cess_models={path = "../cess_models"}
 [dev-dependencies]
 rstest = "0.18.2"
-spectral = "0.6.0"
+speculoos = "0.11.0"

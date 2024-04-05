@@ -140,8 +140,8 @@ impl Storage for AwsStorageService {
 #[cfg(test)]
 mod tests {
     use crate::storage_service::{AwsStorageService, Storage};
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     const UNIT_TESTS_BUCKET: &str = "unit-tests-objects-only";
 
