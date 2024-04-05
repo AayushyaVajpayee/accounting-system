@@ -27,7 +27,7 @@ pub enum CompanyUnitServiceError {
 pub trait CompanyUnitService: Send + Sync {
     async fn create_company_unit(
         &self,
-        request: &CreateCompanyUnitRequest,
+        request: &CreateCompanyUnitRequest,tenant_id:Uuid,user_id:Uuid
     ) -> Result<Uuid, CompanyUnitServiceError>;
     async fn get_company_unit_by_id(
         &self,
@@ -48,9 +48,9 @@ struct CompanyUnitServiceImpl {
 impl CompanyUnitService for CompanyUnitServiceImpl {
     async fn create_company_unit(
         &self,
-        request: &CreateCompanyUnitRequest,
+        request: &CreateCompanyUnitRequest,tenant_id:Uuid,user_id:Uuid
     ) -> Result<Uuid, CompanyUnitServiceError> {
-        let uuid = self.dao.create_company_unit(request).await?;
+        let uuid = self.dao.create_company_unit(request,tenant_id,user_id).await?;
         Ok(uuid)
     }
 

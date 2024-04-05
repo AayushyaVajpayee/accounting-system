@@ -14,7 +14,7 @@ use crate::masters::company_master::company_unit_master::company_unit_models::{
 pub trait CompanyUnitDao: Send + Sync {
     async fn create_company_unit(
         &self,
-        request: &CreateCompanyUnitRequest,
+        request: &CreateCompanyUnitRequest,tenant_id:Uuid,user_id:Uuid
     ) -> Result<Uuid, DaoError>;
     async fn get_company_unit_by_id(
         &self,

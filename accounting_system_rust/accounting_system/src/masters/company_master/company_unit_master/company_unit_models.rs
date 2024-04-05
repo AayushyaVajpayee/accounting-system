@@ -21,11 +21,9 @@ pub struct CompanyUnitMaster {
 #[derive(Debug, Serialize, Deserialize, Builder)]
 pub struct CreateCompanyUnitRequest {
     pub idempotency_key: Uuid,
-    pub tenant_id: Uuid,
     pub company_id: Uuid,
     pub gstin_no: GstinNo,
     // will this be optional or not? also where is the validation
-    pub created_by: Uuid,
     pub address: CompanyUnitAddressRequest,
 }
 
@@ -35,7 +33,6 @@ impl CreateCompanyUnitRequest {
             CompanyUnitAddressRequest::ExistingAddress { .. } => None,
             CompanyUnitAddressRequest::NewAddress { request } => Some(CreateAddressRequest {
                 idempotence_key: self.idempotency_key,
-                tenant_id: self.tenant_id,
                 line_1: request.line_1.get_inner().to_string(),
                 line_2: request.line_2.as_ref().map(|a| a.get_inner().to_string()),
                 landmark: request.landmark.as_ref().map(|a| a.get_inner().to_string()),
@@ -43,7 +40,6 @@ impl CreateCompanyUnitRequest {
                 state_id: request.state_id,
                 country_id: request.country_id,
                 pincode_id: request.pincode_id,
-                created_by: self.created_by,
             }),
         }
     }
@@ -66,7 +62,6 @@ impl From<CreateCompanyUnitRequest> for Option<CreateAddressRequest> {
             CompanyUnitAddressRequest::ExistingAddress { .. } => None,
             CompanyUnitAddressRequest::NewAddress { request } => Some(CreateAddressRequest {
                 idempotence_key: value.idempotency_key,
-                tenant_id: value.tenant_id,
                 line_1: request.line_1.get_inner().to_string(),
                 line_2: request.line_2.map(|a| a.get_inner().to_string()),
                 landmark: request.landmark.map(|a| a.get_inner().to_string()),
@@ -74,7 +69,6 @@ impl From<CreateCompanyUnitRequest> for Option<CreateAddressRequest> {
                 state_id: request.state_id,
                 country_id: request.country_id,
                 pincode_id: request.pincode_id,
-                created_by: value.created_by,
             }),
         }
     }
@@ -124,7 +118,6 @@ pub mod tests {
     ) -> CreateCompanyUnitRequest {
         CreateCompanyUnitRequest {
             idempotency_key: builder.company_id.unwrap_or_else(Uuid::now_v7),
-            tenant_id: builder.tenant_id.unwrap_or(*SEED_TENANT_ID),
             company_id: builder.company_id.unwrap_or(*SEED_COMPANY_MASTER_ID),
             gstin_no: builder.gstin_no.unwrap_or_else(|| {
                 generate_random_gstin_no()
@@ -133,7 +126,6 @@ pub mod tests {
                     .try_into()
                     .unwrap()
             }),
-            created_by: builder.created_by.unwrap_or(*SEED_USER_ID),
             address: builder
                 .address
                 .unwrap_or(CompanyUnitAddressRequest::ExistingAddress {

@@ -8,6 +8,7 @@ use uuid::Uuid;
 use crate::common_utils::pagination::pagination_utils::{
     set_pagination_headers, PaginationRequest,
 };
+use crate::common_utils::utils::{TenantId, UserId};
 use crate::masters::company_master::company_unit_master::company_unit_models::CreateCompanyUnitRequest;
 use crate::masters::company_master::company_unit_master::company_unit_service::{
     CompanyUnitService, CompanyUnitServiceError,
@@ -25,9 +26,9 @@ impl ResponseError for CompanyUnitServiceError {
 #[allow(dead_code)]
 async fn create_company_unit(
     data: Data<Arc<dyn CompanyUnitService>>,
-    request: web::Json<CreateCompanyUnitRequest>,
+    request: web::Json<CreateCompanyUnitRequest>,tenant_id: TenantId,user_id: UserId
 ) -> actix_web::Result<impl Responder> {
-    let resp = data.create_company_unit(&request).await?;
+    let resp = data.create_company_unit(&request,tenant_id.inner(),user_id.inner()).await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(resp))
 }
 #[allow(dead_code)]
@@ -80,7 +81,7 @@ mod tests {
     use crate::common_utils::pagination::pagination_utils::{
         pagination_header_middleware, PaginatedResponse, PaginationMetadata,
     };
-    use crate::get_and_create_api_test;
+    use crate::{get_and_create_api_test, get_and_create_api_test_v2};
     use crate::masters::company_master::company_master_models::company_master::tests::SEED_COMPANY_MASTER_ID;
     use crate::masters::company_master::company_unit_master::company_unit_master_http_api::map_endpoints_to_functions;
     use crate::masters::company_master::company_unit_master::company_unit_models::tests::a_create_company_unit_request;
@@ -90,6 +91,7 @@ mod tests {
     use crate::masters::company_master::company_unit_master::company_unit_service::{
         CompanyUnitService, MockCompanyUnitService,
     };
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_get_company_units_by_company_id() {
@@ -132,7 +134,7 @@ mod tests {
             let mut mocked = MockCompanyUnitService::new();
             mocked
                 .expect_create_company_unit()
-                .returning(|_| Ok(Default::default()));
+                .returning(|_,_,_| Ok(Default::default()));
             mocked
                 .expect_get_company_unit_by_id()
                 .returning(|_| Ok(Some(Default::default())));
@@ -141,14 +143,15 @@ mod tests {
         let get_uri = format!("/company-unit-master/company-unit-id/{}", Uuid::default());
         let expected_company_unit: CompanyUnitMaster = Default::default();
         let create_req = a_create_company_unit_request(CreateCompanyUnitRequestBuilder::default());
-        get_and_create_api_test!(
+        get_and_create_api_test_v2!(
             CompanyUnitMaster,
             CompanyUnitService,
             closure,
             get_uri,
             "/company-unit-master/create",
             create_req,
-            expected_company_unit
+            expected_company_unit,
+            *SEED_TENANT_ID
         );
     }
 }

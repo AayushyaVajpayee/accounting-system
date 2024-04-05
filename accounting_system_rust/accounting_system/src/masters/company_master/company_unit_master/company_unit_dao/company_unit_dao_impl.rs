@@ -65,7 +65,7 @@ impl TryFrom<&Row> for CompanyUnitMaster {
 impl CompanyUnitDao for CompanyUnitDaoImpl {
     async fn create_company_unit(
         &self,
-        request1: &CreateCompanyUnitRequest,
+        request1: &CreateCompanyUnitRequest,tenant_id:Uuid,user_id:Uuid
     ) -> Result<Uuid, DaoError> {
         let query = match &request1.address {
             CompanyUnitAddressRequest::ExistingAddress { id } => {
@@ -76,10 +76,10 @@ impl CompanyUnitDao for CompanyUnitDaoImpl {
            commit;
         "#,
                     request1.idempotency_key,
-                    request1.tenant_id,
+                    tenant_id,
                     request1.company_id,
                     request1.gstin_no.get_str(),
-                    request1.created_by,
+                    user_id,
                     true,
                     1,
                     "null",
@@ -97,13 +97,13 @@ impl CompanyUnitDao for CompanyUnitDaoImpl {
            commit;
         "#,
                     request1.idempotency_key,
-                    request1.tenant_id,
+                    tenant_id,
                     request1.company_id,
                     request1.gstin_no.get_str(),
-                    request1.created_by,
+                    user_id,
                     true,
                     1,
-                    create_address_input_for_db_function(&addr_req),
+                    create_address_input_for_db_function(&addr_req,tenant_id,user_id),
                     "null"
                 )
             }
@@ -201,6 +201,7 @@ mod tests {
     use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::common_utils::dao_error::DaoError;
     use crate::masters::address_master::address_model::tests::{a_create_address_request, SEED_ADDRESS_ID};
     use crate::masters::company_master::company_master_models::company_master::tests::SEED_COMPANY_MASTER_ID;
@@ -209,6 +210,7 @@ mod tests {
     use crate::masters::company_master::company_unit_master::company_unit_dao::company_unit_dao_impl::CompanyUnitDaoImpl;
     use crate::masters::company_master::company_unit_master::company_unit_models::{CompanyUnitAddressRequest, CreateCompanyUnitRequestBuilder};
     use crate::masters::company_master::company_unit_master::company_unit_models::tests::a_create_company_unit_request;
+    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
     #[tokio::test]
     async fn test_paginated_get_company_units_by_company_id() {
@@ -228,7 +230,7 @@ mod tests {
         };
         for _i in 0..20 {
             let k = a_create_company_unit_request(Default::default());
-            company_master_dao.create_company_unit(&k).await.unwrap(); //todo create batch api
+            company_master_dao.create_company_unit(&k,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap(); //todo create batch api
         }
         let p = company_master_dao
             .get_company_units_by_company_id(&SEED_COMPANY_MASTER_ID, 1, 10)
@@ -251,10 +253,10 @@ mod tests {
         let mut create_request =
             a_create_company_unit_request(CreateCompanyUnitRequestBuilder::default());
         create_request.gstin_no = GstinNo::new("27AAAFU0696A1ZE").unwrap();
-        let _created_id_1 = dao.create_company_unit(&create_request).await.unwrap();
+        let _created_id_1 = dao.create_company_unit(&create_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
         create_request.gstin_no = GstinNo::new("27AAAFU0696A1ZE").unwrap();
         create_request.idempotency_key = Uuid::now_v7();
-        let err = dao.create_company_unit(&create_request).await.unwrap_err();
+        let err = dao.create_company_unit(&create_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap_err();
         assert!(matches!(err, DaoError::UniqueConstraintViolated { .. }));
     }
 
@@ -267,8 +269,8 @@ mod tests {
         };
         let create_request =
             a_create_company_unit_request(CreateCompanyUnitRequestBuilder::default());
-        let created_id_1 = dao.create_company_unit(&create_request).await.unwrap();
-        let created_id_2 = dao.create_company_unit(&create_request).await.unwrap();
+        let created_id_1 = dao.create_company_unit(&create_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
+        let created_id_2 = dao.create_company_unit(&create_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
         assert_that!(created_id_1).is_equal_to(created_id_2)
     }
 
@@ -286,7 +288,7 @@ mod tests {
         let mut buil = CreateCompanyUnitRequestBuilder::default();
         buil.address(add_type);
         let create_request = a_create_company_unit_request(buil);
-        let created_id = dao.create_company_unit(&create_request).await.unwrap();
+        let created_id = dao.create_company_unit(&create_request,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
         let k = dao.get_company_unit_by_id(&created_id).await.unwrap();
         assert_that!(k)
             .is_some()

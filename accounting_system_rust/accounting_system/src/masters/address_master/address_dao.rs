@@ -118,6 +118,7 @@ mod tests {
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_dao_generic, get_postgres_conn_pool, get_postgres_image_port,
     };
+    use crate::accounting::user::user_models::SEED_USER_ID;
     use crate::masters::address_master::address_dao::{AddressDao, AddressDaoImpl};
     use crate::masters::address_master::address_model::tests::a_create_address_request;
     use crate::masters::address_master::address_model::CreateAddressRequestBuilder;
@@ -133,7 +134,7 @@ mod tests {
         )
         .await;
         let address = a_create_address_request(CreateAddressRequestBuilder::default());
-        let id = dao.create_address(&address).await.unwrap();
+        let id = dao.create_address(&address,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
         let k = dao.get_address_by_id(*SEED_TENANT_ID, id).await.unwrap();
         assert_that!(k)
             .is_some()
@@ -154,8 +155,8 @@ mod tests {
         let mut ab = CreateAddressRequestBuilder::default();
         ab.line_1(name.to_string());
         let address = a_create_address_request(ab);
-        let id = dao.create_address(&address).await.unwrap();
-        let id2 = dao.create_address(&address).await.unwrap();
+        let id = dao.create_address(&address,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
+        let id2 = dao.create_address(&address,*SEED_TENANT_ID,*SEED_USER_ID).await.unwrap();
         assert_that!(&id).is_equal_to(id2);
         let number_of_addr_created: i64 = dao
             .postgres_client
