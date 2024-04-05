@@ -6,8 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = {version= "0.11.24",features = ["json"]  }
-accounting-system={path = "../accounting_system"}
+reqwest = {version= "0.12.2",features = ["json"]  }
 tokio = { version = "1.36.0", features = ["full"] }
 serde = { version = "1.0.196", features = ["derive"] }
-serde_json = "1.0.113"
+serde_json =  {version =  "1.0.113" }
+uuid = { version = "1.7.0", features = ["v7","serde"] }
+lazy_static = "1.4.0"
+chrono = { version = "0.4.37",features = ["serde"] }
+chrono-tz = "0.8.6"
+cess_models={path = "../cess_models"}
