@@ -203,6 +203,12 @@ async fn main() -> io::Result<()> {
                     invoicing_series_service.clone(),
                 )
             })
+            .configure(|conf|{
+                masters::address_master::address_http_api::init_routes(conf,address_service.clone())
+            })
+            .configure(|conf|{
+                masters::business_entity_master::business_entity_http_api::init_routes(conf,business_entity_service.clone())
+            })
             .route("/healthcheck", web::get().to(healthcheck))
     })
     .bind(("0.0.0.0", 8090))?

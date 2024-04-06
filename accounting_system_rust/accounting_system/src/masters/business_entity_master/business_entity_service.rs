@@ -16,9 +16,7 @@ use crate::masters::address_master::address_service::AddressService;
 use crate::masters::business_entity_master::business_entity_dao::{
     get_business_entity_dao, BusinessEntityDao,
 };
-use crate::masters::business_entity_master::business_entity_models::{
-    BusinessEntityDto, CreateBusinessEntityRequest,
-};
+use crate::masters::business_entity_master::business_entity_models::{BusinessEntityDto, CreateBusinessEntityRequest, CreateBusinessEntityRequestRaw};
 
 #[derive(Debug, Error)]
 pub enum BusinessEntityServiceError {
@@ -44,7 +42,7 @@ pub trait BusinessEntityService: Send + Sync {
     ) -> Result<bool, BusinessEntityServiceError>;
     async fn create_business_entity(
         &self,
-        request: &CreateBusinessEntityRequest,
+        request: CreateBusinessEntityRequestRaw,
         tenant_id: Uuid,
         user_id: Uuid,
     ) -> Result<Uuid, BusinessEntityServiceError>;
@@ -117,13 +115,14 @@ impl BusinessEntityService for BusinessEntityServiceImpl {
 
     async fn create_business_entity(
         &self,
-        request: &CreateBusinessEntityRequest,
+        request: CreateBusinessEntityRequestRaw,
         tenant_id: Uuid,
         user_id: Uuid,
     ) -> Result<Uuid, BusinessEntityServiceError> {
+        let request :CreateBusinessEntityRequest= request.try_into()?;
         let kk = self
             .dao
-            .create_business_entity(request, tenant_id, user_id)
+            .create_business_entity(&request, tenant_id, user_id)
             .await?;
         Ok(kk)
     }

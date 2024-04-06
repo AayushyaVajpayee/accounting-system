@@ -6,7 +6,7 @@ use actix_web::{web, HttpResponseBuilder, Responder, ResponseError};
 use uuid::Uuid;
 
 use crate::common_utils::utils::{TenantId, UserId};
-use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequest;
+use crate::masters::business_entity_master::business_entity_models::{CreateBusinessEntityRequestRaw};
 use crate::masters::business_entity_master::business_entity_service::{
     BusinessEntityService, BusinessEntityServiceError,
 };
@@ -23,12 +23,12 @@ impl ResponseError for BusinessEntityServiceError {
 
 async fn create_business_entity_master(
     data: Data<Arc<dyn BusinessEntityService>>,
-    request: web::Json<CreateBusinessEntityRequest>,
+    request: web::Json<CreateBusinessEntityRequestRaw>,
     tenant_id: TenantId,
     user_id: UserId,
 ) -> actix_web::Result<impl Responder> {
     let ap = data
-        .create_business_entity(&request, tenant_id.inner(), user_id.inner())
+        .create_business_entity(request.into_inner(), tenant_id.inner(), user_id.inner())
         .await?;
     Ok(HttpResponseBuilder::new(StatusCode::OK).json(ap))
 }

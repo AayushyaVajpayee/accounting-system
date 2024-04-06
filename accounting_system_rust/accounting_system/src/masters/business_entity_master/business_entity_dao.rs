@@ -56,6 +56,7 @@ impl TryFrom<Row> for BusinessEntityMaster {
     fn try_from(row: Row) -> Result<Self, Self::Error> {
         let (base_master_fields, next_ind) = convert_row_to_base_master_fields(&row)?;
         let eligible_supplier: bool = row.get(next_ind);
+        println!("eligible supplier {}",eligible_supplier);
         let e_type: BusinessEntityType = if eligible_supplier {
             BusinessEntityType::EligibleSupplier {
                 name: BusinessEntityName::new(row.get(next_ind + 1))?,
@@ -134,7 +135,7 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
                 gstin,
             } => {
                 format!(
-                    "Row('{}','{}',{}::smallint,true,'{}',{},'{}',{},{},\
+                    "Row('{}','{}',{}::smallint,false,'{}',{},'{}',{},{},\
                  '{}')",
                     r.idempotence_key,
                     tenant_id,
@@ -253,7 +254,7 @@ mod tests {
             None,
         )
         .await;
-        let be = a_create_business_entity_request(Default::default());
+        let be = a_create_business_entity_request(Default::default()).try_into().unwrap();
         let p = dao
             .create_business_entity(&be, *SEED_TENANT_ID, *SEED_USER_ID)
             .await

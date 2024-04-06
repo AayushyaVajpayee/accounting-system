@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{ensure, Context};
+use anyhow::{Context, ensure};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -16,7 +16,9 @@ pub struct BusinessEntityDto {
     pub business_entity: BusinessEntityMaster,
     pub address: Option<Arc<AddressDto>>,
 }
+
 impl BusinessEntityDto {}
+
 #[derive(Debug, Serialize, Deserialize, Builder, PartialEq, Default)]
 pub struct BusinessEntityMaster {
     pub base_master_fields: BaseMasterFields,
@@ -165,6 +167,46 @@ pub struct CreateBusinessEntityRequest {
     pub entity_type: BusinessEntityType,
 }
 
+#[derive(Debug, Serialize, Deserialize, Builder)]
+pub struct CreateBusinessEntityRequestRaw {
+    pub idempotence_key: Uuid,
+    pub name: BusinessEntityName,
+    pub email: Option<Email>,
+    pub phone: PhoneNumber,
+    pub address_id: Option<Uuid>,
+    pub gstin: Option<GstinNo>,
+
+}
+
+impl TryFrom<CreateBusinessEntityRequestRaw> for CreateBusinessEntityRequest {
+    type Error = anyhow::Error;
+
+    fn try_from(value: CreateBusinessEntityRequestRaw) -> Result<Self, Self::Error> {
+        let entity_type: BusinessEntityType = if value.gstin.is_none() || value.address_id.is_none() || value.email.is_none() {
+            BusinessEntityType::Other {
+                name: value.name,
+                email: value.email,
+                phone: value.phone,
+                address_id: value.address_id,
+                gstin: value.gstin,
+            }
+        } else {
+            BusinessEntityType::EligibleSupplier {
+                name: value.name,
+                email: value.email.context("email cannot be none")?,
+                phone: value.phone,
+                address_id: value.address_id.context("address id cannot be none")?,
+                gstin: value.gstin.context("gstin cannot be none")?,
+            }
+        };
+
+        Ok(CreateBusinessEntityRequest {
+            idempotence_key: value.idempotence_key,
+            entity_type,
+        })
+    }
+}
+
 impl Default for BusinessEntityName {
     fn default() -> Self {
         Self("Default Business Entity".to_string())
@@ -202,12 +244,8 @@ pub mod tests {
     use lazy_static::lazy_static;
     use uuid::Uuid;
 
-    use crate::accounting::user::user_models::SEED_USER_ID;
-    use crate::masters::business_entity_master::business_entity_models::{
-        BusinessEntityMaster, BusinessEntityMasterBuilder, CreateBusinessEntityRequest,
-        CreateBusinessEntityRequestBuilder,
-    };
-    use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
+    use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, BusinessEntityMasterBuilder, BusinessEntityName, CreateBusinessEntityRequestRawBuilder, PhoneNumber};
+    use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequestRaw;
 
     lazy_static! {
         pub static ref SEED_BUSINESS_ENTITY_ID1: Uuid =
@@ -235,11 +273,15 @@ pub mod tests {
     }
 
     pub fn a_create_business_entity_request(
-        b: CreateBusinessEntityRequestBuilder,
-    ) -> CreateBusinessEntityRequest {
-        CreateBusinessEntityRequest {
+        b: CreateBusinessEntityRequestRawBuilder,
+    ) -> CreateBusinessEntityRequestRaw {
+        CreateBusinessEntityRequestRaw {
             idempotence_key: b.idempotence_key.unwrap_or_else(Uuid::now_v7),
-            entity_type: b.entity_type.unwrap_or_default(),
+            name: b.name.unwrap_or(BusinessEntityName::new("Somename").unwrap()),
+            email: b.email.flatten(),
+            phone: b.phone.unwrap_or(PhoneNumber::new("1234567891").unwrap()),
+            address_id: b.address_id.flatten(),
+            gstin: b.gstin.flatten(),
         }
     }
 }
