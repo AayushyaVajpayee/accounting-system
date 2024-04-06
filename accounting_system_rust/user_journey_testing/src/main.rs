@@ -7,7 +7,21 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 const LOCAL_HOST: &str = "http://localhost:8090/";
+async fn send_request<T:Serialize>(request:&T,tenant_id:Uuid,user_id:Uuid,path:&str)->Uuid{
+    let  cli = reqwest::Client::new();
+    let path = format!("{}{}", LOCAL_HOST,path);
 
+    let req = cli
+        .post(path.as_str())
+        .json(request)
+        .header("x-acc-tenant-id", tenant_id.to_string())
+        .header("x-acc-user-id", user_id.to_string())
+        .send()
+        .await
+        .unwrap();
+    let d: Uuid = req.json().await.unwrap();
+    d
+}
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateTenantRequest {
     pub idempotence_key: Uuid,
@@ -43,38 +57,11 @@ lazy_static! {
 }
 
 async fn get_create_tenant_request(request: &CreateTenantRequest) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}tenant/create", LOCAL_HOST);
-
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (*SUPER_TENANT_ID).to_string())
-        .header("x-acc-user-id", (*SUPER_USER_ID).to_string())
-        .send()
-        .await
-        .unwrap();
-    let d: Uuid = req.json().await.unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,*SUPER_TENANT_ID,*SUPER_USER_ID,"tenant/create").await
 }
 
 async fn create_user(request: &CreateUserRequest) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}user/create", LOCAL_HOST);
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (*SUPER_TENANT_ID).to_string())
-        .header("x-acc-user-id", (*SUPER_USER_ID).to_string())
-        .send()
-        .await
-        .unwrap();
-    let text: String = req.text().await.unwrap();
-    println!("received response: {}", text);
-    let d: Uuid = serde_json::from_str(&text).unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,*SUPER_TENANT_ID,*SUPER_USER_ID,"user/create").await
 }
 
 async fn create_currency(
@@ -82,21 +69,7 @@ async fn create_currency(
     tenant_id: Uuid,
     user_id: Uuid,
 ) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}currency/create", LOCAL_HOST);
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (tenant_id).to_string())
-        .header("x-acc-user-id", (user_id).to_string())
-        .send()
-        .await
-        .unwrap();
-    let text: String = req.text().await.unwrap();
-    println!("received response: {}", text);
-    let d: Uuid = serde_json::from_str(&text).unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,tenant_id,user_id,"currency/create").await
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -124,21 +97,7 @@ struct CreateProductRequest {
 }
 
 async fn create_product(request: &CreateProductRequest, tenant_id: Uuid, user_id: Uuid) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}product-item/create", LOCAL_HOST);
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (tenant_id).to_string())
-        .header("x-acc-user-id", (user_id).to_string())
-        .send()
-        .await
-        .unwrap();
-    let text: String = req.text().await.unwrap();
-    println!("received response: {}", text);
-    let d: Uuid = serde_json::from_str(&text).unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,tenant_id,user_id,"product-item/create").await
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -157,52 +116,24 @@ async fn create_invoicing_series_mst(
     tenant_id: Uuid,
     user_id: Uuid,
 ) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}invoice-no-series/create", LOCAL_HOST);
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (tenant_id).to_string())
-        .header("x-acc-user-id", (user_id).to_string())
-        .send()
-        .await
-        .unwrap();
-    let text: String = req.text().await.unwrap();
-    println!("received response: {}", text);
-    let d: Uuid = serde_json::from_str(&text).unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,tenant_id,user_id,"invoice-no-series/create").await
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateBusinessEntityRequest {
+    idempotence_key:Uuid,
     name: String,
     email: String,
     phone: String,
     address_id: Uuid,
     gstin: String,
 }
-
 async fn create_business_entity(
     request: &CreateBusinessEntityRequest,
     tenant_id: Uuid,
     user_id: Uuid,
 ) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}business-entity/create", LOCAL_HOST);
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (tenant_id).to_string())
-        .header("x-acc-user-id", (user_id).to_string())
-        .send()
-        .await
-        .unwrap();
-    let text: String = req.text().await.unwrap();
-    println!("received response: {}", text);
-    let d: Uuid = serde_json::from_str(&text).unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,tenant_id,user_id,"business-entity/create").await
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -219,7 +150,7 @@ pub struct CreateAddressRequest {
 
 async fn create_address(request: &CreateAddressRequest, tenant_id: Uuid, user_id: Uuid) -> Uuid {
     let mut cli = reqwest::Client::new();
-    let path = format!("{}business-entity/create", LOCAL_HOST);
+    let path = format!("{}address/create", LOCAL_HOST);
     let req = cli
         .post(path.as_str())
         .json(request)
@@ -237,12 +168,6 @@ async fn create_address(request: &CreateAddressRequest, tenant_id: Uuid, user_id
 
 #[tokio::main]
 async fn main() {
-    // let p= reqwest::get("http://localhost:8080/tenant/id/018b33d9-c862-7fde-a0cd-55504d75e5e9")
-    //      .await.unwrap();
-    //    println!("{}", p.status().as_str());
-    //
-    //  let pp:Value=p.json().await.unwrap();
-    //  println!("Hello, world! {:?}",pp);
     let name = format!("tenant 2 {}", Uuid::now_v7());
     let req = CreateTenantRequest {
         idempotence_key: Uuid::now_v7(),
@@ -306,11 +231,12 @@ async fn main() {
     let address_id = create_address(&create_address_request, tenant_id, user_id).await;
     println!("address id {}", address_id);
     let create_business_entity_request = CreateBusinessEntityRequest {
+        idempotence_key:Uuid::now_v7(),
         name: "Supplier".to_string(),
         email: "supplier@gmail.com".to_string(),
         phone: "8888888888".to_string(),
         address_id,
-        gstin: "07AAAHHHHHHH1Z5".to_string(),
+        gstin: "29AABCZ2616B1ZK".to_string(),
     };
     let business_entity_id =
         create_business_entity(&create_business_entity_request, tenant_id, user_id).await;
