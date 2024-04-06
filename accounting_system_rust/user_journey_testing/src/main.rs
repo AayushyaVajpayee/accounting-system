@@ -149,21 +149,7 @@ pub struct CreateAddressRequest {
 }
 
 async fn create_address(request: &CreateAddressRequest, tenant_id: Uuid, user_id: Uuid) -> Uuid {
-    let mut cli = reqwest::Client::new();
-    let path = format!("{}address/create", LOCAL_HOST);
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", (tenant_id).to_string())
-        .header("x-acc-user-id", (user_id).to_string())
-        .send()
-        .await
-        .unwrap();
-    let text: String = req.text().await.unwrap();
-    println!("received response: {}", text);
-    let d: Uuid = serde_json::from_str(&text).unwrap();
-    // Uuid::from_str(&d).unwrap()
-    d
+    send_request(request,tenant_id,user_id,"address/create").await
 }
 
 #[tokio::main]
