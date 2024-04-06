@@ -66,8 +66,8 @@ impl TryFrom<LineQuantityRaw> for LineQuantity {
 #[cfg(test)]
 mod line_quantity_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::invoice_line::line_quantity::LineQuantity;
     use crate::invoice_line1::UOM;

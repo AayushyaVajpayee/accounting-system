@@ -74,8 +74,8 @@ mod tests {
     use std::sync::Arc;
 
     use moka::future::Cache;
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
     use uuid::Uuid;
 
     use crate::masters::state_master::state_master_dao::MockStateMasterDao;

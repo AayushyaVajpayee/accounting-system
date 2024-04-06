@@ -17,6 +17,6 @@ serde = { version = "1.0.196", features = ["derive"] }
 anyhow = "1.0.79"
 [dev-dependencies]
 rstest = "0.18.2"
-spectral = "0.6.0"
+speculoos = "0.11.0"
 [build-dependencies]
 csv = "1.3.0"

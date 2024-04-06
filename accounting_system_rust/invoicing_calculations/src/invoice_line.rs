@@ -116,8 +116,8 @@ mod tests {
     use crate::invoice_line::InvoiceLine;
     use cess_models::CessStrategy;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::FloatAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::FloatAssertions;
 
     #[rstest]
     #[case(InvoiceLine::new(0.0, 0.0, 0.0, 0.0, CessStrategy::PercentageOfAssessableValue {cess_rate_percentage: 0.0}).unwrap(), 0.0)]

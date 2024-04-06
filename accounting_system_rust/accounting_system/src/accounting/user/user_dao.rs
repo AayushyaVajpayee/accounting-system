@@ -126,8 +126,8 @@ impl UserDao for UserDaoPostgresImpl {
 #[cfg(test)]
 mod tests {
     use crate::accounting::user::user_models::SEED_USER_ID;
-    use spectral::assert_that;
-    use spectral::option::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::option::OptionAssertions;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_dao_generic, get_postgres_image_port,

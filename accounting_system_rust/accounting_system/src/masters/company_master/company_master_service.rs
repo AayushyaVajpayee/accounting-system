@@ -191,8 +191,8 @@ pub mod tests {
     use std::sync::Arc;
 
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::{ResultAssertions, VecAssertions};
+    use speculoos::assert_that;
+    use speculoos::prelude::{ResultAssertions, VecAssertions};
     use tracing_test::traced_test;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{

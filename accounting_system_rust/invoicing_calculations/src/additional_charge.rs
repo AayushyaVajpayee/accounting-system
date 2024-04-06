@@ -54,7 +54,7 @@ pub fn compute_total_charge_amount(additional_charge: &AdditionalCharge) -> f64 
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
-    use spectral::assert_that;
+    use speculoos::assert_that;
 
     use crate::additional_charge::{
         compute_tax_amount, compute_total_charge_amount, AdditionalCharge,

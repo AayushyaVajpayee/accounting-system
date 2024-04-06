@@ -61,8 +61,8 @@ pub mod tests {
 
     use lazy_static::lazy_static;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
     use uuid::Uuid;
 
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;

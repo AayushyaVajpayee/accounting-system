@@ -105,9 +105,9 @@ mod tests {
     use deadpool_postgres::{GenericClient, Pool};
     use itertools::Itertools;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::boolean::BooleanAssertions;
-    use spectral::option::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::boolean::BooleanAssertions;
+    use speculoos::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
     use uuid::Uuid;
 

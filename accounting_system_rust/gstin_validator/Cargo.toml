@@ -12,4 +12,4 @@ lazy_static = "1.4.0"
 
 [dev-dependencies]
 rstest = "0.18.2"
-spectral = "0.6.0"
+speculoos = "0.11.0"

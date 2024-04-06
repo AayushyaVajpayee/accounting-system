@@ -361,8 +361,8 @@ pub fn get_invoicing_service(
 #[cfg(test)]
 mod tests {
     use chrono::Days;
-    use spectral::assert_that;
-    use spectral::prelude::VecAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::VecAssertions;
 
     use invoice_doc_generator::hsn_sac::GstItemCode::{HsnCode, SacCode};
     use invoice_doc_generator::hsn_sac::{Hsn, Sac};

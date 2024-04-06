@@ -42,8 +42,8 @@ impl TryFrom<f64> for Price {
 #[cfg(test)]
 mod unit_price_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::invoice_line::unit_price::Price;
 

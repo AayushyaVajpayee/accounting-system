@@ -208,8 +208,8 @@ impl BusinessEntityDao for BusinessEntityDaoImpl {
 
 #[cfg(test)]
 mod tests {
-    use spectral::assert_that;
-    use spectral::option::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::option::OptionAssertions;
     use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{

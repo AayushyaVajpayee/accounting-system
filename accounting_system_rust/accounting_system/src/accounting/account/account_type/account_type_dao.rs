@@ -161,8 +161,8 @@ pub fn get_account_type_dao(pool: Arc<Pool>) -> Arc<dyn AccountTypeDao> {
 
 #[cfg(test)]
 mod account_type_tests {
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
 
     use crate::accounting::account::account_type::account_type_dao::{
         AccountTypeDao, AccountTypeDaoPostgresImpl,

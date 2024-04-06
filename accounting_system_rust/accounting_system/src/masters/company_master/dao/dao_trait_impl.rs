@@ -179,9 +179,9 @@ impl CompanyMasterDao for CompanyMasterDaoPostgresImpl {
 
 #[cfg(test)]
 mod tests {
-    use spectral::assert_that;
-    use spectral::prelude::OptionAssertions;
-    use spectral::vec::VecAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::OptionAssertions;
+    use speculoos::vec::VecAssertions;
     use uuid::Uuid;
 
     use crate::accounting::postgres_factory::test_utils_postgres::{get_postgres_conn_pool, get_postgres_image_port};

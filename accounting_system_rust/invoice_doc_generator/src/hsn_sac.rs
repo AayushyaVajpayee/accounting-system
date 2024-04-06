@@ -144,8 +144,8 @@ impl TryFrom<String> for Sac {
 #[cfg(test)]
 mod hsn_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::hsn_sac::Hsn;
 
@@ -171,8 +171,8 @@ mod hsn_tests {
 #[cfg(test)]
 mod sac_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::hsn_sac::Sac;
 

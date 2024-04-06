@@ -192,7 +192,7 @@ mod tests {
     use itertools::Itertools;
     use maplit::hashmap;
     use rstest::rstest;
-    use spectral::assert_that;
+    use speculoos::assert_that;
     use std::collections::HashMap;
     use xxhash_rust::xxh32;
 

@@ -307,8 +307,8 @@ pub fn flatten_errors(
 #[cfg(test)]
 mod utils_tests {
     use serde::{Deserialize, Serialize};
-    use spectral::assert_that;
-    use spectral::prelude::VecAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::VecAssertions;
     use validator::Validate;
 
     use crate::common_utils::utils::flatten_errors;

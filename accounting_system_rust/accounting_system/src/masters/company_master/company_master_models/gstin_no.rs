@@ -37,8 +37,8 @@ impl TryFrom<String> for GstinNo {
 pub mod gstin_no_tests {
     use rand::Rng;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use gstin_validator::gstin_models::gstin_checksum;
 

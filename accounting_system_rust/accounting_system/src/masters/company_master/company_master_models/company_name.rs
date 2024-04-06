@@ -25,8 +25,8 @@ impl CompanyName {
 #[cfg(test)]
 mod company_name_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::masters::company_master::company_master_models::company_name::CompanyName;
 

@@ -43,8 +43,8 @@ impl TryFrom<i32> for MasterStatusEnum {
 mod master_status_enum_tests {
     use anyhow::{anyhow, Error};
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum;
     use crate::masters::company_master::company_master_models::master_status_enum::MasterStatusEnum::Approved;

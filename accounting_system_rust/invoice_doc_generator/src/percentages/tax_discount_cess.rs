@@ -59,8 +59,8 @@ impl TaxPercentage {
 #[cfg(test)]
 mod tax_percentage_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::percentages::tax_discount_cess::TaxPercentage;
 
@@ -112,8 +112,8 @@ impl TryFrom<f32> for CessPercentage {
 #[cfg(test)]
 mod cess_percentage_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::percentages::tax_discount_cess::CessPercentage;
 
@@ -167,8 +167,8 @@ impl TryFrom<f32> for DiscountPercentage {
 #[cfg(test)]
 mod discount_percentage_tests {
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::percentages::tax_discount_cess::DiscountPercentage;
 

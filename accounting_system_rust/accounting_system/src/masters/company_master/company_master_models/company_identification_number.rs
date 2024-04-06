@@ -29,8 +29,8 @@ pub mod cin_tests {
     use rand::distributions::Alphanumeric;
     use rand::Rng;
     use rstest::rstest;
-    use spectral::assert_that;
-    use spectral::prelude::ResultAssertions;
+    use speculoos::assert_that;
+    use speculoos::prelude::ResultAssertions;
 
     use crate::masters::company_master::company_master_models::company_identification_number::CompanyIdentificationNumber;
 
