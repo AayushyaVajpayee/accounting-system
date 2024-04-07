@@ -3,7 +3,7 @@ val kotlin_version: String by project
 val logback_version: String by project
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "1.9.23"
     id("io.ktor.plugin") version "2.3.7"
     id("com.google.cloud.tools.jib") version "3.4.0"
     idea
