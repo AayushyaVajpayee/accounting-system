@@ -15,3 +15,5 @@ lazy_static = "1.4.0"
 chrono = { version = "0.4.37",features = ["serde"] }
 chrono-tz = "0.8.6"
 cess_models={path = "../cess_models"}
+rand = "0.8.5"
+regex = "1.10.4"
