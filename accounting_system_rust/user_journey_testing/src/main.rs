@@ -1,50 +1,29 @@
-use chrono::{DateTime, Utc};
 use std::str::FromStr;
 
-use cess_models::CessStrategy;
 use lazy_static::lazy_static;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::business_entity::create_random_business_entity;
+use crate::currency::create_random_currency;
+use crate::invoice::{BillShipDetail, create_random_invoice};
+use crate::invoice_series::create_random_invoice_series_mst;
+use crate::product_item::create_random_product;
+use crate::tenant::create_random_tenant;
+use crate::user::{create_random_user_with_other_user_of_same_tenant, create_random_user_with_super_tenant};
+use crate::util::{generate_random_gstin_no, send_request};
+
+mod business_entity;
+mod util;
+mod product_item;
+mod tenant;
+mod user;
+mod currency;
+mod invoice_series;
+mod invoice;
+
 const LOCAL_HOST: &str = "http://localhost:8090/";
-async fn send_request<T:Serialize>(request:&T,tenant_id:Uuid,user_id:Uuid,path:&str)->Uuid{
-    let  cli = reqwest::Client::new();
-    let path = format!("{}{}", LOCAL_HOST,path);
-
-    let req = cli
-        .post(path.as_str())
-        .json(request)
-        .header("x-acc-tenant-id", tenant_id.to_string())
-        .header("x-acc-user-id", user_id.to_string())
-        .send()
-        .await
-        .unwrap();
-    let d: Uuid = req.json().await.unwrap();
-    d
-}
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CreateTenantRequest {
-    pub idempotence_key: Uuid,
-    pub display_name: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateUserRequest {
-    pub idempotence_key: Uuid,
-    pub tenant_id: Uuid,
-    pub first_name: String,
-    pub last_name: Option<String>,
-    pub email_id: Option<String>,
-    pub mobile_number: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateCurrencyMasterRequest {
-    pub idempotence_key: Uuid,
-    pub scale: i16,
-    pub display_name: String,
-    pub description: String,
-}
 
 lazy_static! {
     pub static ref SUPER_TENANT_ID: Uuid =
@@ -56,175 +35,33 @@ lazy_static! {
         Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap();
 }
 
-async fn get_create_tenant_request(request: &CreateTenantRequest) -> Uuid {
-    send_request(request,*SUPER_TENANT_ID,*SUPER_USER_ID,"tenant/create").await
-}
 
-async fn create_user(request: &CreateUserRequest) -> Uuid {
-    send_request(request,*SUPER_TENANT_ID,*SUPER_USER_ID,"user/create").await
-}
 
-async fn create_currency(
-    request: &CreateCurrencyMasterRequest,
-    tenant_id: Uuid,
-    user_id: Uuid,
-) -> Uuid {
-    send_request(request,tenant_id,user_id,"currency/create").await
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CreateTaxRateRequest {
-    pub tax_rate_percentage: f32,
-    pub start_date: DateTime<Utc>, //todo ensure that it is not in past more than 24 hours
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateCessRequest {
-    pub cess_strategy: CessStrategy,
-    pub start_date: DateTime<Utc>, //todo ensure that it is not in past more than 24 hours
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct CreateProductRequest {
-    idempotence_key: Uuid,
-    line_title: String,
-    line_subtitle: String,
-    hsn_sac_code: String,
-    uom: String,
-    //Piece
-    create_tax_request: CreateTaxRateRequest,
-    create_cess_request: Option<CreateCessRequest>,
-}
-
-async fn create_product(request: &CreateProductRequest, tenant_id: Uuid, user_id: Uuid) -> Uuid {
-    send_request(request,tenant_id,user_id,"product-item/create").await
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateInvoicingSeriesRequest {
-    pub idempotence_key: Uuid,
-    pub name: String,
-    pub prefix: String,
-    pub zero_padded_counter: bool,
-    ///primarily for migration purpose and nothing else
-    pub start_value: Option<u32>,
-    pub financial_year: i32,
-}
-
-async fn create_invoicing_series_mst(
-    request: &CreateInvoicingSeriesRequest,
-    tenant_id: Uuid,
-    user_id: Uuid,
-) -> Uuid {
-    send_request(request,tenant_id,user_id,"invoice-no-series/create").await
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateBusinessEntityRequest {
-    idempotence_key:Uuid,
-    name: String,
-    email: String,
-    phone: String,
-    address_id: Uuid,
-    gstin: String,
-}
-async fn create_business_entity(
-    request: &CreateBusinessEntityRequest,
-    tenant_id: Uuid,
-    user_id: Uuid,
-) -> Uuid {
-    send_request(request,tenant_id,user_id,"business-entity/create").await
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CreateAddressRequest {
-    pub idempotence_key: Uuid,
-    pub line_1: String,
-    pub line_2: Option<String>,
-    pub landmark: Option<String>,
-    pub city_id: Uuid,
-    pub state_id: Uuid,
-    pub country_id: Uuid,
-    pub pincode_id: Uuid,
-}
-
-async fn create_address(request: &CreateAddressRequest, tenant_id: Uuid, user_id: Uuid) -> Uuid {
-    send_request(request,tenant_id,user_id,"address/create").await
-}
 
 #[tokio::main]
 async fn main() {
-    let name = format!("tenant 2 {}", Uuid::now_v7());
-    let req = CreateTenantRequest {
-        idempotence_key: Uuid::now_v7(),
-        display_name: name,
-    };
-    let tenant_id = get_create_tenant_request(&req).await;
+    let tenant_id = create_random_tenant().await;
     println!("{}", tenant_id);
-    let create_user_req = CreateUserRequest {
-        idempotence_key: Uuid::now_v7(),
-        tenant_id,
-        first_name: "test name 1".to_string(),
-        last_name: None,
-        email_id: None,
-        mobile_number: None,
-    };
-    let user_id = create_user(&create_user_req).await;
+    let user_id = create_random_user_with_super_tenant(tenant_id).await;
     println!("user_id {}", user_id);
-    let create_currency_request = CreateCurrencyMasterRequest {
-        idempotence_key: Uuid::now_v7(),
-        scale: 2,
-        display_name: "INR".to_string(),
-        description: "Indian Rupees".to_string(),
-    };
-    let currency_id = create_currency(&create_currency_request, tenant_id, user_id).await;
+    let user_id_1 = create_random_user_with_other_user_of_same_tenant(tenant_id, user_id).await;
+    println!("user_id_1 {}", user_id_1);
+    let currency_id = create_random_currency(tenant_id, user_id_1).await;
     println!("currency id {}", currency_id);
-    let product_request = CreateProductRequest {
-        idempotence_key: Uuid::now_v7(),
-        line_title: format!("some title {}", Uuid::now_v7().as_simple().to_string()),
-        line_subtitle: format!("some subtitle {}", Uuid::now_v7().as_simple().to_string()),
-        hsn_sac_code: "01013020".to_string(),
-        uom: "Piece".to_string(),
-        create_tax_request: CreateTaxRateRequest {
-            tax_rate_percentage: 12.0,
-            start_date: Utc::now(),
-        },
-        create_cess_request: None,
-    };
-    let product_id = create_product(&product_request, tenant_id, user_id).await;
+    let product_id = create_random_product(tenant_id, user_id).await;
     println!("product_id {}", product_id);
-    let invoicing_series_req = CreateInvoicingSeriesRequest {
-        idempotence_key: Uuid::now_v7(),
-        name: "test-series-inv".to_string(),
-        prefix: "INV/T1/".to_string(),
-        zero_padded_counter: false,
-        start_value: None,
-        financial_year: 2024,
-    };
-    let invoicing_series_mst_id =
-        create_invoicing_series_mst(&invoicing_series_req, tenant_id, user_id).await;
+    let invoicing_series_mst_id = create_random_invoice_series_mst(tenant_id, user_id_1).await;
     println!("invoicing series mst {}", invoicing_series_mst_id);
-    let create_address_request = CreateAddressRequest {
-        idempotence_key: Uuid::now_v7(),
-        line_1: "some address key".to_string(),
-        line_2: Some("some address line 2".to_string()),
-        landmark: Some("some landmark".to_string()),
-        city_id: Uuid::from_str("c7d82fae-7928-7f91-970b-41450b26f197").unwrap(),
-        state_id: Uuid::from_str("c42190c1-cc98-7d51-9442-0edebe9b0220").unwrap(),
-        country_id: Uuid::from_str("018b05dd-2983-7809-a2d1-95b3f1776eb3").unwrap(),
-        pincode_id: Uuid::from_str("c8c1da55-8be8-722c-9623-1295611b2eee").unwrap(),
+    let supplier_id = create_random_business_entity(tenant_id, user_id_1).await;
+    println!("business entity id {}", supplier_id);
+    let bill_to_id = create_random_business_entity(tenant_id, user_id_1).await;
+    let bill_ship_dtl = BillShipDetail {
+        billed_to_customer_id: bill_to_id,
+        shipped_to_customer_id: bill_to_id,
     };
-    let address_id = create_address(&create_address_request, tenant_id, user_id).await;
-    println!("address id {}", address_id);
-    let create_business_entity_request = CreateBusinessEntityRequest {
-        idempotence_key:Uuid::now_v7(),
-        name: "Supplier".to_string(),
-        email: "supplier@gmail.com".to_string(),
-        phone: "8888888888".to_string(),
-        address_id,
-        gstin: "29AABCZ2616B1ZK".to_string(),
-    };
-    let business_entity_id =
-        create_business_entity(&create_business_entity_request, tenant_id, user_id).await;
-    println!("business entity id {}", business_entity_id);
+    let invoice = create_random_invoice(product_id, supplier_id,bill_ship_dtl,
+                                        currency_id,invoicing_series_mst_id,
+                                        tenant_id,user_id_1).await;
+    println!("generated invoice {}",invoice);
+    // let product_item_id=create_product();
 }
