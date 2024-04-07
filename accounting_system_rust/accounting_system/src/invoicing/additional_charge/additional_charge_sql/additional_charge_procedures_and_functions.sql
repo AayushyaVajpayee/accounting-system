@@ -6,6 +6,9 @@ DECLARE
     line               create_additional_charge_request;
     title_id           uuid;
 BEGIN
+    if additional_charges is null then
+        return;
+    end if;
     foreach line in array additional_charges
         loop
             select get_or_create_line_title(line.line_title, line.title_xx_hash,
