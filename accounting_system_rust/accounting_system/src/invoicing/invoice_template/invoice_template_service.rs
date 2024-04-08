@@ -6,13 +6,14 @@ use deadpool_postgres::Pool;
 use moka::future::Cache;
 use thiserror::Error;
 use uuid::Uuid;
-
+#[cfg(test)]
+use mockall::automock;
 use crate::common_utils::cache_utils::get_or_fetch_entity;
 use crate::common_utils::dao_error::DaoError;
 use crate::invoicing::invoice_template::invoice_template_dao::{
     get_invoice_template_dao, InvoiceTemplateDao,
 };
-use crate::invoicing::invoice_template::invoice_template_models::InvoiceTemplateMaster;
+use crate::invoicing::invoice_template::invoice_template_models::{CreateInvoiceTemplateRequest, InvoiceTemplateMaster};
 
 #[derive(Debug, Error)]
 pub enum InvoiceTemplateServiceError {
@@ -21,9 +22,11 @@ pub enum InvoiceTemplateServiceError {
 }
 
 type TemplateEntityOpt = Option<Arc<InvoiceTemplateMaster>>;
-
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait InvoiceTemplateService: Send + Sync {
+    async fn create_template(&self, request: CreateInvoiceTemplateRequest,tenant_id:Uuid,user_id:Uuid)
+                             -> Result<Uuid, InvoiceTemplateServiceError>;
     async fn get_template_by_id(
         &self,
         id: Uuid,
@@ -44,6 +47,12 @@ struct InvoiceTemplateServiceImpl {
 
 #[async_trait]
 impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
+    async fn create_template(&self, request: CreateInvoiceTemplateRequest, tenant_id: Uuid, user_id: Uuid)
+                             -> Result<Uuid, InvoiceTemplateServiceError> {
+        let p = self.dao.create_invoice_template(request, tenant_id, user_id).await?;
+        Ok(p)
+    }
+
     async fn get_template_by_id(
         &self,
         id: Uuid,
@@ -65,6 +74,7 @@ impl InvoiceTemplateService for InvoiceTemplateServiceImpl {
         Ok(k.is_some())
     }
 }
+
 #[allow(dead_code)]
 pub fn get_invoice_template_master_service(arc: Arc<Pool>) -> Arc<dyn InvoiceTemplateService> {
     let dao = get_invoice_template_dao(arc);

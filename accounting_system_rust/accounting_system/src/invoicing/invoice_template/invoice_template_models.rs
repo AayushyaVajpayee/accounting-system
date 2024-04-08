@@ -1,14 +1,46 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
+use crate::common_utils::pg_util::pg_util::{create_composite_type_db_row, ToPostgresString};
 use crate::masters::company_master::company_master_models::base_master_fields::BaseMasterFields;
 
-#[derive(Debug, Serialize, Deserialize, Builder)]
+#[derive(Debug, Serialize, Deserialize, Builder,Default,PartialEq,Clone)]
 pub struct InvoiceTemplateMaster {
     pub base_master_fields: BaseMasterFields,
     pub sample_doc_s3_id: Option<String>,
     pub audit_metadata: AuditMetadataBase,
+}
+
+#[derive(Debug, Serialize, Deserialize, Builder)]
+pub struct CreateInvoiceTemplateRequest {
+    pub idempotence_key: Uuid,
+    pub sample_doc_s3_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub(crate) struct CreateInvoiceTemplateDbRequest {
+    pub idempotence_key: Uuid,
+    pub sample_doc_s3_id: Option<String>,
+    pub tenant_id: Uuid,
+    pub user_id: Uuid,
+}
+
+impl ToPostgresString for CreateInvoiceTemplateDbRequest {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        let fields: &[&dyn ToPostgresString] = &[
+            &self.idempotence_key,
+            &self.sample_doc_s3_id,
+            &self.tenant_id,
+            &self.user_id,
+        ];
+        create_composite_type_db_row(fields, f)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "create_invoice_template_request"
+    }
 }
 
 #[cfg(test)]

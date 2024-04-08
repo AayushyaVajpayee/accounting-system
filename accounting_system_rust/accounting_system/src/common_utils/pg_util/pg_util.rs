@@ -159,6 +159,16 @@ impl ToPostgresString for &str {
     }
 }
 
+impl ToPostgresString for String {
+    fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
+        write!(f, "'{}'", self)
+    }
+
+    fn db_type_name(&self) -> &'static str {
+        "text"
+    }
+}
+
 impl ToPostgresString for DateTime<Tz> {
     fn fmt_postgres(&self, f: &mut String) -> std::fmt::Result {
         let representation = self.to_rfc3339_opts(SecondsFormat::Micros, false);
