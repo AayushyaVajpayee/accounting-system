@@ -1,10 +1,46 @@
-use anyhow::bail;
+use std::marker::PhantomData;
+
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::invoice_line::line_quantity::LineQuantityError::{NegativeValue, TooLarge};
 use crate::invoice_line1::UOM;
+use crate::invoice_line::line_quantity::LineQuantityError::{NegativeValue, TooLarge};
+
+pub type FreeLineQuantity = BaseLineQuantity<FreeLineQuantityTag>;
+pub type LineQuantity = BaseLineQuantity<LineQuantityTag>;
+#[derive(Debug,Clone)]
+pub struct FreeLineQuantityTag;
+#[derive(Debug,Clone)]
+pub struct LineQuantityTag;
+
+#[derive(Debug, Serialize, Deserialize, Builder, Clone)]
+pub struct BaseLineQuantity<T> {
+    quantity: f64,
+    uom: UOM,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> BaseLineQuantity<T> {
+    fn create_type(quantity: f64, uom: UOM) -> Result<Self, LineQuantityError> {
+        if quantity > 1_000_000_000.00 {
+            return Err(TooLarge(1_000_000_000.00));
+        }
+        Ok(Self {
+            quantity,
+            uom,
+            _phantom: PhantomData,
+        })
+    }
+
+    pub fn get_quantity(&self) -> f64 {
+        self.quantity
+    }
+
+    pub fn uom_as_str(&self) -> &str {
+        self.uom.as_str()
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LineQuantityRaw {
@@ -12,12 +48,6 @@ pub struct LineQuantityRaw {
     uom: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Builder, Clone)]
-#[serde(try_from = "LineQuantityRaw")]
-pub struct LineQuantity {
-    quantity: f64,
-    uom: UOM,
-}
 
 #[derive(Debug, Error)]
 pub enum LineQuantityError {
@@ -29,37 +59,19 @@ pub enum LineQuantityError {
 
 impl LineQuantity {
     pub fn new(quantity: f64, uom: UOM) -> Result<Self, LineQuantityError> {
-        if quantity < 0.0 {
+        if quantity <= 0.0 {
             return Err(NegativeValue(quantity));
         }
-        if quantity > 1_000_000_000.00 {
-            return Err(TooLarge(1_000_000_000.00));
-        }
-        Ok(Self { quantity, uom })
-    }
-    pub fn get_quantity(&self) -> f64 {
-        self.quantity
-    }
-    pub fn uom_as_str(&self) -> &str {
-        self.uom.as_str()
+        BaseLineQuantity::create_type(quantity, uom)
     }
 }
 
-impl TryFrom<LineQuantityRaw> for LineQuantity {
-    type Error = anyhow::Error;
-
-    fn try_from(value: LineQuantityRaw) -> Result<Self, Self::Error> {
-        let uom: UOM = value.uom.try_into()?;
-        if value.quantity <= 0.0 {
-            bail!("quantity cannot be less than 0")
+impl FreeLineQuantity {
+    pub fn new(quantity: f64, uom: UOM) -> Result<Self, LineQuantityError> {
+        if quantity < 0.0 {
+            return Err(NegativeValue(quantity));
         }
-        if value.quantity >= 10_000_000.00 {
-            bail!("quantity cannot be more than 1_00_00_000")
-        }
-        Ok(LineQuantity {
-            quantity: value.quantity,
-            uom,
-        })
+        BaseLineQuantity::create_type(quantity, uom)
     }
 }
 
@@ -69,8 +81,8 @@ mod line_quantity_tests {
     use speculoos::assert_that;
     use speculoos::prelude::ResultAssertions;
 
-    use crate::invoice_line::line_quantity::LineQuantity;
     use crate::invoice_line1::UOM;
+    use crate::invoice_line::line_quantity::LineQuantity;
 
     #[rstest]
     #[case(34.0, true)]
@@ -80,21 +92,33 @@ mod line_quantity_tests {
         let q = LineQuantity::new(input, UOM::Piece);
         if valid {
             assert_that!(q).is_ok();
+            assert!(q.is_ok())
         } else {
-            assert_that!(q).is_err();
+            assert!(q.is_err())
         }
     }
 }
 
 #[cfg(feature = "test_utils")]
 pub mod test_utils {
-    use crate::invoice_line::line_quantity::{LineQuantity, LineQuantityBuilder};
-    use crate::invoice_line1::UOM;
+    use std::marker::PhantomData;
 
-    pub fn a_line_quantity(builder: LineQuantityBuilder) -> LineQuantity {
+    use crate::invoice_line1::UOM;
+    use crate::invoice_line::line_quantity::{BaseLineQuantityBuilder, FreeLineQuantity, FreeLineQuantityTag, LineQuantity, LineQuantityTag};
+
+    pub fn a_line_quantity(builder: BaseLineQuantityBuilder<LineQuantityTag>) -> LineQuantity {
         LineQuantity {
             quantity: builder.quantity.unwrap_or(1.0),
             uom: builder.uom.unwrap_or(UOM::Piece),
+            _phantom: PhantomData::default(),
+        }
+    }
+
+    pub fn a_free_line_quantity(builder: BaseLineQuantityBuilder<FreeLineQuantityTag>) -> FreeLineQuantity {
+        FreeLineQuantity {
+            quantity: builder.quantity.unwrap_or(1.0),
+            uom: builder.uom.unwrap_or(UOM::Piece),
+            _phantom: Default::default(),
         }
     }
 }

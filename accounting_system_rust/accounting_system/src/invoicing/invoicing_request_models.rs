@@ -1,12 +1,13 @@
-use anyhow::{ensure, Context};
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use anyhow::{Context, ensure};
 use chrono::NaiveDate;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use uuid::Uuid;
 
-use invoice_doc_generator::invoice_line::line_quantity::LineQuantity;
+use invoice_doc_generator::invoice_line::line_quantity::{FreeLineQuantity, LineQuantity};
 use invoice_doc_generator::invoice_line::line_title::LineTitle;
 use invoice_doc_generator::invoice_line::unit_price::Price;
 use invoice_doc_generator::percentages::tax_discount_cess::DiscountPercentage;
@@ -14,6 +15,7 @@ use pdf_doc_generator::invoice_template::Invoice;
 
 use crate::masters::company_master::company_master_models::gstin_no::GstinNo;
 use crate::masters::product_item_master::product_item_models::ProductItemResponse;
+
 #[derive(Debug)]
 pub struct CreateInvoiceWithAllDetailsIncluded {
     pub idempotence_key: Uuid,
@@ -40,7 +42,7 @@ pub struct CreateInvoiceWithAllDetailsIncluded {
 pub struct CreateInvoiceLineRequestWithAllDetails {
     pub product_item_id: Arc<ProductItemResponse>,
     pub quantity: LineQuantity,
-    pub free_quantity: LineQuantity,
+    pub free_quantity: FreeLineQuantity,
     pub unit_price: Price,
     pub discount_percentage: DiscountPercentage,
     pub mrp: Option<Price>,
@@ -141,7 +143,7 @@ pub struct CreateAdditionalChargeRequest {
 pub struct CreateInvoiceLineRequest {
     pub product_item_id: Uuid,
     pub quantity: LineQuantity,
-    pub free_quantity: LineQuantity,
+    pub free_quantity: FreeLineQuantity,
     pub unit_price: Price,
     pub discount_percentage: DiscountPercentage,
     pub mrp: Option<Price>,
@@ -397,7 +399,7 @@ pub mod tests {
     use lazy_static::lazy_static;
     use uuid::Uuid;
 
-    use invoice_doc_generator::invoice_line::line_quantity::test_utils::a_line_quantity;
+    use invoice_doc_generator::invoice_line::line_quantity::test_utils::{a_free_line_quantity, a_line_quantity};
     use invoice_doc_generator::invoice_line::line_title::LineTitle;
     use invoice_doc_generator::invoice_line::unit_price::Price;
     use invoice_doc_generator::percentages::tax_discount_cess::DiscountPercentage;
@@ -484,7 +486,7 @@ pub mod tests {
                 .unwrap_or_else(|| a_line_quantity(Default::default())),
             free_quantity: builder
                 .free_quantity
-                .unwrap_or_else(|| a_line_quantity(Default::default())),
+                .unwrap_or_else(|| a_free_line_quantity(Default::default())),
             unit_price: builder
                 .unit_price
                 .unwrap_or_else(|| Price::new(10.0).unwrap()),
