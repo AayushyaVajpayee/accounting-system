@@ -9,6 +9,7 @@ use crate::business_entity::create_random_business_entity;
 use crate::currency::create_random_currency;
 use crate::invoice::{BillShipDetail, create_random_invoice};
 use crate::invoice_series::create_random_invoice_series_mst;
+use crate::invoice_template::create_random_invoice_template;
 use crate::product_item::create_random_product;
 use crate::tenant::create_random_tenant;
 use crate::user::{create_random_user_with_other_user_of_same_tenant, create_random_user_with_super_tenant};
@@ -22,6 +23,7 @@ mod user;
 mod currency;
 mod invoice_series;
 mod invoice;
+mod invoice_template;
 
 const LOCAL_HOST: &str = "http://localhost:8090/";
 
@@ -59,9 +61,11 @@ async fn main() {
         billed_to_customer_id: bill_to_id,
         shipped_to_customer_id: bill_to_id,
     };
-    let invoice = create_random_invoice(product_id, supplier_id,bill_ship_dtl,
-                                        currency_id,invoicing_series_mst_id,
-                                        tenant_id,user_id_1).await;
-    println!("generated invoice {}",invoice);
+    let invoice_template_id = create_random_invoice_template(tenant_id,
+                                                             user_id_1).await;
+    let invoice = create_random_invoice(invoice_template_id,product_id, supplier_id, bill_ship_dtl,
+                                        currency_id, invoicing_series_mst_id,
+                                        tenant_id, user_id_1).await;
+    println!("generated invoice {}", invoice);
     // let product_item_id=create_product();
 }

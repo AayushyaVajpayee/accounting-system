@@ -84,13 +84,13 @@ async fn create_invoice(request: &CreateInvoiceRequest, tenant_id: Uuid, user_id
     d
 }
 
-pub async fn create_random_invoice(product_item_id:Uuid,supplier_id: Uuid, bill_ship_detail: BillShipDetail,
+pub async fn create_random_invoice(invoice_template_id:Uuid,product_item_id:Uuid,supplier_id: Uuid, bill_ship_detail: BillShipDetail,
                                currency_id: Uuid, invoicing_series_mst_id: Uuid,
                                tenant_id: Uuid, user_id: Uuid) -> String {
     let order_date = Utc::now().checked_sub_days(Days::new(8)).unwrap().date_naive();
     let create_invoice_request = CreateInvoiceRequest {
         idempotence_key: Uuid::now_v7(),
-        invoice_template_id: Uuid::from_str("018d5552-fb70-7d28-bbf6-7e726e5c15eb").unwrap(),
+        invoice_template_id,
         invoicing_series_mst_id,
         currency_id,
         service_invoice: false,

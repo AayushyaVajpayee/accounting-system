@@ -18,6 +18,7 @@ pub struct LineQuantityTag;
 pub struct BaseLineQuantity<T> {
     quantity: f64,
     uom: UOM,
+    #[serde(skip)]
     _phantom: PhantomData<T>,
 }
 
