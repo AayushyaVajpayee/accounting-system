@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use std::fmt;
 
 use anyhow::{anyhow, Context};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use typst::eval::Tracer;
-use typst::foundations::Bytes;
+use typst::foundations::{Bytes, Smart};
 
 use crate::world::InMemoryWorld;
 
@@ -326,7 +326,7 @@ pub fn create_invoice_pdf(input: Invoice) -> anyhow::Result<Vec<u8>> {
     let _k = std::time::SystemTime::now();
     let document = typst::compile(&world, &mut tracer)
         .map_err(|_a| anyhow!("error during typst compilation"))?;
-    let pdf = typst_pdf::pdf(&document, None, None);
+    let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
     //invoice creation does not have that much reusable data. also this evicts all cache everywhere
     comemo::evict(0);
     Ok(pdf)

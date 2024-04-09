@@ -5648,8 +5648,8 @@ checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
 
 [[package]]
 name = "typst"
-version = "0.10.0"
-source = "git+https://github.com/typst/typst.git?rev=aace521#aace521b56a078fd73f3d76862ee5f5d49235c51"
+version = "0.11.0"
+source = "git+https://github.com/typst/typst.git#7ea55ec9a09c6ca92eb272f99c03499d1cdd5ee3"
 dependencies = [
  "az",
  "bitflags 2.5.0",
@@ -5709,13 +5709,14 @@ dependencies = [
 
 [[package]]
 name = "typst-assets"
-version = "0.10.0"
-source = "git+https://github.com/typst/typst-assets?rev=4d1211a#4d1211ab5ba8a02992a7362000e6dd422d44dd68"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f13f85360328da54847dd7fefaf272dfa5b6d1fdeb53f32938924c39bf5b2c6c"
 
 [[package]]
 name = "typst-macros"
-version = "0.10.0"
-source = "git+https://github.com/typst/typst.git?rev=aace521#aace521b56a078fd73f3d76862ee5f5d49235c51"
+version = "0.11.0"
+source = "git+https://github.com/typst/typst.git#7ea55ec9a09c6ca92eb272f99c03499d1cdd5ee3"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
@@ -5725,8 +5726,8 @@ dependencies = [
 
 [[package]]
 name = "typst-pdf"
-version = "0.10.0"
-source = "git+https://github.com/typst/typst.git?rev=aace521#aace521b56a078fd73f3d76862ee5f5d49235c51"
+version = "0.11.0"
+source = "git+https://github.com/typst/typst.git#7ea55ec9a09c6ca92eb272f99c03499d1cdd5ee3"
 dependencies = [
  "base64 0.22.0",
  "bytemuck",
@@ -5750,8 +5751,8 @@ dependencies = [
 
 [[package]]
 name = "typst-syntax"
-version = "0.10.0"
-source = "git+https://github.com/typst/typst.git?rev=aace521#aace521b56a078fd73f3d76862ee5f5d49235c51"
+version = "0.11.0"
+source = "git+https://github.com/typst/typst.git#7ea55ec9a09c6ca92eb272f99c03499d1cdd5ee3"
 dependencies = [
  "comemo",
  "ecow",
@@ -5766,8 +5767,8 @@ dependencies = [
 
 [[package]]
 name = "typst-timing"
-version = "0.10.0"
-source = "git+https://github.com/typst/typst.git?rev=aace521#aace521b56a078fd73f3d76862ee5f5d49235c51"
+version = "0.11.0"
+source = "git+https://github.com/typst/typst.git#7ea55ec9a09c6ca92eb272f99c03499d1cdd5ee3"
 dependencies = [
  "parking_lot",
  "serde",
