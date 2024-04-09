@@ -337,6 +337,7 @@ mod tests {
     use std::fs;
 
     use typst::eval::Tracer;
+    use typst::foundations::Smart;
 
     use crate::invoice_template::{get_file_map, InvoiceTableHeaderNameEnum, MAIN};
     use crate::world::InMemoryWorld;
@@ -351,7 +352,7 @@ mod tests {
         let mut tracer = Tracer::default();
         let k = std::time::SystemTime::now();
         let document = typst::compile(&world, &mut tracer).expect("Error compiling typst.");
-        let pdf = typst_pdf::pdf(&document, None, None);
+        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
         fs::write("./out220913.pdf", pdf).expect("Error writing PDF.");
     }
 
