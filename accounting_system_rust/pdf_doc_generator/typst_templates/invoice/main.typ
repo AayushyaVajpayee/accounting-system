@@ -4,12 +4,16 @@
 #import "invoice_summary.typ"
 #set page(flipped: true)
 #let invoice_model = json("invoice_data.json")
+
+#let format_address(address)={
+  [#address.line_1 \ #address.line_2 \ #address.city_name pincode:#address.pincode]
+}
 #let supplier_heading(name,gstin,address)=[
  #grid(columns: (1fr,3fr,1fr),
  align(center+horizon)[#image("sunset.png")],
    align(center+horizon, text(12pt)[
   = *#name*
-    #address
+    #format_address(address)
   ])
 
  ,figure(image("einvoice_qr.png"),caption:[einvoicing qr code],numbering:none)
@@ -33,7 +37,7 @@
     [],[*supplier*],[*billed to*],[*shipped to*],
     [*name*],supplier.name,billed_to.name,shipped_to.name,
     [*gstin*],supplier.gstin,billed_to.gstin,shipped_to.gstin,
-    [*address*],supplier.address,billed_to.address,shipped_to.address,hlinex()
+    [*address*],format_address(supplier.address),format_address(billed_to.address),format_address(shipped_to.address),hlinex()
   )
 ]
 #let get_order_date(order_date)={

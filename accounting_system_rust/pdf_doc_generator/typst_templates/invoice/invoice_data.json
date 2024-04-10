@@ -1,64 +1,74 @@
 {
-  "invoice_number": "INV00123456789",
+  "invoice_number": "IV/DFY/1",
   "invoice_date": {
-    "month": 2,
+    "month": 4,
     "year": 2024,
-    "day": 29
+    "day": 9
   },
-  "order_date": null,
+  "order_date": {
+    "month": 4,
+    "year": 2024,
+    "day": 1
+  },
   "payment_term": "",
-  "order_number": null,
+  "order_number": "GZiQ4Hituk",
+  "service_invoice": false,
   "irn_no": "",
   "supplier": {
-    "name": "Test supplier",
-    "gstin": "05AABCA291p1ZD",
+    "name": "qwwJvikX3eYAxBQ9I0UZLrC0r",
+    "gstin": "19AVSFH5291p1Z3",
     "address": {
-      "line_1": "some fke address",
-      "line_2": "s"
+      "line_1": "vXMQKeGdC32F2HmlS0TW",
+      "line_2": "87k3oPWZlVX16GgZrYR7",
+      "city_name": "AMRAVATI",
+      "pincode": "854332",
+      "gst_state_code": "29"
     }
   },
+  "dispatch_from": null,
   "billed_to": {
-    "name": "Test supplier 2",
-    "gstin": "06MFNMS5291p1ZA",
+    "name": "Co3kOqeiBfys3baUanw55g7uU",
+    "gstin": "14SDADV5291p1Z4",
     "address": {
-      "line_1": "some fake address",
-      "line_2": "s"
+      "line_1": "OvHE9wuAROens7dQ0PJf",
+      "line_2": "6P1MveiUc6PV27yc4C6t",
+      "city_name": "AMRAVATI",
+      "pincode": "854332",
+      "gst_state_code": "29"
     }
   },
   "shipped_to": {
-    "name": "Test supplier 2",
-    "gstin": "06MFNMS5291p1ZA",
+    "name": "Co3kOqeiBfys3baUanw55g7uU",
+    "gstin": "14SDADV5291p1Z4",
     "address": {
-      "line_1": "some fake addess",
-      "line_2": "s"
+      "line_1": "OvHE9wuAROens7dQ0PJf",
+      "line_2": "6P1MveiUc6PV27yc4C6t",
+      "city_name": "AMRAVATI",
+      "pincode": "854332",
+      "gst_state_code": "29"
     }
   },
-  "additional_charges": [
-    {
-      "name": "some line tile",
-      "rate": 0.0
-    }
-  ],
+  "additional_charges": [],
   "tax_summary": {
     "igst_lines": [
       {
-        "tax_slab": 28.0,
-        "tax_amount": 2.8
+        "tax_slab": 0.0,
+        "tax_amount": 0.0
       }
     ],
     "cgst_lines": [],
     "sgst_lines": [],
-    "total_tax_amount": 2.8
+    "total_tax_amount": 0.0
   },
   "invoice_summary": {
-    "taxable_amt": 10.0,
-    "tax_amt": 2.8,
+    "taxable_amt": 500.0,
+    "tax_amt": 0.0,
     "additional_charges_amt": 0.0,
     "round_off": 0.0,
-    "total_payable_amount": 12.89
+    "total_payable_amount": 500.0
   },
   "invoice_lines_table": {
-    "invoice_lines_total": 12.8,
+    "invoice_lines_total": 500.0,
     "header_and_units": [
       [
         "sl no",
@@ -76,6 +86,16 @@
         "hsn_sac"
       ],
       [
+        "batch_no",
+        "",
+        "batch_no"
+      ],
+      [
+        "mrp",
+        "CURR273",
+        "mrp"
+      ],
+      [
         "uqc",
         "",
         "uqc"
@@ -87,38 +107,37 @@
       ],
       [
         "unit price",
-        "Rs",
+        "CURR273",
         "unit_price"
       ],
       [
-        "igst",
-        "%",
-        "igst_percentage"
-      ],
-      [
         "line total",
-        "Rs",
+        "CURR273",
         "line_total"
       ]
     ],
     "lines": [
       {
         "line_no": 0,
-        "item": "some random line title",
-        "hsn_sac": "38220011",
-        "batch_no": null,
+        "item": "YdcaZTy8M02b9htLzN9SMoesme26Fc0TZs3HdkrP",
+        "hsn_sac": "01013020",
+        "batch_no": "k0kYKe",
         "expiry_date": null,
-        "mrp": null,
-        "quantity": 1.0,
+        "mrp": 55.0,
+        "quantity": 10.0,
+        "free_quantity": 0.0,
         "uqc": "Piece",
-        "unit_price": 10.0,
+        "unit_price": 50.0,
         "discount_percentage": 0.0,
-        "igst_percentage": 28.0,
+        "igst_percentage": 0.0,
         "cgst_percentage": 0.0,
         "sgst_percentage": 0.0,
         "cess_percentage": 0.0,
-        "line_total": 12.8
+        "line_total": 500.0,
+        "reverse_charge_applicable": false
       }
     ]
-  }
+  },
+  "invoice_remarks": "IYk1vSSR5Y5AmsPAD3QivLGjKqT5SkXOEzT",
+  "ecommerce_gstin": null
 }
