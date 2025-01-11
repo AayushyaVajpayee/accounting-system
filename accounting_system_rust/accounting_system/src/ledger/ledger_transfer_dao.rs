@@ -89,7 +89,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
         let query = convert_transfers_to_postgres_array(transfers);
         let conn = self.postgres_client.get().await.unwrap();
         let query_results = conn.simple_query(&query).await;
-        let query_results = &query_results.unwrap()[1];
+        let query_results = &query_results.unwrap()[2];
         let transfers_db_response = match query_results {
             SimpleQueryMessage::Row(row) => {
                 let raw_str = row.get(0);
@@ -131,7 +131,7 @@ impl LedgerTransferDao for LedgerTransferDaoPostgresImpl {
                 .join(",")
         );
         let conn = &self.postgres_client.get().await.unwrap();
-        let query_results = &conn.simple_query(&formatted_array).await.unwrap()[1];
+        let query_results = &conn.simple_query(&formatted_array).await.unwrap()[2];
         let batch_transfers_response = match query_results {
             SimpleQueryMessage::Row(r) => {
                 serde_json::from_str::<Vec<Vec<TransferCreationDbResponse>>>(r.get(0).unwrap())

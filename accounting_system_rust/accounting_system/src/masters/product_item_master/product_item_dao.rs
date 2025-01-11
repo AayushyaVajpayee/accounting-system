@@ -71,7 +71,7 @@ impl ProductItemDao for ProductItemDaoImpl {
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(&query).await?;
         let value: Option<Value> =
-            parse_db_output_of_insert_create_and_return_json_at_index(&rows, 0)?;
+            parse_db_output_of_insert_create_and_return_json_at_index(&rows, 1)?;
         if let Some(value) = value {
             let raw_db_resp: GetProductItemDbRsp =
                 serde_json::from_value(value).context("error during deserialization")?;
@@ -94,7 +94,7 @@ impl ProductItemDao for ProductItemDaoImpl {
         write!(&mut simple_query, ");")?;
         let conn = self.postgres_client.get().await?;
         let rows = conn.simple_query(simple_query.as_str()).await?;
-        let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows, 0)?;
+        let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows, 1)?;
         if let Some(value) = value {
             let raw_db_resp: Vec<GetProductItemDbRsp> =
                 serde_json::from_value(value).context("error during deserialization")?;

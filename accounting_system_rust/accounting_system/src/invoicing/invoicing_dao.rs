@@ -110,7 +110,7 @@ mod tests {
     use speculoos::option::OptionAssertions;
     use tokio_postgres::SimpleQueryMessage;
     use uuid::Uuid;
-
+    use crate::common_utils::utils::parse_db_output_of_insert_create_and_return_json_at_index;
     use crate::accounting::postgres_factory::test_utils_postgres::{
         get_dao_generic, get_postgres_conn_pool, get_postgres_image_port,
     };
@@ -285,8 +285,8 @@ mod tests {
             .simple_query(&input_str)
             .await
             .unwrap();
-        let po = rows.into_iter().skip(1).collect_vec();
-        let value = parse_db_output_of_insert_create_and_return_json(&po).unwrap();
+        // let po = rows.into_iter().skip(1).collect_vec();
+        let value = parse_db_output_of_insert_create_and_return_json_at_index(&rows,4).unwrap().unwrap();
         let uuid = Uuid::from_str(value.get("invoice_id").unwrap().as_str().unwrap()).unwrap();
         let persisted_id = dao
             .postgres_client
@@ -345,7 +345,7 @@ mod tests {
             .simple_query(&query_form)
             .await
             .unwrap();
-        let ak = p.get(1).unwrap();
+        let ak = p.get(2).unwrap();
         match ak {
             SimpleQueryMessage::Row(a) => {
                 let p: Option<&str> = a.get(0);
