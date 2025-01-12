@@ -4,5 +4,5 @@ resolver="1"
 members = ["adhoc-scripts", "db_prep_tool", "gstin_validator", "invoice_doc_generator", "invoicing_calculations", "accounting_system", "user_journey_testing", "pdf_doc_generator", "storage_service", "cess_models"]
 
 [profile.dev]
-debug = 0
+#debug = 0
 #strip = "debuginfo"

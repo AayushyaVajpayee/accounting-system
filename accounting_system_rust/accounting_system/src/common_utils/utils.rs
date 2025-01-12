@@ -197,7 +197,7 @@ pub fn parse_db_output_of_insert_create_and_return_uuid(
         Uuid::parse_str(a)
             .map_err(|_| DaoError::PostgresQueryError("unable to convert str to uuid".to_string()))
     };
-    parse_rows(rows, 1, closure)
+    parse_rows(rows, 2, closure)
 }
 
 fn parse_rows_nullable<T, F>(
@@ -257,7 +257,7 @@ pub fn parse_db_output_of_insert_create_and_return_json(
         let value = serde_json::from_str(a).context("error during deserialising db value")?;
         Ok(value)
     };
-    parse_rows(rows, 1, closure)
+    parse_rows(rows, 2, closure)
 }
 
 pub fn parse_db_output_of_insert_create_and_return_json_at_index(

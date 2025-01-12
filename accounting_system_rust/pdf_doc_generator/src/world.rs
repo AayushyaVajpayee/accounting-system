@@ -1,17 +1,18 @@
-use std::cell::{RefCell, RefMut};
+use std::sync::{RwLock, RwLockWriteGuard};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use comemo::Prehashed;
 use time::OffsetDateTime;
-use typst::diag::{eco_format, FileError, FileResult, PackageError, PackageResult};
 use typst::foundations::{Bytes, Datetime};
-use typst::syntax::package::PackageSpec;
-use typst::syntax::{FileId, Source};
 use typst::text::{Font, FontBook};
 use typst::{Library, World};
-
+use typst::syntax::{FileId, Source};
+use typst::diag::{FileError, FileResult, PackageError, PackageResult};
+use typst::ecow::EcoString;
+use typst::syntax::package::PackageSpec;
+use typst::utils::LazyHash;
 use crate::fonts::register_fonts;
+
 #[derive(Debug)]
 pub struct FileEntry {
     bytes: Bytes,
@@ -22,13 +23,14 @@ impl FileEntry {
     pub fn from_bytes(bytes: Bytes, source: Option<Source>) -> Self {
         Self { bytes, source }
     }
+
     pub fn new(bytes: Vec<u8>, source: Option<Source>) -> Self {
-        //todo we need to provide another constructor that will provide all related files as bytes in a hashmap
         Self {
-            bytes: bytes.into(), //todo for our use case we can take static bytes for many things except the json
+            bytes: Bytes::new(bytes),
             source,
         }
     }
+
     pub fn source(&mut self, id: FileId) -> FileResult<Source> {
         let source = if let Some(source) = &self.source {
             source
@@ -41,24 +43,17 @@ impl FileEntry {
         Ok(source.clone())
     }
 }
+
 #[derive(Debug)]
 pub struct InMemoryWorld {
     root: PathBuf,
-    /// The content of a source.
-    source: Source,
-    /// The standard library.
-    library: Prehashed<Library>,
-    ///Metadata about all known fonts.
-    book: Prehashed<FontBook>,
-    ///all known fonts.
+    main_id: FileId,
+    library: LazyHash<Library>,
+    book: LazyHash<FontBook>,
     fonts: Vec<Font>,
-    /// Map of all known files.
-    files: RefCell<HashMap<FileId, FileEntry>>,
-    /// Cache directory (e.g. where packages are downloaded to).
+    files: RwLock<HashMap<FileId, FileEntry>>, // Use RwLock
     package_cache_dir: PathBuf,
-    /// Datetime.
     time: OffsetDateTime,
-    /// http agent to download packages.
     http: ureq::Agent,
     file_map: HashMap<&'static str, Bytes>,
 }
@@ -66,13 +61,21 @@ pub struct InMemoryWorld {
 impl InMemoryWorld {
     pub fn new(content: &str, file_map: HashMap<&'static str, Bytes>) -> Self {
         let fonts = register_fonts();
+        let main_id = FileId::new(None, typst::syntax::VirtualPath::new("main.typ"));
+
+        let mut files = HashMap::new();
+        files.insert(
+            main_id,
+            FileEntry::new(content.as_bytes().to_vec(), None),
+        );
+
         Self {
             root: PathBuf::from(""),
-            source: Source::detached(content),
-            library: Prehashed::new(Library::builder().build()),
-            book: Prehashed::new(FontBook::from_fonts(&fonts)),
+            main_id,
+            library: LazyHash::new(Library::default()),
+            book: LazyHash::new(FontBook::from_fonts(&fonts)),
             fonts,
-            files: RefCell::new(HashMap::new()),
+            files: RwLock::new(files),
             package_cache_dir: std::env::var_os("CACHE_DIRECTORY")
                 .map(|os_path| os_path.into())
                 .unwrap_or(std::env::temp_dir()),
@@ -81,21 +84,25 @@ impl InMemoryWorld {
             file_map,
         }
     }
-    fn download_package(&self, package: &PackageSpec) -> PackageResult<PathBuf> {
-        let package_subdir = format!("{}/{}/{}", package.namespace, package.name, package.version);
+
+    fn download_package(&self, spec: &PackageSpec) -> PackageResult<PathBuf> {
+        let package_subdir = format!("{}/{}/{}", spec.namespace, spec.name, spec.version);
         let path = self.package_cache_dir.join(package_subdir);
+
         if let Some(path_str) = path.to_str() {
             if self.file_map.contains_key(path_str) {
                 return Ok(path);
             }
         }
+
         if path.exists() {
             return Ok(path);
         }
-        eprintln!("downloading {package}");
+
+        eprintln!("downloading {spec}");
         let url = format!(
             "https://packages.typst.org/{}/{}-{}.tar.gz",
-            package.namespace, package.name, package.version,
+            spec.namespace, spec.name, spec.version,
         );
 
         let response = retry(|| {
@@ -103,81 +110,82 @@ impl InMemoryWorld {
                 .http
                 .get(&url)
                 .call()
-                .map_err(|error| eco_format!("{error}"))?;
+                .map_err(|error| format!("{error}"))?;
 
             let status = response.status();
             if !http_successful(status) {
-                return Err(eco_format!(
+                return Err(format!(
                     "response returned unsuccessful status code {status}",
                 ));
             }
 
             Ok(response)
         })
-        .map_err(|error| PackageError::NetworkFailed(Some(error)))?;
+            .map_err(|error| PackageError::NetworkFailed(Some(EcoString::from(error))))?;
 
         let mut compressed_archive = Vec::new();
         response
             .into_reader()
             .read_to_end(&mut compressed_archive)
-            .map_err(|error| PackageError::NetworkFailed(Some(eco_format!("{error}"))))?;
+            .map_err(|error| PackageError::NetworkFailed(Some(format!("{error}").into())))?;
+
         let raw_archive = zune_inflate::DeflateDecoder::new(&compressed_archive)
             .decode_gzip()
-            .map_err(|error| PackageError::MalformedArchive(Some(eco_format!("{error}"))))?;
+            .map_err(|error| PackageError::MalformedArchive(Some(format!("{error}").into())))?;
+
         let mut archive = tar::Archive::new(raw_archive.as_slice());
         archive.unpack(&path).map_err(|error| {
             _ = std::fs::remove_dir_all(&path);
-            PackageError::MalformedArchive(Some(eco_format!("{error}")))
+            PackageError::MalformedArchive(Some(format!("{error}").into()))
         })?;
+
         Ok(path)
     }
-    fn file(&self, id: FileId) -> FileResult<RefMut<'_, FileEntry>> {
-        if let Ok(entry) = RefMut::filter_map(self.files.borrow_mut(), |files| files.get_mut(&id)) {
-            return Ok(entry);
+
+    fn get_file(&self, id: FileId) -> FileResult<RwLockWriteGuard<'_, HashMap<FileId, FileEntry>>> {
+        let mut files = self.files.write().unwrap();
+        if let std::collections::hash_map::Entry::Vacant(e) = files.entry(id) {
+            let path = if let Some(package) = id.package() {
+                let package_dir = self.download_package(package)?;
+                id.vpath().resolve(&package_dir)
+            } else {
+                id.vpath().resolve(&self.root)
+            }
+                .ok_or(FileError::AccessDenied)?;
+
+            let content = if let Some(a) = self.file_map.get(path.to_str().unwrap()) {
+                a.clone()
+            } else {
+                Bytes::new( std::fs::read(&path).map_err(|error| FileError::from_io(error, &path))?)
+            };
+
+            e.insert(FileEntry::new(content.to_vec(), None));
         }
-        let path = if let Some(package) = id.package() {
-            let package_dir = self.download_package(package)?;
-            id.vpath().resolve(&package_dir)
-        } else {
-            id.vpath().resolve(&self.root)
-        }
-        .ok_or(FileError::AccessDenied)?;
-        if let Some(a) = self.file_map.get(path.to_str().unwrap()) {
-            let p = FileEntry::from_bytes(a.clone(), None);
-            return Ok(RefMut::map(self.files.borrow_mut(), |files| {
-                files.entry(id).or_insert(p)
-            }));
-        }
-        let content = std::fs::read(&path).map_err(|error| FileError::from_io(error, &path))?;
-        Ok(RefMut::map(self.files.borrow_mut(), |files| {
-            files.entry(id).or_insert(FileEntry::new(content, None))
-        }))
+        Ok(files)
     }
 }
 
 impl World for InMemoryWorld {
-    fn library(&self) -> &Prehashed<Library> {
+    fn library(&self) -> &LazyHash<Library> {
         &self.library
     }
 
-    fn book(&self) -> &Prehashed<FontBook> {
+    fn book(&self) -> &LazyHash<FontBook> {
         &self.book
     }
 
-    fn main(&self) -> Source {
-        self.source.clone()
+    fn main(&self) -> FileId {
+        self.main_id
     }
 
     fn source(&self, id: FileId) -> FileResult<Source> {
-        if id == self.source.id() {
-            Ok(self.source.clone())
-        } else {
-            self.file(id)?.source(id)
-        }
+        let mut files = self.get_file(id)?;
+        files.get_mut(&id).unwrap().source(id)
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        self.file(id).map(|file| file.bytes.clone())
+        let files = self.get_file(id)?;
+        Ok(files[&id].bytes.clone())
     }
 
     fn font(&self, index: usize) -> Option<Font> {
@@ -201,6 +209,5 @@ fn retry<T, E>(mut f: impl FnMut() -> Result<T, E>) -> Result<T, E> {
 }
 
 fn http_successful(status: u16) -> bool {
-    // 2XX
     status / 100 == 2
 }

@@ -5,9 +5,8 @@ use anyhow::{anyhow, Context};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
-use typst::eval::Tracer;
 use typst::foundations::{Bytes, Smart};
-
+use typst_pdf::PdfOptions;
 use crate::world::InMemoryWorld;
 
 const MAIN: &str = include_str!("../typst_templates/invoice/main.typ");
@@ -20,15 +19,15 @@ const TABLEX_PACKAGE_TYP: &[u8] = include_bytes!("../typst_templates/invoice/tab
 const TABLEX_TOML: &[u8] = include_bytes!("../typst_templates/invoice/typst.toml");
 
 fn get_file_map(data: Vec<u8>) -> HashMap<&'static str, Bytes> {
-    let entry_main = Bytes::from_static(MAIN.as_bytes());
-    let entry_invoice_lines = Bytes::from_static(INVOICE_LINES.as_bytes());
-    let entry_invoice_summary = Bytes::from_static(INVOICE_SUMMARY.as_bytes());
-    let entry_tax_summary = Bytes::from_static(TAX_SUMMARY.as_bytes());
-    let entry_sunset_png = Bytes::from_static(SUNSET_PNG);
-    let entry_einvoice_qr = Bytes::from_static(EINVOICE_QR);
-    let entry_tablex_package_typ = Bytes::from_static(TABLEX_PACKAGE_TYP);
-    let entry_tablex_toml = Bytes::from_static(TABLEX_TOML);
-    let entry_json_data = Bytes::from(data);
+    let entry_main = Bytes::new(MAIN);
+    let entry_invoice_lines = Bytes::new(INVOICE_LINES);
+    let entry_invoice_summary = Bytes::new(INVOICE_SUMMARY);
+    let entry_tax_summary = Bytes::new(TAX_SUMMARY);
+    let entry_sunset_png = Bytes::new(SUNSET_PNG);
+    let entry_einvoice_qr = Bytes::new(EINVOICE_QR);
+    let entry_tablex_package_typ = Bytes::new(TABLEX_PACKAGE_TYP);
+    let entry_tablex_toml = Bytes::new(TABLEX_TOML);
+    let entry_json_data = Bytes::new(data);
     let mut map = HashMap::new();
     let empty: Vec<u8> = Vec::new();
     map.insert("main.typ", entry_main);
@@ -40,7 +39,7 @@ fn get_file_map(data: Vec<u8>) -> HashMap<&'static str, Bytes> {
     map.insert("invoice_data.json", entry_json_data);
     map.insert("preview/tablex/0.0.8/tablex.typ", entry_tablex_package_typ);
     map.insert("preview/tablex/0.0.8/typst.toml", entry_tablex_toml);
-    map.insert("preview/tablex/0.0.8", Bytes::from(empty));
+    map.insert("preview/tablex/0.0.8", Bytes::new(empty));
     map
 }
 
@@ -322,11 +321,11 @@ pub fn create_invoice_pdf(input: Invoice) -> anyhow::Result<Vec<u8>> {
     let a = serde_json::to_vec(&input).context("error during serialisation")?;
     let map = get_file_map(a);
     let world = InMemoryWorld::new(MAIN, map);
-    let mut tracer = Tracer::default();
     let _k = std::time::SystemTime::now();
-    let document = typst::compile(&world, &mut tracer)
+    let document = typst::compile(&world).output
         .map_err(|_a| anyhow!("error during typst compilation"))?;
-    let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
+    let pdf = typst_pdf::pdf(&document,&PdfOptions::default())
+        .map_err(|_a| anyhow!("error during pdf compilation"))?;
     //invoice creation does not have that much reusable data. also this evicts all cache everywhere
     comemo::evict(0);
     Ok(pdf)
@@ -336,9 +335,8 @@ pub fn create_invoice_pdf(input: Invoice) -> anyhow::Result<Vec<u8>> {
 mod tests {
     use std::fs;
 
-    use typst::eval::Tracer;
     use typst::foundations::Smart;
-
+    use typst_pdf::PdfOptions;
     use crate::invoice_template::{get_file_map, InvoiceTableHeaderNameEnum, MAIN};
     use crate::world::InMemoryWorld;
 
@@ -349,10 +347,9 @@ mod tests {
         let data = JSON_DATA.to_vec();
         let map = get_file_map(data);
         let world = InMemoryWorld::new(MAIN, map);
-        let mut tracer = Tracer::default();
         let k = std::time::SystemTime::now();
-        let document = typst::compile(&world, &mut tracer).expect("Error compiling typst.");
-        let pdf = typst_pdf::pdf(&document, Smart::Auto, None);
+        let document = typst::compile(&world).output.expect("Error compiling typst.");
+        let pdf = typst_pdf::pdf(&document, &PdfOptions::default()).expect("error during pdf compilation");
         fs::write("./out220913.pdf", pdf).expect("Error writing PDF.");
     }
 

@@ -1,4 +1,4 @@
-#import "@preview/tablex:0.0.8": tablex, cellx,vlinex,hlinex,colspanx,rowspanx
+#import "@preview/tablex:0.0.9": tablex, cellx,vlinex,hlinex,colspanx,rowspanx
 
 #let tax_lines2(lines,type)={
   if lines.len()==0{

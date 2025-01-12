@@ -32,7 +32,7 @@ mod tests {
             .simple_query(&query_form)
             .await
             .unwrap();
-        let ak = p.get(1).unwrap();
+        let ak = p.get(2).unwrap();
         match ak {
             SimpleQueryMessage::Row(a) => {
                 let p: Option<&str> = a.get(0);
@@ -67,7 +67,7 @@ mod tests {
             .simple_query(&query_form)
             .await
             .unwrap();
-        let ak = p.get(1).unwrap();
+        let ak = p.get(2).unwrap();
         match ak {
             SimpleQueryMessage::Row(a) => {
                 let p: Option<&str> = a.get(0);
