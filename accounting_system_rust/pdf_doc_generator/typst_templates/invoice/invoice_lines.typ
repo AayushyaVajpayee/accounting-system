@@ -1,4 +1,4 @@
-#import "@preview/tablex:0.0.8": tablex,colspanx, cellx,vlinex,hlinex
+#import "@preview/tablex:0.0.9": tablex,colspanx, cellx,vlinex,hlinex
 #let spread_lines(invoice_lines,headers)={
   for l in invoice_lines{
     headers.map(h=>l.at(h))

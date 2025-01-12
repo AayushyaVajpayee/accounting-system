@@ -1,4 +1,4 @@
-#import "@preview/tablex:0.0.8":tablex,cellx,vlinex,hlinex,colspanx,rowspanx
+#import "@preview/tablex:0.0.9":tablex,cellx,vlinex,hlinex,colspanx,rowspanx
 
 #let additional_charges_list_content()={
   for c in add_chgs{

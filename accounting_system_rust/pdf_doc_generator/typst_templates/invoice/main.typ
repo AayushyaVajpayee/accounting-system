@@ -1,4 +1,4 @@
-#import "@preview/tablex:0.0.8": tablex, cellx,vlinex,hlinex
+#import "@preview/tablex:0.0.9": tablex, cellx,vlinex,hlinex
 #import "invoice_lines.typ"
 #import "tax_summary.typ"
 #import "invoice_summary.typ"
