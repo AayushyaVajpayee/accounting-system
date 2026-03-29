@@ -11,6 +11,6 @@ async-trait = "0.1"
 anyhow = "1"
 rand = { version = "0.8", features = [] }
 url = "2"
-reqwest = "0.11"
+reqwest = { version = "0.12", features = ["rustls-tls"] }
 [dev-dependencies]
 speculoos = "0.11"
