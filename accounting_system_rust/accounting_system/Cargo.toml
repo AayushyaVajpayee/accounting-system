@@ -56,7 +56,7 @@ derive_builder = "0.13.0"
 actix-web-lab = "0.20.2"
 [dev-dependencies]
 invoice_doc_generator = { path = "../invoice_doc_generator", features = ["test_utils"] }
-testcontainers = "0.15.0"
+testcontainers = "0.23"
 rstest = "0.18.2"
 speculoos = "0.11.0"
 mockall = "0.12.1"

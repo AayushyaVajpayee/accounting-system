@@ -60,9 +60,9 @@ pub mod test_utils_postgres {
     use deadpool_postgres::{Manager, ManagerConfig, Pool, Runtime};
     use std::sync::Arc;
     use std::time::Duration;
-    use testcontainers::clients::Cli;
     use testcontainers::core::WaitFor;
-    use testcontainers::{Container, GenericImage};
+    use testcontainers::runners::AsyncRunner;
+    use testcontainers::{ContainerAsync, GenericImage, ImageExt};
     use tokio::sync::OnceCell;
     use tokio_postgres::{Config, NoTls};
 
@@ -70,16 +70,8 @@ pub mod test_utils_postgres {
     use crate::configurations::{get_dev_conf, Setting};
     use crate::db_schema_syncer::db_struct_mapper::init_db_with_seed;
 
-    static TEST_CONTAINER_CLIENT: OnceCell<Cli> = OnceCell::const_new();
-    static PG_CONTAINER: OnceCell<PK<'static>> = OnceCell::const_new();
+    static PG_CONTAINER: OnceCell<ContainerAsync<GenericImage>> = OnceCell::const_new();
 
-    struct PK<'a> {
-        container: Container<'a, GenericImage>,
-    }
-
-    unsafe impl Send for PK<'_> {}
-
-    unsafe impl Sync for PK<'_> {}
     pub async fn get_dao_generic<T, F>(f: F, dbname: Option<&str>) -> T
     where
         F: FnOnce(Arc<Pool>) -> T,
@@ -152,40 +144,31 @@ pub mod test_utils_postgres {
         p
     }
 
-    async fn get_client() -> &'static Cli {
-        TEST_CONTAINER_CLIENT.get_or_init(init_cli).await
-    }
-
-    async fn init_cli() -> Cli {
-        Cli::default()
-    }
-
     pub async fn get_postgres_image_port() -> u16 {
-        let k = PG_CONTAINER.get_or_init(init_container).await;
-        k.container.get_host_port_ipv4(5432)
+        let container = PG_CONTAINER.get_or_init(init_container).await;
+        container.get_host_port_ipv4(5432).await.unwrap()
     }
 
-    async fn init_container() -> PK<'static> {
+    async fn init_container() -> ContainerAsync<GenericImage> {
         let container = run_postgres().await;
-        let port = container.get_host_port_ipv4(5432);
+        let port = container.get_host_port_ipv4(5432).await.unwrap();
         let pool = get_postgres_conn_pool(port, None).await;
         init_db_with_seed(pool).await;
-        PK { container }
+        container
     }
 
-    async fn run_postgres() -> Container<'static, GenericImage> {
+    async fn run_postgres() -> ContainerAsync<GenericImage> {
         let settings: Setting = get_dev_conf();
-        let test_container_client = get_client().await;
-        let image = "postgres";
-        let image_tag = "16.0";
-        let generic_postgres = GenericImage::new(image, image_tag)
+        GenericImage::new("postgres", "16.6")
             .with_wait_for(WaitFor::message_on_stderr(
                 "database system is ready to accept connections",
             ))
             .with_env_var("POSTGRES_DB", settings.db.db)
             .with_env_var("POSTGRES_USER", settings.db.user)
-            .with_env_var("POSTGRES_PASSWORD", settings.db.password);
-        test_container_client.run(generic_postgres)
+            .with_env_var("POSTGRES_PASSWORD", settings.db.password)
+            .start()
+            .await
+            .unwrap()
     }
 
     fn get_pg_config(settings: &Setting, port: u16) -> Config {
