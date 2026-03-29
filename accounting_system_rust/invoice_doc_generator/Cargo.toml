@@ -9,7 +9,6 @@ test_utils=[]
 [dependencies]
 derive_builder = "0.13"
 csv = "1"
-lazy_static = "1"
 thiserror = "1"
 gstin_validator = { path = "../gstin_validator" }
 regex = "1"

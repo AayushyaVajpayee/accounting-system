@@ -1,4 +1,3 @@
-use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
 use thiserror::Error;
@@ -12,27 +11,28 @@ pub enum GstinValidationError {
     #[error("gstin no {0} is not valid, check any typing error")]
     TypingError(String),
 }
-lazy_static! {
-    static ref REGEX: Regex =
-        Regex::new("\\d{2}[a-zA-Z]{5}\\d{4}[a-zA-Z]{1}[a-zA-Z\\d]{1}[zZ]{1}[a-zA-Z\\d]{1}")
-            .unwrap();
-}
+static REGEX: std::sync::LazyLock<Regex> = std::sync::LazyLock::new(|| {
+    Regex::new("\\d{2}[a-zA-Z]{5}\\d{4}[a-zA-Z]{1}[a-zA-Z\\d]{1}[zZ]{1}[a-zA-Z\\d]{1}")
+        .unwrap()
+});
 static CONVERSION_TABLE: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-lazy_static! {
-    static ref ALPHABET_TO_INT_MAP: HashMap<char, usize> = CONVERSION_TABLE
-        .chars()
-        .enumerate()
-        .map(|(a, i)| (i, a))
-        .collect::<HashMap<char, usize>>();
-}
-lazy_static! {
-    static ref INT_TO_ALPHABET_MAP: HashMap<usize, char> = CONVERSION_TABLE
-        .chars()
-        .enumerate()
-        .map(|(a, i)| (a, i))
-        .collect::<HashMap<usize, char>>();
-}
+static ALPHABET_TO_INT_MAP: std::sync::LazyLock<HashMap<char, usize>> =
+    std::sync::LazyLock::new(|| {
+        CONVERSION_TABLE
+            .chars()
+            .enumerate()
+            .map(|(a, i)| (i, a))
+            .collect::<HashMap<char, usize>>()
+    });
+static INT_TO_ALPHABET_MAP: std::sync::LazyLock<HashMap<usize, char>> =
+    std::sync::LazyLock::new(|| {
+        CONVERSION_TABLE
+            .chars()
+            .enumerate()
+            .map(|(a, i)| (a, i))
+            .collect::<HashMap<usize, char>>()
+    });
 
 fn validate_gstin_size(gstin: &str) -> Option<GstinValidationError> {
     let length = gstin.chars().count();

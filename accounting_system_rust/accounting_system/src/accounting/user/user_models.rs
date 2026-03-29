@@ -1,14 +1,11 @@
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-lazy_static! {
-    pub static ref SEED_USER_ID: Uuid =
-        Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap();
-}
+pub static SEED_USER_ID: std::sync::LazyLock<Uuid> =
+    std::sync::LazyLock::new(|| Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap());
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct User {

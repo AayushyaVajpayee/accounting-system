@@ -141,8 +141,8 @@ impl TryFrom<String> for InvoicingSeriesName {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use crate::invoicing::invoicing_series::invoicing_series_models::{
@@ -150,10 +150,8 @@ pub mod tests {
         InvoiceNumberPrefix, InvoicingSeriesName,
     };
 
-    lazy_static! {
-        pub static ref SEED_INVOICING_SERIES_MST_ID: Uuid =
-            Uuid::from_str("018d417d-e88a-732b-bdd9-db9aec8d3f78").unwrap();
-    }
+    pub static SEED_INVOICING_SERIES_MST_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d417d-e88a-732b-bdd9-db9aec8d3f78").unwrap());
     pub fn a_create_invoice_number_series_request(
         builder: CreateInvoiceNumberSeriesRequestBuilder,
     ) -> CreateInvoiceNumberSeriesRequest {

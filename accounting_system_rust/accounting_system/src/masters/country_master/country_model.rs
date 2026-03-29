@@ -1,15 +1,12 @@
 use std::str::FromStr;
 
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::accounting::currency::currency_models::AuditMetadataBase;
 
-lazy_static! {
-    pub static ref INDIA_COUNTRY_ID: Uuid =
-        Uuid::from_str("018b05dd-2983-7809-a2d1-95b3f1776eb3").unwrap();
-}
+pub static INDIA_COUNTRY_ID: std::sync::LazyLock<Uuid> =
+    std::sync::LazyLock::new(|| Uuid::from_str("018b05dd-2983-7809-a2d1-95b3f1776eb3").unwrap());
 #[derive(Debug)]
 pub enum CountryEnum {
     India,

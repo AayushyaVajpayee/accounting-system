@@ -124,9 +124,9 @@ pub struct CreateCessRequest {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
     use chrono::Utc;
-    use lazy_static::lazy_static;
     use rand::distributions::Alphanumeric;
     use rand::Rng;
     use uuid::Uuid;
@@ -145,10 +145,8 @@ pub mod tests {
         ProductTaxRateResponse, ProductTaxRateResponseBuilder,
     };
 
-    lazy_static! {
-        pub static ref SEED_PRODUCT_ITEM_ID: Uuid =
-            Uuid::from_str("018e7b88-65d8-7545-85c4-b41146987929").unwrap();
-    }
+    pub static SEED_PRODUCT_ITEM_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018e7b88-65d8-7545-85c4-b41146987929").unwrap());
 
     pub fn a_product_creation_request(
         builder: ProductCreationRequestBuilder,
