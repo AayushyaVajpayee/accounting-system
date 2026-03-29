@@ -18,7 +18,7 @@
 #CMD ["accounting_system"]
 
 
-FROM clux/muslrust:stable AS chef
+FROM clux/muslrust:1.85.0-stable AS chef
 USER root
 RUN cargo install cargo-chef
 WORKDIR /app
@@ -34,7 +34,7 @@ RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path r
 COPY . .
 RUN cargo build --release --locked --target x86_64-unknown-linux-musl --bin accounting_system
 
-FROM alpine AS runtime
+FROM alpine:3.21 AS runtime
 RUN addgroup -S myuser && adduser -S myuser -G myuser
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/accounting_system /usr/local/bin/
 USER myuser
