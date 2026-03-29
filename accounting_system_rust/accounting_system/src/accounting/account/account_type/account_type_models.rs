@@ -27,17 +27,17 @@ pub struct CreateAccountTypeMasterRequest {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+    use std::sync::LazyLock;
+
     use crate::accounting::account::account_type::account_type_models::{
         CreateAccountTypeMasterRequest, CreateAccountTypeMasterRequestBuilder,
     };
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
-    use lazy_static::lazy_static;
-    use std::str::FromStr;
     use uuid::Uuid;
-    lazy_static! {
-        pub static ref SEED_ACCOUNT_TYPE_ID:Uuid = Uuid::from_str("7d7ac3ba-ca98-7fac-9881-60f838ea0cd5").unwrap();//todo
-    }
+    pub static SEED_ACCOUNT_TYPE_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("7d7ac3ba-ca98-7fac-9881-60f838ea0cd5").unwrap()); //todo
     pub fn a_create_account_type_master_request(
         builder: CreateAccountTypeMasterRequestBuilder,
     ) -> CreateAccountTypeMasterRequest {

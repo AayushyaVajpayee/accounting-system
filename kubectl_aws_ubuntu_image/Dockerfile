@@ -1,9 +1,9 @@
 # Use Ubuntu as the base image
-FROM ubuntu:latest
+FROM ubuntu:24.04
 
 # Set environment variables
-ENV AWS_CLI_VERSION="2.15.12"
-ENV KUBECTL_VERSION="1.29.1"
+ENV AWS_CLI_VERSION="2.22.35"
+ENV KUBECTL_VERSION="1.32.3"
 
 # Update and install necessary packages
 RUN apt-get update -y && \

@@ -39,12 +39,8 @@ fn generate_codes_comma_separated_list(hsn_list: Vec<String>) -> String {
 fn generate_rust_code(comma_separated_str: String, variable_name: &str) -> String {
     format!(
         r#"
-    use lazy_static::lazy_static;
-    use std::collections::HashSet;
-    lazy_static!{{
-       pub static ref {variable_name}:HashSet<u32> = [{}]
-            .into_iter().collect();
-    }}
+    pub static {variable_name}: std::sync::LazyLock<std::collections::HashSet<u32>> = std::sync::LazyLock::new(|| [{}]
+            .into_iter().collect());
     "#,
         comma_separated_str
     )

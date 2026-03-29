@@ -16,8 +16,8 @@ pub struct CompanyMaster {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_models::AuditMetadataBase;
@@ -29,10 +29,8 @@ pub mod tests {
     use crate::masters::company_master::company_master_models::company_master::CompanyMaster;
     use crate::masters::company_master::company_master_models::company_name::CompanyName;
 
-    lazy_static! {
-        pub static ref SEED_COMPANY_MASTER_ID: Uuid =
-            Uuid::from_str("018c5e2d-615b-742f-85e2-907c65daf8f4").unwrap();
-    }
+    pub static SEED_COMPANY_MASTER_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018c5e2d-615b-742f-85e2-907c65daf8f4").unwrap());
 
     #[derive(Debug, Default)]
     pub struct CompanyMasterTestDataBuilder {

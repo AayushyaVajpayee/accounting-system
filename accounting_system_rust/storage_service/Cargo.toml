@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-aws-config ={version = "1.1.7",features = ["behavior-version-latest"]}
-tokio = {version="1.36.0",features = ["full"]}
-aws-sdk-s3 = {version = "1.17.0"}
-async-trait = "0.1.77"
-anyhow = "1.0.80"
-rand = { version = "0.8.5", features = [] }
-url = "2.5"
-reqwest = "0.11"
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+tokio = { version = "1", features = ["full"] }
+aws-sdk-s3 = { version = "1" }
+async-trait = "0.1"
+anyhow = "1"
+rand = { version = "0.8", features = [] }
+url = "2"
+reqwest = { version = "0.12", features = ["rustls-tls"] }
 [dev-dependencies]
-speculoos = "0.11.0"
+speculoos = "0.11"

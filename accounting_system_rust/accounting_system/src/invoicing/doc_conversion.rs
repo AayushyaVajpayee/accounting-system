@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
-use chrono::{Datelike, NaiveDateTime};
+use chrono::{DateTime, Datelike, Utc};
 use itertools::Itertools;
 use uuid::Uuid;
 
@@ -289,8 +289,9 @@ fn convert_db_line_to_doc_line(
 }
 
 fn epoch_ms_to_doc_date(epoch_ms: i64) -> anyhow::Result<DocDate> {
-    let jp = NaiveDateTime::from_timestamp_millis(epoch_ms)
-        .ok_or_else(|| anyhow!("error parsing date"))?;
+    let jp = DateTime::from_timestamp_millis(epoch_ms)
+        .ok_or_else(|| anyhow!("error parsing date"))?
+        .naive_utc();
     Ok(DocDate {
         month: jp.month() as u16,
         year: jp.year() as u16,

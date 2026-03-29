@@ -20,8 +20,8 @@ pub struct CreateTenantRequest {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_models::tests::an_audit_metadata_base;
@@ -29,10 +29,8 @@ pub mod tests {
         CreateTenantRequest, CreateTenantRequestBuilder, Tenant, TenantBuilder,
     };
 
-    lazy_static! {
-        pub static ref SEED_TENANT_ID: Uuid =
-            Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
-    }
+    pub static SEED_TENANT_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap());
     pub fn a_create_tenant_request(builder: CreateTenantRequestBuilder) -> CreateTenantRequest {
         CreateTenantRequest {
             idempotence_key: builder.idempotence_key.unwrap_or_else(Uuid::now_v7),

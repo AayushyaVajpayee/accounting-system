@@ -1,5 +1,4 @@
 use anyhow::ensure;
-use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::ops::Not;
@@ -9,12 +8,10 @@ use std::ops::Not;
 pub struct InvoiceNumber(String);
 
 //https://old.cbic.gov.in/htdocs-cbec/gst/Tax_Invoice_and_other_new.pdf
-lazy_static! {
-    static ref INVOICE_NUMBER_REGEX:Regex = Regex::new("^([[:alnum:]]|[/-]){1,16}$").unwrap();//todo test
-}
-lazy_static! {
-    static ref INVOICE_NUMBER_ONLY_SPECIAL_CHAR_REGEX:Regex = Regex::new("^[/-]{1,16}$").unwrap();//todo test
-}
+static INVOICE_NUMBER_REGEX: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new("^([[:alnum:]]|[/-]){1,16}$").unwrap()); //todo test
+static INVOICE_NUMBER_ONLY_SPECIAL_CHAR_REGEX: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new("^[/-]{1,16}$").unwrap()); //todo test
 impl InvoiceNumber {
     pub fn new(invoice_number: String) -> anyhow::Result<Self> {
         ensure!(!invoice_number.is_empty(), "invoice number cannot be empty");

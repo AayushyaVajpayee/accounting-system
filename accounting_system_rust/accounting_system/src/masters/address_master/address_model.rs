@@ -90,9 +90,9 @@ pub struct CreateAddressRequest {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
     use anyhow::anyhow;
-    use lazy_static::lazy_static;
     use rstest::rstest;
     use speculoos::assert_that;
     use speculoos::prelude::ResultAssertions;
@@ -112,10 +112,8 @@ pub mod tests {
     use crate::masters::state_master::state_models::tests::SEED_STATE_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
-    lazy_static! {
-        pub static ref SEED_ADDRESS_ID: Uuid =
-            Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap();
-    }
+    pub static SEED_ADDRESS_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018c6261-186b-763f-a3ae-13d44e2bf01d").unwrap());
     #[allow(dead_code)]
     pub struct AddressBuilder {
         base_master_fields: Option<BaseMasterFields>,

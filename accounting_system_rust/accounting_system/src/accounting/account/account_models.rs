@@ -34,10 +34,11 @@ pub struct CreateAccountRequest {
 
 #[cfg(test)]
 pub mod tests {
-    use lazy_static::lazy_static;
+    use std::str::FromStr;
+    use std::sync::LazyLock;
+
     use rand::distributions::Alphanumeric;
     use rand::Rng;
-    use std::str::FromStr;
     use uuid::Uuid;
 
     use crate::accounting::account::account_models::CreateAccountRequest;
@@ -48,14 +49,10 @@ pub mod tests {
     use crate::ledger::ledgermaster::ledger_master_models::tests::SEED_LEDGER_MASTER_ID;
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
-    lazy_static! {
-        pub static ref SEED_DEBIT_ACCOUNT_ID: Uuid =
-            Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap();
-    }
-    lazy_static! {
-        pub static ref SEED_CREDIT_ACCOUNT_ID: Uuid =
-            Uuid::from_str("018c1515-0580-7444-9da8-107986ab3d35").unwrap();
-    }
+    pub static SEED_DEBIT_ACCOUNT_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018c1515-057e-7322-84a7-6f6dc48886d2").unwrap());
+    pub static SEED_CREDIT_ACCOUNT_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018c1515-0580-7444-9da8-107986ab3d35").unwrap());
 
     #[derive(Debug, Default)]
     pub struct CreateAccountRequestTestBuilder {

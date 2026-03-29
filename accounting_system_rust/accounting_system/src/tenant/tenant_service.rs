@@ -4,7 +4,6 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use deadpool_postgres::Pool;
-use lazy_static::lazy_static;
 #[cfg(test)]
 use mockall::automock;
 use moka::future::Cache;
@@ -16,15 +15,11 @@ use crate::common_utils::dao_error::DaoError;
 use crate::tenant::tenant_dao::{get_tenant_dao, TenantDao};
 use crate::tenant::tenant_models::{CreateTenantRequest, Tenant};
 
-lazy_static! {
-    pub static ref SUPER_TENANT_ID: Uuid =
-        Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
-}
+pub static SUPER_TENANT_ID: std::sync::LazyLock<Uuid> =
+    std::sync::LazyLock::new(|| Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap());
 
-lazy_static! {
-    pub static ref SUPER_USER_ID: Uuid =
-        Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap();
-}
+pub static SUPER_USER_ID: std::sync::LazyLock<Uuid> =
+    std::sync::LazyLock::new(|| Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap());
 #[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum TenantServiceError {

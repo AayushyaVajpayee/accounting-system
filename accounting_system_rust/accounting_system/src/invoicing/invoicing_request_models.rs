@@ -320,7 +320,7 @@ impl PurchaseOrderDate {
         return self
             .0
             .and_hms_milli_opt(0, 0, 0, 0)
-            .map(|a| a.timestamp_millis());
+            .map(|a| a.and_utc().timestamp_millis());
     }
 }
 
@@ -373,7 +373,7 @@ impl ExpiryDateMs {
     pub fn epoch_millis(&self) -> Option<i64> {
         self.0
             .and_hms_milli_opt(0, 0, 0, 0)
-            .map(|a| a.timestamp_millis())
+            .map(|a| a.and_utc().timestamp_millis())
     }
 }
 
@@ -395,8 +395,8 @@ pub struct InvoicePdfRequest {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use invoice_doc_generator::invoice_line::line_quantity::test_utils::{a_free_line_quantity, a_line_quantity};
@@ -417,10 +417,8 @@ pub mod tests {
     };
     use crate::masters::product_item_master::product_item_models::tests::SEED_PRODUCT_ITEM_ID;
 
-    lazy_static! {
-        pub static ref SEED_INVOICE_ID: Uuid =
-            Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap();
-    }
+    pub static SEED_INVOICE_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d5559-745a-7371-80c6-a4efaa2cafe6").unwrap());
 
     pub fn a_create_invoice_request(builder: CreateInvoiceRequestBuilder) -> CreateInvoiceRequest {
         CreateInvoiceRequest {
