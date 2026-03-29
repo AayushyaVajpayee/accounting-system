@@ -52,7 +52,7 @@ impl CityMasterService for CityMasterServiceImpl {
         if self.cache_all.get(&CACHE_ALL_KEY).await.is_none() {
             self.populate_caches().await;
         }
-        return self.cache_by_id.get(&id).await;
+        return self.cache_by_id.get(id).await;
     }
 
     async fn get_all_cities(&self) -> Option<Arc<Vec<Arc<CityMaster>>>> {
