@@ -11,7 +11,6 @@ tokio = { version = "1.36.0", features = ["full"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json =  {version =  "1.0.113" }
 uuid = { version = "1.7.0", features = ["v7","serde"] }
-lazy_static = "1.4.0"
 chrono = { version = "0.4.37",features = ["serde"] }
 chrono-tz = "0.8.6"
 cess_models={path = "../cess_models"}

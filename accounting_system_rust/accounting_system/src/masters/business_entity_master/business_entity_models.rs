@@ -240,29 +240,21 @@ impl Default for BusinessEntityType {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use crate::masters::business_entity_master::business_entity_models::{BusinessEntityMaster, BusinessEntityMasterBuilder, BusinessEntityName, CreateBusinessEntityRequestRawBuilder, PhoneNumber};
     use crate::masters::business_entity_master::business_entity_models::CreateBusinessEntityRequestRaw;
 
-    lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_ID1: Uuid =
-            Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap();
-    }
-    lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1: Uuid =
-            Uuid::from_str("018d503d-acef-795b-89ae-dfb0b7feda60").unwrap();
-    }
-    lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_ID2: Uuid =
-            Uuid::from_str("018d5efd-009f-7e36-9d4f-8ad30460cada").unwrap();
-    }
-    lazy_static! {
-        pub static ref SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2: Uuid =
-            Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap();
-    }
+    pub static SEED_BUSINESS_ENTITY_ID1: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d5037-bb9d-7263-ba97-d3c46e188c89").unwrap());
+    pub static SEED_BUSINESS_ENTITY_INVOICE_DTL_ID1: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d503d-acef-795b-89ae-dfb0b7feda60").unwrap());
+    pub static SEED_BUSINESS_ENTITY_ID2: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d5efd-009f-7e36-9d4f-8ad30460cada").unwrap());
+    pub static SEED_BUSINESS_ENTITY_INVOICE_DTL_ID2: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d5faf-086c-7347-84a6-cb2b4dcb9dab").unwrap());
     #[allow(dead_code)]
     pub fn a_business_entity_master(b: BusinessEntityMasterBuilder) -> BusinessEntityMaster {
         BusinessEntityMaster {

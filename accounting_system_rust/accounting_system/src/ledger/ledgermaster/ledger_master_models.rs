@@ -23,8 +23,8 @@ pub struct CreateLedgerMasterEntryRequest {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
     use crate::accounting::currency::currency_models::tests::{
@@ -35,10 +35,8 @@ pub mod tests {
     };
     use crate::tenant::tenant_models::tests::SEED_TENANT_ID;
 
-    lazy_static! {
-        pub static ref SEED_LEDGER_MASTER_ID: Uuid =
-            Uuid::from_str("82a4209a-d298-747f-902f-d323df4f4400").unwrap();
-    }
+    pub static SEED_LEDGER_MASTER_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("82a4209a-d298-747f-902f-d323df4f4400").unwrap());
     pub fn a_create_ledger_master_entry_request(
         builder: CreateLedgerMasterEntryRequestBuilder,
     ) -> CreateLedgerMasterEntryRequest {

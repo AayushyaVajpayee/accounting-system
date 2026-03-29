@@ -58,8 +58,8 @@ impl Pincode {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use rstest::rstest;
     use speculoos::assert_that;
     use speculoos::prelude::ResultAssertions;
@@ -68,10 +68,8 @@ pub mod tests {
     use crate::masters::country_master::country_model::INDIA_COUNTRY_ID;
     use crate::masters::pincode_master::pincode_models::Pincode;
 
-    lazy_static! {
-        pub static ref SEED_PINCODE_ID: Uuid =
-            Uuid::from_str("c8c1da55-8be8-722c-9623-1295611b2eee").unwrap();
-    }
+    pub static SEED_PINCODE_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("c8c1da55-8be8-722c-9623-1295611b2eee").unwrap());
 
     #[rstest]
     #[case("0000c0",false,Err("india pincode has to be numeric"),*INDIA_COUNTRY_ID)]

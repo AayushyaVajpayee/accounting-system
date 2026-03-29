@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use lazy_static::lazy_static;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use regex::Regex;
@@ -15,27 +14,28 @@ const GST_STATE_CODE_LIST: [u16; 39] = [
 const ALPHABETS: &[u8] = b"ABCDEFGHIJKLNMNOPQRSTUVWXYZ";
 const SEED_GSTIN: &str = "05AABCA5291p1ZD";
 
-lazy_static! {
-    static ref REGEX: Regex =
-        Regex::new("\\d{2}[a-zA-Z]{5}\\d{4}[a-zA-Z]{1}[a-zA-Z\\d]{1}[zZ]{1}[a-zA-Z\\d]{1}")
-            .unwrap();
-}
+static REGEX: std::sync::LazyLock<Regex> = std::sync::LazyLock::new(|| {
+    Regex::new("\\d{2}[a-zA-Z]{5}\\d{4}[a-zA-Z]{1}[a-zA-Z\\d]{1}[zZ]{1}[a-zA-Z\\d]{1}")
+        .unwrap()
+});
 static CONVERSION_TABLE: &str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-lazy_static! {
-    static ref ALPHABET_TO_INT_MAP: HashMap<char, usize> = CONVERSION_TABLE
-        .chars()
-        .enumerate()
-        .map(|(a, i)| (i, a))
-        .collect::<HashMap<char, usize>>();
-}
-lazy_static! {
-    static ref INT_TO_ALPHABET_MAP: HashMap<usize, char> = CONVERSION_TABLE
-        .chars()
-        .enumerate()
-        .map(|(a, i)| (a, i))
-        .collect::<HashMap<usize, char>>();
-}
+static ALPHABET_TO_INT_MAP: std::sync::LazyLock<HashMap<char, usize>> =
+    std::sync::LazyLock::new(|| {
+        CONVERSION_TABLE
+            .chars()
+            .enumerate()
+            .map(|(a, i)| (i, a))
+            .collect::<HashMap<char, usize>>()
+    });
+static INT_TO_ALPHABET_MAP: std::sync::LazyLock<HashMap<usize, char>> =
+    std::sync::LazyLock::new(|| {
+        CONVERSION_TABLE
+            .chars()
+            .enumerate()
+            .map(|(a, i)| (a, i))
+            .collect::<HashMap<usize, char>>()
+    });
 pub fn gstin_checksum(gstin: &str) -> Result<char, &str> {
     let gstin = gstin.to_uppercase();
     let checked_digit = gstin.chars().nth(14);

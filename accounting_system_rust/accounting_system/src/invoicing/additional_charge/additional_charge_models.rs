@@ -13,8 +13,8 @@ pub struct CreateAdditionalChargeRequestDbModel {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
     use xxhash_rust::xxh32;
 
@@ -22,10 +22,8 @@ pub mod tests {
         CreateAdditionalChargeRequestDbModel, CreateAdditionalChargeRequestDbModelBuilder,
     };
 
-    lazy_static! {
-        pub static ref ADDITIONAL_CHARGE_SEED_ID: Uuid =
-            Uuid::from_str("018d557f-4a97-78ef-9947-fcbcebc2be21").unwrap();
-    }
+    pub static ADDITIONAL_CHARGE_SEED_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("018d557f-4a97-78ef-9947-fcbcebc2be21").unwrap());
 
     pub fn a_create_additional_charge_request_db_model(
         builder: CreateAdditionalChargeRequestDbModelBuilder,

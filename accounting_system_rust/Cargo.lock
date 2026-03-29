@@ -26,7 +26,6 @@ dependencies = [
  "invoice_doc_generator",
  "invoicing_calculations",
  "itertools",
- "lazy_static",
  "log",
  "maplit",
  "mockall",
@@ -2378,7 +2377,6 @@ dependencies = [
 name = "gstin_validator"
 version = "0.1.0"
 dependencies = [
- "lazy_static",
  "regex",
  "rstest",
  "speculoos",
@@ -3023,7 +3021,6 @@ dependencies = [
  "csv",
  "derive_builder",
  "gstin_validator",
- "lazy_static",
  "regex",
  "rstest",
  "serde",
@@ -3037,7 +3034,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cess_models",
- "lazy_static",
  "rstest",
  "speculoos",
  "thiserror 1.0.69",
@@ -6147,7 +6143,6 @@ dependencies = [
  "cess_models",
  "chrono",
  "chrono-tz",
- "lazy_static",
  "rand",
  "regex",
  "reqwest 0.12.12",

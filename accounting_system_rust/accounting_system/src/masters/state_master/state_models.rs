@@ -33,12 +33,10 @@ pub struct StateMasterModel {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
-    lazy_static! {
-        pub static ref SEED_STATE_ID: Uuid =
-            Uuid::from_str("c42190c1-cc98-7d51-9442-0edebe9b0220").unwrap();
-    }
+    pub static SEED_STATE_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("c42190c1-cc98-7d51-9442-0edebe9b0220").unwrap());
 }

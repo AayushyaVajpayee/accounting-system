@@ -31,12 +31,10 @@ pub struct CityMaster {
 #[cfg(test)]
 pub mod tests {
     use std::str::FromStr;
+    use std::sync::LazyLock;
 
-    use lazy_static::lazy_static;
     use uuid::Uuid;
 
-    lazy_static! {
-        pub static ref SEED_CITY_ID: Uuid =
-            Uuid::from_str("c7d82fae-7928-7f91-970b-41450b26f197").unwrap();
-    }
+    pub static SEED_CITY_ID: LazyLock<Uuid> =
+        LazyLock::new(|| Uuid::from_str("c7d82fae-7928-7f91-970b-41450b26f197").unwrap());
 }

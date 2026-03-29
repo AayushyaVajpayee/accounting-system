@@ -44,7 +44,6 @@ storage_service={path="../storage_service"}
 cess_models={path = "../cess_models"}
 const_format = "0.2.32"
 moka = { version = "0.12.5", features = ["future"] }
-lazy_static = "1.4.0"
 anyhow = "1.0.79"
 tracing = {version =  "0.1.40" }
 tracing-subscriber = { version = "0.3.18",features = ["env-filter"] }

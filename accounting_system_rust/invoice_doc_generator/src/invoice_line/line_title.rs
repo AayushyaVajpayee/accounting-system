@@ -1,5 +1,4 @@
 use anyhow::Context;
-use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -8,9 +7,8 @@ use crate::invoice_line::line_title::LineTitleError::{
     EmptyTitle, NoReadableChars, TooLong, TooShort,
 };
 
-lazy_static! {
-    static ref NO_ALPHABET_REGEX: Regex = Regex::new(r"^(?:[^a-z^A-Z]+)$").unwrap();
-}
+static NO_ALPHABET_REGEX: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"^(?:[^a-z^A-Z]+)$").unwrap());
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(try_from = "String")]
 pub struct LineTitle(String);

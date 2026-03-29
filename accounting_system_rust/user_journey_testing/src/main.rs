@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use lazy_static::lazy_static;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -27,15 +26,11 @@ mod invoice_template;
 
 const LOCAL_HOST: &str = "http://localhost:8090/";
 
-lazy_static! {
-    pub static ref SUPER_TENANT_ID: Uuid =
-        Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap();
-}
+pub static SUPER_TENANT_ID: std::sync::LazyLock<Uuid> =
+    std::sync::LazyLock::new(|| Uuid::from_str("018b33d9-c862-7fde-a0cd-55504d75e5e9").unwrap());
 
-lazy_static! {
-    pub static ref SUPER_USER_ID: Uuid =
-        Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap();
-}
+pub static SUPER_USER_ID: std::sync::LazyLock<Uuid> =
+    std::sync::LazyLock::new(|| Uuid::from_str("018b3444-dc75-7a3f-a4d9-02c41071d3bd").unwrap());
 
 
 
