@@ -283,7 +283,7 @@ pub fn convert_to_invoice_db(
             .from_utc_datetime(&date)
             .date_naive()
             .and_hms_opt(0, 0, 0)
-            .map(|a| a.timestamp_millis())
+            .map(|a| a.and_utc().timestamp_millis())
             .ok_or_else(|| anyhow!("error during invoice date computation"))?,
         currency_id: req.currency_id,
         service_invoice: req.service_invoice,

@@ -15,7 +15,7 @@ spec:
           serviceAccountName: sa-default # Replace with your service account name if different
           containers:
             - name: ecr-registry-helper
-              image: public.ecr.aws/k0z0q3l8/aws-kubectl-ubuntu:latest
+              image: public.ecr.aws/k0z0q3l8/aws-kubectl-ubuntu:ubuntu-24.04-awscli-2.22.35-kubectl-1.32.3
               imagePullPolicy: IfNotPresent
               envFrom:
                 - secretRef:

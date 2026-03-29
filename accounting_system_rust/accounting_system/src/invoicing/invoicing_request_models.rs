@@ -320,7 +320,7 @@ impl PurchaseOrderDate {
         return self
             .0
             .and_hms_milli_opt(0, 0, 0, 0)
-            .map(|a| a.timestamp_millis());
+            .map(|a| a.and_utc().timestamp_millis());
     }
 }
 
@@ -373,7 +373,7 @@ impl ExpiryDateMs {
     pub fn epoch_millis(&self) -> Option<i64> {
         self.0
             .and_hms_milli_opt(0, 0, 0, 0)
-            .map(|a| a.timestamp_millis())
+            .map(|a| a.and_utc().timestamp_millis())
     }
 }
 

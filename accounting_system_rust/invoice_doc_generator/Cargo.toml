@@ -7,15 +7,15 @@ edition = "2021"
 [features]
 test_utils=[]
 [dependencies]
-derive_builder = "0.13.0"
-csv = "1.3.0"
-thiserror = "1.0.56"
-gstin_validator = {path="../gstin_validator"}
-regex="1.10.3"
-serde = { version = "1.0.196", features = ["derive"] }
-anyhow = "1.0.79"
+derive_builder = "0.13"
+csv = "1"
+thiserror = "1"
+gstin_validator = { path = "../gstin_validator" }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+anyhow = "1"
 [dev-dependencies]
-rstest = "0.18.2"
-speculoos = "0.11.0"
+rstest = "0.18"
+speculoos = "0.11"
 [build-dependencies]
-csv = "1.3.0"
+csv = "1"

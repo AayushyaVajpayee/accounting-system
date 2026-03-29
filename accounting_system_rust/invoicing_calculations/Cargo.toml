@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thiserror = "1.0.56"
-anyhow = "1.0.79"
-cess_models={path = "../cess_models"}
+thiserror = "1"
+anyhow = "1"
+cess_models = { path = "../cess_models" }
 [dev-dependencies]
-rstest = "0.18.2"
-speculoos = "0.11.0"
+rstest = "0.18"
+speculoos = "0.11"

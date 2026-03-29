@@ -64,7 +64,7 @@ impl PincodeMasterService for PincodeMasterServiceImpl {
         if self.cache_all.get(&CACHE_ALL_KEY).await.is_none() {
             self.populate_caches().await;
         }
-        return self.cache_by_id.get(&id).await;
+        return self.cache_by_id.get(id).await;
     }
 }
 
